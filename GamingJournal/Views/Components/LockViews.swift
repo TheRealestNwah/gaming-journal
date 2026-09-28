@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 extension View {
     /// Covers the app while the journal is locked, and hides it in the app switcher when the lock
@@ -15,14 +16,25 @@ private struct AppLockModifier: ViewModifier {
     /// briefly inactive, and prompting on that would loop after a cancel.
     @State private var returningFromBackground = false
 
+    private enum Cover: Equatable {
+        case none, sealed, locked
+    }
+
+    private var cover: Cover {
+        if lock.isLocked { return .locked }
+        // What the app switcher snapshots: no pages on show.
+        if lock.isEnabled && scenePhase != .active { return .sealed }
+        return .none
+    }
+
     func body(content: Content) -> some View {
         content
-            .overlay {
-                if lock.isLocked {
-                    LockScreen(lock: lock)
-                } else if lock.isEnabled && scenePhase != .active {
-                    // What the app switcher snapshots: no pages on show.
-                    SealedCover()
+            // In its own window so it covers sheets and alerts too, not just the root view.
+            .onChange(of: cover, initial: true) { _, cover in
+                switch cover {
+                case .none: LockWindow.shared.hide()
+                case .sealed: LockWindow.shared.show(SealedCover())
+                case .locked: LockWindow.shared.show(LockScreen(lock: lock))
                 }
             }
             .onChange(of: scenePhase) { _, phase in
@@ -37,6 +49,32 @@ private struct AppLockModifier: ViewModifier {
                     break
                 }
             }
+    }
+}
+
+/// A window above everything else in the app (sheets, alerts, the keyboard) for the lock.
+@MainActor
+private final class LockWindow {
+    static let shared = LockWindow()
+    private var window: UIWindow?
+
+    func show(_ view: some View) {
+        guard let scene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first(where: { $0.activationState != .unattached })
+        else { return }
+        let window = window ?? UIWindow(windowScene: scene)
+        window.windowLevel = .alert + 1
+        let host = UIHostingController(rootView: AnyView(view))
+        host.view.backgroundColor = .clear
+        window.rootViewController = host
+        window.isHidden = false
+        self.window = window
+    }
+
+    func hide() {
+        window?.isHidden = true
+        window = nil
     }
 }
 
