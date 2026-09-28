@@ -45,15 +45,17 @@ struct StatsView: View {
                     }
                 }
                 if notebooks.count > 1 {
-                    Menu {
-                        Picker("Tale", selection: $notebookID) {
-                            Text("All tales").tag(UUID?.none)
-                            ForEach(notebooks) { notebook in
-                                Text(notebook.title).tag(UUID?.some(notebook.id))
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            Picker("Tale", selection: $notebookID) {
+                                Text("All tales").tag(UUID?.none)
+                                ForEach(notebooks) { notebook in
+                                    Text(notebook.title).tag(UUID?.some(notebook.id))
+                                }
                             }
+                        } label: {
+                            Label("Tale", systemImage: "books.vertical")
                         }
-                    } label: {
-                        Label("Tale", systemImage: "books.vertical")
                     }
                 }
             }

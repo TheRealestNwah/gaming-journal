@@ -3,9 +3,18 @@ import SwiftData
 @testable import GamingJournal
 
 final class BackupV2Tests: XCTestCase {
+    /// Held for the whole test: a context whose container has been released traps.
+    private var containers: [ModelContainer] = []
+
+    override func tearDown() {
+        containers = []
+        super.tearDown()
+    }
+
     @MainActor
     private func makeStore() throws -> (ModelContainer, ModelContext) {
         let container = try Persistence.makeContainer(inMemory: true)
+        containers.append(container)
         return (container, container.mainContext)
     }
 
