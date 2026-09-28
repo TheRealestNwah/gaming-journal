@@ -81,7 +81,9 @@ final class JournalBackupTests: XCTestCase {
         XCTAssertEqual(again.skippedCount, 1)
 
         // Fresh store: the session comes back with its photo and mood.
-        let other = try Persistence.makeContainer(inMemory: true).mainContext
+        // Keep the container alive: a context whose container is released crashes.
+        let otherContainer = try Persistence.makeContainer(inMemory: true)
+        let other = otherContainer.mainContext
         for session in backup.mergePlan(existingIDs: []).newSessions {
             other.insert(session.makeSession())
         }
