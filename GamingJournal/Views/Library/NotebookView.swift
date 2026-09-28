@@ -11,7 +11,7 @@ struct NotebookView: View {
     @State private var filter = ChronicleFilter()
 
     enum NotebookSection: String, CaseIterable, Identifiable {
-        case chronicle, atlas
+        case chronicle, atlas, sessions
 
         var id: String { rawValue }
 
@@ -19,6 +19,7 @@ struct NotebookView: View {
             switch self {
             case .chronicle: "Chronicle"
             case .atlas: "Atlas"
+            case .sessions: "Sessions"
             }
         }
     }
@@ -58,6 +59,8 @@ struct NotebookView: View {
                         filter = ChronicleFilter(place: place)
                         section = .chronicle
                     }
+                case .sessions:
+                    NotebookSessionsSection(notebook: notebook)
                 }
             }
             .padding()
@@ -67,6 +70,9 @@ struct NotebookView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(for: Entry.self) { entry in
             EntryDetailView(entry: entry)
+        }
+        .navigationDestination(for: PlaySession.self) { session in
+            SessionDetailView(session: session)
         }
         .toolbar {
             Button("Edit") { isEditing = true }

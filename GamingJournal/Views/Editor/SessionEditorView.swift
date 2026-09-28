@@ -6,6 +6,7 @@ struct SessionEditorView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Query private var allSessions: [PlaySession]
+    @Query(sort: \Notebook.updatedAt, order: .reverse) private var notebooks: [Notebook]
 
     private let session: PlaySession?
     private let onSave: (() -> Void)?
@@ -32,6 +33,7 @@ struct SessionEditorView: View {
             Form {
                 Group {
                     gameSection
+                    notebookSection
                     timeSection
                     feelSection
                     notesSection
@@ -84,6 +86,22 @@ struct SessionEditorView: View {
             ChipRow(items: platformOptions, selected: draft.platform) { platform in
                 draft.platform = platform
                 platformTouched = true
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var notebookSection: some View {
+        if !notebooks.isEmpty {
+            Section {
+                Picker("Notebook", selection: $draft.notebookID) {
+                    Text("None").tag(UUID?.none)
+                    ForEach(notebooks) { notebook in
+                        Text(notebook.title).tag(UUID?.some(notebook.id))
+                    }
+                }
+            } footer: {
+                Text("File this session under a playthrough.")
             }
         }
     }
@@ -160,9 +178,13 @@ struct SessionEditorView: View {
     private func save() {
         if let session {
             draft.apply(to: session, index: index)
+            draft.linkNotebook(of: session, from: notebooks)
         } else {
-            context.insert(draft.makeSession(index: index))
+            let newSession = draft.makeSession(index: index)
+            context.insert(newSession)
+            draft.linkNotebook(of: newSession, from: notebooks)
         }
+        try? context.save()
         onSave?()
         dismiss()
     }

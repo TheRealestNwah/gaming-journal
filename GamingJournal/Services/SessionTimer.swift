@@ -4,6 +4,8 @@ import Observation
 /// A running or paused play timer. Plain value so it can be persisted and tested.
 struct TimerState: Codable, Equatable {
     var gameTitle: String
+    /// The notebook the timer was started from, if any.
+    var notebookID: UUID?
     /// When the timer was first started; becomes the session's start date.
     var startedAt: Date
     /// Seconds counted in earlier runs, before the current one.
@@ -11,8 +13,9 @@ struct TimerState: Codable, Equatable {
     /// Start of the current run, or nil while paused.
     var runningSince: Date?
 
-    init(gameTitle: String, startedAt: Date) {
+    init(gameTitle: String, startedAt: Date, notebookID: UUID? = nil) {
         self.gameTitle = gameTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.notebookID = notebookID
         self.startedAt = startedAt
         self.runningSince = startedAt
     }
@@ -46,6 +49,7 @@ struct TimerState: Codable, Equatable {
     func draft(at now: Date) -> SessionDraft {
         var draft = SessionDraft()
         draft.gameTitle = gameTitle
+        draft.notebookID = notebookID
         draft.startDate = startedAt
         draft.durationMinutes = minutes(at: now)
         return draft
@@ -72,8 +76,8 @@ final class LiveTimer {
 
     var isActive: Bool { state != nil }
 
-    func start(gameTitle: String, at now: Date = .now) {
-        state = TimerState(gameTitle: gameTitle, startedAt: now)
+    func start(gameTitle: String, notebookID: UUID? = nil, at now: Date = .now) {
+        state = TimerState(gameTitle: gameTitle, startedAt: now, notebookID: notebookID)
     }
 
     func pause(at now: Date = .now) {
