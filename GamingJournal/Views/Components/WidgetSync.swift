@@ -2,9 +2,9 @@ import SwiftUI
 import SwiftData
 
 extension View {
-    /// Keeps the widget snapshot current and handles the start-session widget's deep link.
-    func widgetSync(onStartTimer: @escaping () -> Void) -> some View {
-        modifier(WidgetSync(onStartTimer: onStartTimer))
+    /// Keeps the widget snapshot current and handles the widgets' deep links.
+    func widgetSync(onStartTimer: @escaping () -> Void, onWrite: @escaping (UUID?) -> Void) -> some View {
+        modifier(WidgetSync(onStartTimer: onStartTimer, onWrite: onWrite))
     }
 }
 
@@ -12,11 +12,14 @@ private struct WidgetSync: ViewModifier {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(LiveTimer.self) private var timer
     @Query private var sessions: [PlaySession]
+    @Query(sort: \Entry.writtenAt, order: .reverse) private var entries: [Entry]
     let onStartTimer: () -> Void
+    let onWrite: (UUID?) -> Void
 
     /// Changes whenever anything a widget shows might have changed.
     private var fingerprint: [String] {
         sessions.map { "\($0.id)|\($0.gameTitle)|\($0.platform)|\($0.startDate.timeIntervalSince1970)|\($0.durationMinutes)" }
+            + entries.prefix(1).map { "\($0.id)|\($0.title)|\($0.body.prefix(200))|\($0.updatedAt.timeIntervalSince1970)" }
     }
 
     func body(content: Content) -> some View {
@@ -28,6 +31,10 @@ private struct WidgetSync: ViewModifier {
                 if phase != .active { publish() }
             }
             .onOpenURL { url in
+                if url.scheme == WidgetSnapshot.writeURL.scheme, url.host == WidgetSnapshot.writeURL.host {
+                    onWrite(WidgetSnapshot.notebookID(inWriteURL: url))
+                    return
+                }
                 guard url.scheme == WidgetSnapshot.startTimerURL.scheme,
                       url.host == WidgetSnapshot.startTimerURL.host,
                       !timer.isActive
@@ -37,6 +44,10 @@ private struct WidgetSync: ViewModifier {
     }
 
     private func publish() {
-        WidgetSnapshot.make(sessions: sessions.map(StatsRecord.init(session:)), timer: timer.state).publish()
+        WidgetSnapshot.make(
+            sessions: sessions.map(StatsRecord.init(session:)),
+            timer: timer.state,
+            latestEntry: entries.first { $0.notebook != nil }.map(WidgetSnapshot.LatestEntry.init(entry:))
+        ).publish()
     }
 }

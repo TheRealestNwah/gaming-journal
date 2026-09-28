@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 /// Top-level tabs.
 struct RootView: View {
@@ -6,6 +7,8 @@ struct RootView: View {
     @State private var tab = RootTab.library
     @State private var isStartingTimer = false
     @AppStorage(OnboardingView.completedKey) private var onboardingCompleted = false
+    @State private var writingIn: Notebook?
+    @Query(sort: \Notebook.updatedAt, order: .reverse) private var notebooks: [Notebook]
 
     enum RootTab: Hashable {
         case library, journal, games, stats, settings
@@ -31,9 +34,20 @@ struct RootView: View {
         }
         .foregroundStyle(Theme.ink)
         .background(ParchmentBackground())
-        .widgetSync {
-            tab = .journal
-            isStartingTimer = true
+        .widgetSync(
+            onStartTimer: {
+                tab = .journal
+                isStartingTimer = true
+            },
+            onWrite: { notebookID in
+                tab = .library
+                writingIn = notebookID.flatMap { id in notebooks.first { $0.id == id } }
+                    ?? notebooks.first { $0.status == .ongoing }
+                    ?? notebooks.first
+            }
+        )
+        .sheet(item: $writingIn) { notebook in
+            EntryEditorView(notebook: notebook)
         }
         .sheet(isPresented: $isStartingTimer) {
             StartTimerSheet()

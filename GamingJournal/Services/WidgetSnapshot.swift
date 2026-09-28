@@ -8,6 +8,22 @@ struct WidgetSnapshot: Codable, Equatable {
     static let key = "widgetSnapshot"
     /// Opened by the start-session widget.
     static let startTimerURL = URL(string: "gamingjournal://start-timer")!
+    /// Opened by the latest-entry widget: write in the notebook it shows.
+    static let writeURL = URL(string: "gamingjournal://write")!
+
+    /// The notebook ID a write link points at, if it names one.
+    static func notebookID(inWriteURL url: URL) -> UUID? {
+        guard url.scheme == writeURL.scheme, url.host == writeURL.host else { return nil }
+        return URLComponents(url: url, resolvingAgainstBaseURL: false)?
+            .queryItems?.first { $0.name == "notebook" }?.value
+            .flatMap(UUID.init(uuidString:))
+    }
+
+    static func writeURL(for notebookID: UUID) -> URL {
+        var components = URLComponents(url: writeURL, resolvingAgainstBaseURL: false)!
+        components.queryItems = [URLQueryItem(name: "notebook", value: notebookID.uuidString)]
+        return components.url!
+    }
 
     struct LastSession: Codable, Equatable {
         var title: String
@@ -24,6 +40,31 @@ struct WidgetSnapshot: Codable, Equatable {
         var runningSince: Date?
     }
 
+    /// The most recent journal entry across all notebooks.
+    struct LatestEntry: Codable, Equatable {
+        var notebookID: UUID
+        var notebookTitle: String
+        var title: String
+        /// Opening of the body, trimmed for a small widget.
+        var excerpt: String
+        var author: String
+        var writtenAt: Date
+
+        static let excerptLength = 160
+
+        init(entry: Entry) {
+            notebookID = entry.notebook?.id ?? UUID()
+            notebookTitle = entry.notebook?.title ?? ""
+            title = entry.title
+            let body = entry.body.replacingOccurrences(of: "\n", with: " ")
+            excerpt = body.count > Self.excerptLength
+                ? String(body.prefix(Self.excerptLength)).trimmingCharacters(in: .whitespaces) + "…"
+                : body
+            author = entry.author?.name ?? "Narrator"
+            writtenAt = entry.writtenAt
+        }
+    }
+
     struct Game: Codable, Equatable {
         var title: String
         var minutes: Int
@@ -36,10 +77,12 @@ struct WidgetSnapshot: Codable, Equatable {
     var weekMinutes: Int
     var weekStart: Date
     var topGames: [Game]
+    var latestEntry: LatestEntry?
 
     static func make(
         sessions: [StatsRecord],
         timer: TimerState?,
+        latestEntry: LatestEntry? = nil,
         now: Date = .now,
         calendar: Calendar = .current
     ) -> WidgetSnapshot {
@@ -56,7 +99,8 @@ struct WidgetSnapshot: Codable, Equatable {
             weekStart: weekStart,
             topGames: StatsCalculator(calendar: calendar, now: now)
                 .topGames(thisWeek, limit: 3)
-                .map { Game(title: $0.name, minutes: $0.minutes) }
+                .map { Game(title: $0.name, minutes: $0.minutes) },
+            latestEntry: latestEntry
         )
     }
 

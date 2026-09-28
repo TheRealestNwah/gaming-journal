@@ -5,6 +5,13 @@ struct Snapshot: Codable {
     static let appGroup = "group.com.gamingjournal.GamingJournal"
     static let key = "widgetSnapshot"
     static let startTimerURL = URL(string: "gamingjournal://start-timer")!
+    static let writeURL = URL(string: "gamingjournal://write")!
+
+    static func writeURL(for notebookID: UUID) -> URL {
+        var components = URLComponents(url: writeURL, resolvingAgainstBaseURL: false)!
+        components.queryItems = [URLQueryItem(name: "notebook", value: notebookID.uuidString)]
+        return components.url!
+    }
 
     struct LastSession: Codable {
         var title: String
@@ -30,6 +37,15 @@ struct Snapshot: Codable {
         }
     }
 
+    struct LatestEntry: Codable {
+        var notebookID: UUID
+        var notebookTitle: String
+        var title: String
+        var excerpt: String
+        var author: String
+        var writtenAt: Date
+    }
+
     struct Game: Codable, Hashable {
         var title: String
         var minutes: Int
@@ -41,6 +57,8 @@ struct Snapshot: Codable {
     var weekMinutes: Int
     var weekStart: Date
     var topGames: [Game]
+    /// Added with notebooks; older snapshots don't have it.
+    var latestEntry: LatestEntry?
 
     static let placeholder = Snapshot(
         generatedAt: .now,
@@ -52,7 +70,15 @@ struct Snapshot: Codable {
             Game(title: "Hades", minutes: 190),
             Game(title: "Celeste", minutes: 120),
             Game(title: "Balatro", minutes: 70),
-        ]
+        ],
+        latestEntry: LatestEntry(
+            notebookID: UUID(),
+            notebookTitle: "The Dragonborn's Road",
+            title: "Night at the Bannered Mare",
+            excerpt: "We drank to Whiterun and, for once, I slept without dreaming of dragons.",
+            author: "Lydia",
+            writtenAt: .now
+        )
     )
 
     static func load() -> Snapshot? {
