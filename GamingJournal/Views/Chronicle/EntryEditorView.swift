@@ -15,10 +15,11 @@ struct EntryEditorView: View {
 
     private enum Field { case title, body, place, quest }
 
-    init(notebook: Notebook, entry: Entry? = nil, author: PartyMember? = nil) {
+    init(notebook: Notebook, entry: Entry? = nil, author: PartyMember? = nil, prefill: EntryDraft? = nil) {
         self.notebook = notebook
         self.entry = entry
         let initial = entry.map(EntryDraft.init(entry:))
+            ?? prefill
             ?? EntryDraft(authorID: author?.id ?? notebook.party.first(where: { !$0.isRetired })?.id)
         _draft = State(initialValue: initial)
         _showsDetails = State(initialValue: !(initial.place.isEmpty && initial.quest.isEmpty && initial.inGameDate.isEmpty))

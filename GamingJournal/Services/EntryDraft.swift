@@ -20,6 +20,13 @@ struct EntryDraft: Equatable {
         self.authorID = authorID
     }
 
+    /// A fresh entry dated to a play session, written by the party's first active member.
+    static func afterSession(in notebook: Notebook, startedAt: Date) -> EntryDraft {
+        var draft = EntryDraft(authorID: notebook.party.first { !$0.isRetired }?.id)
+        draft.writtenAt = startedAt
+        return draft
+    }
+
     init(entry: Entry) {
         title = entry.title
         body = entry.body

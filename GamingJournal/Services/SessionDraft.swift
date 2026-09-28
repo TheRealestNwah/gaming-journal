@@ -20,10 +20,13 @@ struct SessionDraft: Equatable {
     var isMilestone = false
     var milestoneNote = ""
     var photos: [DraftPhoto] = []
+    /// The notebook the session belongs to, if any.
+    var notebookID: UUID?
 
     init() {}
 
     init(session: PlaySession) {
+        notebookID = session.notebook?.id
         gameTitle = session.gameTitle
         platform = session.platform
         startDate = session.startDate
@@ -57,6 +60,13 @@ struct SessionDraft: Equatable {
         let session = PlaySession(gameTitle: index.canonicalTitle(for: trimmedTitle))
         apply(to: session, index: index)
         return session
+    }
+
+    /// Links the session to the draft's notebook (or unlinks it), looking it up among `notebooks`.
+    func linkNotebook(of session: PlaySession, from notebooks: [Notebook]) {
+        let notebook = notebookID.flatMap { id in notebooks.first { $0.id == id } }
+        session.notebook = notebook
+        notebook?.touch()
     }
 
     func apply(to session: PlaySession, index: GameTitleIndex) {
