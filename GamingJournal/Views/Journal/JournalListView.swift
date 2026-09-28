@@ -54,6 +54,7 @@ struct JournalListView: View {
             }
         }
         .sessionOverlays()
+        .sensoryFeedback(.success, trigger: sessions.count) { old, new in new > old }
     }
 
     @ViewBuilder

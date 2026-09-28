@@ -5,6 +5,7 @@ struct RootView: View {
     @Environment(LiveTimer.self) private var timer
     @State private var tab = RootTab.journal
     @State private var isStartingTimer = false
+    @AppStorage(OnboardingView.completedKey) private var onboardingCompleted = false
 
     enum RootTab: Hashable {
         case journal, games, stats, settings
@@ -33,6 +34,13 @@ struct RootView: View {
             StartTimerSheet()
                 .environment(timer)
         }
+        .fullScreenCover(isPresented: Binding(
+            get: { !onboardingCompleted },
+            set: { if !$0 { onboardingCompleted = true } }
+        )) {
+            OnboardingView { onboardingCompleted = true }
+        }
+        .sensoryFeedback(.start, trigger: timer.isActive) { _, isActive in isActive }
     }
 }
 
