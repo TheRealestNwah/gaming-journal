@@ -19,9 +19,18 @@ struct WidgetSnapshot: Codable, Equatable {
             .flatMap(UUID.init(uuidString:))
     }
 
-    static func writeURL(for notebookID: UUID) -> URL {
+    /// The party member a write link asks to write as, if it names one (Siri's "Write as…").
+    static func memberID(inWriteURL url: URL) -> UUID? {
+        guard url.scheme == writeURL.scheme, url.host == writeURL.host else { return nil }
+        return URLComponents(url: url, resolvingAgainstBaseURL: false)?
+            .queryItems?.first { $0.name == "member" }?.value
+            .flatMap(UUID.init(uuidString:))
+    }
+
+    static func writeURL(for notebookID: UUID, member memberID: UUID? = nil) -> URL {
         var components = URLComponents(url: writeURL, resolvingAgainstBaseURL: false)!
         components.queryItems = [URLQueryItem(name: "notebook", value: notebookID.uuidString)]
+            + (memberID.map { [URLQueryItem(name: "member", value: $0.uuidString)] } ?? [])
         return components.url!
     }
 
