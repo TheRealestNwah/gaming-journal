@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @Environment(\.modelContext) private var context
     @Query private var sessions: [PlaySession]
+    @Query private var notebooks: [Notebook]
     @State private var exportDocument: ExportDocument?
     @State private var isImporting = false
     @State private var message: Message?
@@ -31,7 +32,16 @@ struct SettingsView: View {
                 } header: {
                     Text("Your data")
                 } footer: {
-                    Text("A JSON backup holds every session and photo. Importing merges by session, so nothing is duplicated. CSV is for spreadsheets and leaves out photos.")
+                    Text("A JSON backup holds every notebook, entry, session and photo. Importing only adds what's missing, so nothing is duplicated. CSV lists play sessions for spreadsheets.")
+                }
+                .listRowBackground(Theme.vellum)
+
+                Section {
+                    Toggle("Writing prompts", systemImage: "flame", isOn: $promptsEnabled)
+                } header: {
+                    Text("Writing")
+                } footer: {
+                    Text("Suggest an in-character question when you start a new entry.")
                 }
                 .listRowBackground(Theme.vellum)
 
@@ -54,6 +64,7 @@ struct SettingsView: View {
                 .listRowBackground(Theme.vellum)
 
                 Section("About") {
+                    LabeledContent("Notebooks", value: "\(notebooks.count)")
                     LabeledContent("Sessions", value: "\(sessions.count)")
                     LabeledContent("Version", value: Self.appVersion)
                 }
@@ -109,7 +120,7 @@ struct SettingsView: View {
 
     private func exportJSON() {
         do {
-            let data = try JournalBackup(exporting: sessions).encoded()
+            let data = try JournalBackup(exporting: sessions, notebooks: notebooks).encoded()
             exportDocument = ExportDocument(data: data, contentType: .json, filename: Self.filename(""))
         } catch {
             message = Message(title: "Export failed", body: error.localizedDescription)
@@ -126,16 +137,8 @@ struct SettingsView: View {
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         do {
             let backup = try JournalBackup.decode(Data(contentsOf: url))
-            let plan = backup.mergePlan(existingIDs: Set(sessions.map(\.id)))
-            for session in plan.newSessions {
-                context.insert(session.makeSession())
-            }
-            try context.save()
-            message = Message(
-                title: "Import complete",
-                body: "Added \(plan.newSessions.count) session\(plan.newSessions.count == 1 ? "" : "s")."
-                    + (plan.skippedCount > 0 ? " Skipped \(plan.skippedCount) already in your journal." : "")
-            )
+            let report = try JournalImporter.importBackup(backup, into: context)
+            message = Message(title: "Import complete", body: report.summary)
         } catch {
             message = Message(title: "Import failed", body: error.localizedDescription)
         }
@@ -144,7 +147,7 @@ struct SettingsView: View {
 
 /// Bytes handed to the system file exporter.
 struct ExportDocument: FileDocument {
-    static var readableContentTypes: [UTType] { [.json, .commaSeparatedText] }
+    static var readableContentTypes: [UTType] { [.json, .commaSeparatedText, .markdownText, .plainText] }
 
     var data: Data
     var contentType: UTType
@@ -165,4 +168,9 @@ struct ExportDocument: FileDocument {
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
         FileWrapper(regularFileWithContents: data)
     }
+}
+
+extension UTType {
+    /// Markdown, for exported notebook "books".
+    static let markdownText = UTType(filenameExtension: "md", conformingTo: .plainText) ?? .plainText
 }

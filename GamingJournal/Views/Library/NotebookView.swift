@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
 
 /// One playthrough: its cover, party, chronicle and atlas.
 struct NotebookView: View {
@@ -9,6 +10,7 @@ struct NotebookView: View {
     @State private var isWriting = false
     @State private var section = NotebookSection.chronicle
     @State private var filter = ChronicleFilter()
+    @State private var bookExport: ExportDocument?
 
     enum NotebookSection: String, CaseIterable, Identifiable {
         case chronicle, atlas, sessions
@@ -75,8 +77,25 @@ struct NotebookView: View {
             SessionDetailView(session: session)
         }
         .toolbar {
-            Button("Edit") { isEditing = true }
+            ToolbarItem(placement: .primaryAction) {
+                Button("Edit") { isEditing = true }
+            }
+            ToolbarItem(placement: .secondaryAction) {
+                Button("Export as Book", systemImage: "book.pages") {
+                    bookExport = ExportDocument(
+                        data: Data(NotebookMarkdown.render(notebook).utf8),
+                        contentType: .markdownText,
+                        filename: NotebookMarkdown.filename(for: notebook)
+                    )
+                }
+            }
         }
+        .fileExporter(
+            isPresented: Binding(get: { bookExport != nil }, set: { if !$0 { bookExport = nil } }),
+            document: bookExport,
+            contentType: .markdownText,
+            defaultFilename: bookExport?.filename
+        ) { _ in }
         .sheet(isPresented: $isEditing) {
             NotebookEditorView(notebook: notebook)
         }
