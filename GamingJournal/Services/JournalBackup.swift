@@ -3,7 +3,8 @@ import SwiftData
 
 /// Full JSON backup of the journal. `version` lets later app versions read older files and refuse
 /// newer ones they don't understand. Version 1 held sessions only; version 2 adds notebooks with
-/// their party and entries, and links sessions to notebooks.
+/// their party and entries, and links sessions to notebooks. Chapters and pinning were added to
+/// version 2 as optional fields, so files written before them still read.
 struct JournalBackup: Codable, Equatable {
     static let currentVersion = 2
 
@@ -60,6 +61,16 @@ struct JournalBackup: Codable, Equatable {
         var createdAt: Date
         var updatedAt: Date
         var photos: [Photo]
+        /// Added with chapters; nil when the entry isn't in a chapter.
+        var chapterID: UUID?
+    }
+
+    struct ChapterRecord: Codable, Equatable {
+        var id: UUID
+        var title: String
+        var summary: String
+        var sortIndex: Int
+        var createdAt: Date
     }
 
     struct NotebookRecord: Codable, Equatable {
@@ -75,6 +86,9 @@ struct JournalBackup: Codable, Equatable {
         var updatedAt: Date
         var members: [Member]
         var entries: [JournalEntry]
+        /// Added with chapters; missing from earlier version 2 files.
+        var chapters: [ChapterRecord]?
+        var isPinned: Bool?
     }
 
     enum BackupError: Error, Equatable, LocalizedError {
@@ -254,6 +268,8 @@ extension JournalBackup.NotebookRecord {
         createdAt = notebook.createdAt
         updatedAt = notebook.updatedAt
         members = notebook.party.map(JournalBackup.Member.init(member:))
+        chapters = notebook.orderedChapters.map(JournalBackup.ChapterRecord.init(chapter:))
+        isPinned = notebook.isPinned
         entries = (notebook.entries ?? [])
             .sorted { ($0.writtenAt, $0.createdAt) < ($1.writtenAt, $1.createdAt) }
             .map(JournalBackup.JournalEntry.init(entry:))
@@ -273,10 +289,27 @@ extension JournalBackup.NotebookRecord {
         notebook.coverStyleRaw = coverStyle
         notebook.statusRaw = status
         notebook.updatedAt = updatedAt
+        notebook.isPinned = isPinned ?? false
         let madeMembers = members.map { $0.makeMember() }
+        let madeChapters = (chapters ?? []).map { $0.makeChapter() }
         notebook.members = madeMembers
-        notebook.entries = entries.map { $0.makeEntry(members: madeMembers) }
+        notebook.chapters = madeChapters
+        notebook.entries = entries.map { $0.makeEntry(members: madeMembers, chapters: madeChapters) }
         return notebook
+    }
+}
+
+extension JournalBackup.ChapterRecord {
+    init(chapter: Chapter) {
+        id = chapter.id
+        title = chapter.title
+        summary = chapter.summary
+        sortIndex = chapter.sortIndex
+        createdAt = chapter.createdAt
+    }
+
+    func makeChapter() -> Chapter {
+        Chapter(id: id, title: title, summary: summary, sortIndex: sortIndex, createdAt: createdAt)
     }
 }
 
@@ -315,6 +348,7 @@ extension JournalBackup.JournalEntry {
         emotions = entry.emotions
         bonds = entry.bonds
         authorID = entry.author?.id
+        chapterID = entry.chapter?.id
         createdAt = entry.createdAt
         updatedAt = entry.updatedAt
         photos = entry.sortedPhotos.compactMap { photo -> JournalBackup.Photo? in
@@ -329,8 +363,8 @@ extension JournalBackup.JournalEntry {
         }
     }
 
-    /// A new, unsaved entry. The author is looked up among `members` by ID.
-    func makeEntry(members: [PartyMember]) -> Entry {
+    /// A new, unsaved entry. The author and chapter are looked up among `members` and `chapters` by ID.
+    func makeEntry(members: [PartyMember], chapters: [Chapter] = []) -> Entry {
         let entry = Entry(
             id: id,
             title: title,
@@ -346,6 +380,7 @@ extension JournalBackup.JournalEntry {
         )
         entry.updatedAt = updatedAt
         entry.author = authorID.flatMap { id in members.first { $0.id == id } }
+        entry.chapter = chapterID.flatMap { id in chapters.first { $0.id == id } }
         entry.photos = photos.map { photo in
             EntryPhoto(
                 id: photo.id,
@@ -378,8 +413,8 @@ enum JournalImporter {
         }
     }
 
-    /// Adds new notebooks whole; for notebooks already present, adds just the members and entries
-    /// that are new. Sessions are added by ID and re-linked to their notebook.
+    /// Adds new notebooks whole; for notebooks already present, adds just the members, chapters and
+    /// entries that are new. Sessions are added by ID and re-linked to their notebook.
     @MainActor
     static func importBackup(_ backup: JournalBackup, into context: ModelContext) throws -> Report {
         var report = Report()
@@ -387,6 +422,7 @@ enum JournalImporter {
         var notebooksByID = Dictionary(existingNotebooks.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         var knownEntryIDs = Set(try context.fetch(FetchDescriptor<Entry>()).map(\.id))
         var knownMemberIDs = Set(try context.fetch(FetchDescriptor<PartyMember>()).map(\.id))
+        var knownChapterIDs = Set(try context.fetch(FetchDescriptor<Chapter>()).map(\.id))
 
         for record in backup.notebooks ?? [] {
             if let notebook = notebooksByID[record.id] {
@@ -397,12 +433,19 @@ enum JournalImporter {
                     member.notebook = notebook
                     members.append(member)
                 }
+                var chapters = notebook.chapters ?? []
+                for chapterRecord in record.chapters ?? [] where knownChapterIDs.insert(chapterRecord.id).inserted {
+                    let chapter = chapterRecord.makeChapter()
+                    context.insert(chapter)
+                    chapter.notebook = notebook
+                    chapters.append(chapter)
+                }
                 for entryRecord in record.entries {
                     guard knownEntryIDs.insert(entryRecord.id).inserted else {
                         report.skipped += 1
                         continue
                     }
-                    let entry = entryRecord.makeEntry(members: members)
+                    let entry = entryRecord.makeEntry(members: members, chapters: chapters)
                     context.insert(entry)
                     entry.notebook = notebook
                     report.entriesAdded += 1
@@ -413,6 +456,7 @@ enum JournalImporter {
                 context.insert(notebook)
                 notebooksByID[record.id] = notebook
                 record.members.forEach { knownMemberIDs.insert($0.id) }
+                record.chapters?.forEach { knownChapterIDs.insert($0.id) }
                 record.entries.forEach { knownEntryIDs.insert($0.id) }
                 report.notebooksAdded += 1
                 report.entriesAdded += record.entries.count

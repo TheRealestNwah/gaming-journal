@@ -1,15 +1,14 @@
 import Foundation
 import SwiftData
 
-/// The notebook app's first schema: playthrough notebooks, their party and in-character entries,
-/// plus play sessions. Frozen: it only exists so stores written by earlier builds can migrate.
+/// Adds chapters (acts that group a notebook's entries) and pinned notebooks to version 1.
 /// Every property has a default, there are no unique constraints and all relationships are
 /// optional so the store can be mirrored to CloudKit.
-enum JournalSchemaV1: VersionedSchema {
-    static let versionIdentifier = Schema.Version(1, 0, 0)
+enum JournalSchemaV2: VersionedSchema {
+    static let versionIdentifier = Schema.Version(2, 0, 0)
 
     static var models: [any PersistentModel.Type] {
-        [Notebook.self, PartyMember.self, Entry.self, EntryPhoto.self, PlaySession.self, SessionPhoto.self]
+        [Notebook.self, PartyMember.self, Chapter.self, Entry.self, EntryPhoto.self, PlaySession.self, SessionPhoto.self]
     }
 
     /// One playthrough of one game.
@@ -28,12 +27,16 @@ enum JournalSchemaV1: VersionedSchema {
         var createdAt: Date = Date()
         /// Bumped whenever the notebook or one of its entries changes; orders the Library.
         var updatedAt: Date = Date()
+        /// Pinned notebooks sit at the top of the Library.
+        var isPinned: Bool = false
         @Relationship(deleteRule: .cascade, inverse: \PartyMember.notebook)
         var members: [PartyMember]? = []
         @Relationship(deleteRule: .cascade, inverse: \Entry.notebook)
         var entries: [Entry]? = []
         @Relationship(deleteRule: .nullify, inverse: \PlaySession.notebook)
         var sessions: [PlaySession]? = []
+        @Relationship(deleteRule: .cascade, inverse: \Chapter.notebook)
+        var chapters: [Chapter]? = []
 
         init(
             id: UUID = UUID(),
@@ -98,6 +101,35 @@ enum JournalSchemaV1: VersionedSchema {
         }
     }
 
+    /// An act or chapter of a playthrough, e.g. "Act II: The Underdark". Deleting a chapter keeps
+    /// its entries; they just stop belonging to it.
+    @Model
+    final class Chapter {
+        var id: UUID = UUID()
+        var title: String = ""
+        var summary: String = ""
+        /// Position in the notebook, first chapter first.
+        var sortIndex: Int = 0
+        var createdAt: Date = Date()
+        var notebook: Notebook?
+        @Relationship(deleteRule: .nullify, inverse: \Entry.chapter)
+        var entries: [Entry]? = []
+
+        init(
+            id: UUID = UUID(),
+            title: String,
+            summary: String = "",
+            sortIndex: Int = 0,
+            createdAt: Date = .now
+        ) {
+            self.id = id
+            self.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+            self.summary = summary
+            self.sortIndex = sortIndex
+            self.createdAt = createdAt
+        }
+    }
+
     /// A journal entry written in character.
     @Model
     final class Entry {
@@ -119,6 +151,7 @@ enum JournalSchemaV1: VersionedSchema {
         var updatedAt: Date = Date()
         var notebook: Notebook?
         var author: PartyMember?
+        var chapter: Chapter?
         @Relationship(deleteRule: .cascade, inverse: \EntryPhoto.entry)
         var photos: [EntryPhoto]? = []
 
@@ -217,7 +250,7 @@ enum JournalSchemaV1: VersionedSchema {
             self.platform = platform.trimmingCharacters(in: .whitespacesAndNewlines)
             self.startDate = startDate
             self.durationMinutes = max(0, durationMinutes)
-            self.enjoyment = enjoyment.map { min(5, max(1, $0)) }
+            self.enjoyment = PlaySession.clampedEnjoyment(enjoyment)
             self.moodRaw = mood?.rawValue
             self.notes = notes
             self.tags = TagParser.normalize(tags)
