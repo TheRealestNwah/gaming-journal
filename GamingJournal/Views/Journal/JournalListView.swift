@@ -10,13 +10,6 @@ struct JournalListView: View {
     @State private var isAdding = false
     @State private var filter = JournalFilter()
     @State private var isStartingTimer = false
-    @State private var finishedTimer: FinishedTimer?
-
-    /// The session a stopped timer produced, waiting for review in the editor.
-    private struct FinishedTimer: Identifiable {
-        let id = UUID()
-        let draft: SessionDraft
-    }
 
     private var filtered: [PlaySession] {
         filter.apply(to: sessions)
@@ -59,18 +52,8 @@ struct JournalListView: View {
                 StartTimerSheet()
                     .environment(timer)
             }
-            .sheet(item: $finishedTimer) { finished in
-                SessionEditorView(prefill: finished.draft) { timer.clear() }
-            }
         }
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 8) {
-                UndoToastView()
-                TimerBanner { draft in finishedTimer = FinishedTimer(draft: draft) }
-            }
-            .animation(.spring(duration: 0.3), value: undoCenter.toast)
-            .animation(.spring(duration: 0.3), value: timer.state)
-        }
+        .sessionOverlays()
     }
 
     @ViewBuilder

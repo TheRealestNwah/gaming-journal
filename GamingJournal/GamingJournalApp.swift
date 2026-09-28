@@ -17,7 +17,7 @@ struct GamingJournalApp: App {
 
     var body: some Scene {
         WindowGroup {
-            JournalListView()
+            RootView()
                 .environment(undoCenter)
                 .environment(liveTimer)
         }
