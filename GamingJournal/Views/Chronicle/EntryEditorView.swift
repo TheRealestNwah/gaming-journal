@@ -204,13 +204,14 @@ struct EntryEditorView: View {
     }
 
     private func save() {
+        // Saved, so nothing is left unfinished.
+        if entry == nil { drafts.discard(for: notebook.id) }
         if let entry {
             draft.apply(to: entry, in: notebook)
         } else {
             let newEntry = draft.makeEntry(in: notebook)
             context.insert(newEntry)
             newEntry.notebook = notebook
-            drafts.discard(for: notebook.id)
         }
         try? context.save()
         dismiss()
