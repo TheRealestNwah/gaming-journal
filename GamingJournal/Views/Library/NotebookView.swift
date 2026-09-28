@@ -11,9 +11,6 @@ struct NotebookView: View {
     @State private var section = NotebookSection.chronicle
     @State private var filter = ChronicleFilter()
     @State private var bookExport: ExportDocument?
-    @State private var isReadingRecap = false
-    /// Status when the editor opened, to notice the tale being marked completed.
-    @State private var statusBeforeEditing: NotebookStatus?
 
     enum NotebookSection: String, CaseIterable, Identifiable {
         case chronicle, atlas, sessions
@@ -28,6 +25,10 @@ struct NotebookView: View {
             }
         }
     }
+
+    @State private var isReadingRecap = false
+    /// Status when the editor opened, to notice the tale being marked completed.
+    @State private var statusBeforeEditing: NotebookStatus?
 
     var body: some View {
         // After a delete the view may redraw once more before it's popped; don't touch the model then.
@@ -107,9 +108,8 @@ struct NotebookView: View {
             contentType: .markdownText,
             defaultFilename: bookExport?.filename
         ) { _ in }
-        .sheet(isPresented: $isEditing, onDismiss: openRecapIfJustCompleted) {
+        .sheet(isPresented: $isEditing) {
             NotebookEditorView(notebook: notebook)
-                .onAppear { statusBeforeEditing = notebook.status }
         }
         .navigationDestination(item: $selectedMember) { member in
             CharacterSheetView(member: member)
@@ -120,12 +120,22 @@ struct NotebookView: View {
         .sheet(isPresented: $isReadingRecap) {
             TaleRecapView(notebook: notebook)
         }
+        .onChange(of: isEditing) { _, editing in
+            if editing {
+                statusBeforeEditing = notebook.status
+            } else {
+                openRecapIfJustCompleted()
+            }
+        }
         .sensoryFeedback(.success, trigger: notebook.entries?.count ?? 0) { old, new in new > old }
     }
 
-    /// Finishing the tale in the editor opens its closing pages once the editor is gone.
+    /// Finishing the tale in the editor opens its closing pages once the editor has gone (a sheet
+    /// can't be presented while another is still animating away).
     private func openRecapIfJustCompleted() {
-        if statusBeforeEditing != .completed && notebook.status == .completed {
+        guard statusBeforeEditing != .completed && notebook.status == .completed else { return }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(600))
             isReadingRecap = true
         }
     }
