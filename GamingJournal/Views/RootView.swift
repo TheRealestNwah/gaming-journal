@@ -3,16 +3,19 @@ import SwiftUI
 /// Top-level tabs.
 struct RootView: View {
     @Environment(LiveTimer.self) private var timer
-    @State private var tab = RootTab.journal
+    @State private var tab = RootTab.library
     @State private var isStartingTimer = false
     @AppStorage(OnboardingView.completedKey) private var onboardingCompleted = false
 
     enum RootTab: Hashable {
-        case journal, games, stats, settings
+        case library, journal, games, stats, settings
     }
 
     var body: some View {
         TabView(selection: $tab) {
+            LibraryView()
+                .tabItem { Label("Library", systemImage: "books.vertical") }
+                .tag(RootTab.library)
             JournalListView()
                 .tabItem { Label("Journal", systemImage: "book") }
                 .tag(RootTab.journal)
