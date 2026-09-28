@@ -74,7 +74,7 @@ struct StatsView: View {
             }
             .padding()
         }
-        .background(Color(.systemGroupedBackground))
+        .background(ParchmentBackground())
     }
 }
 
@@ -85,13 +85,14 @@ private struct StatsCard<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(.headline)
+                .font(Theme.heading)
                 .accessibilityAddTraits(.isHeader)
             content
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+        .background(Theme.vellum, in: RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.rule, lineWidth: 1))
     }
 }
 
@@ -124,7 +125,8 @@ private struct SummaryTiles: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.vellum, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.rule, lineWidth: 1))
         .accessibilityElement(children: .combine)
     }
 }

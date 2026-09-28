@@ -8,11 +8,9 @@ struct SessionRowView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline) {
                 if session.isMilestone {
-                    Image(systemName: "flag.fill")
-                        .foregroundStyle(.orange)
-                        .accessibilityLabel("Milestone")
+                    WaxSeal(size: 18, label: "Milestone")
                 }
-                Text(session.gameTitle).font(.headline)
+                Text(session.gameTitle).font(Theme.heading)
                 Spacer()
                 Text(session.formattedDuration)
                     .font(.subheadline.monospacedDigit())
@@ -46,11 +44,11 @@ struct SessionRowView: View {
             if session.isMilestone && !session.milestoneNote.isEmpty {
                 Text(session.milestoneNote)
                     .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Theme.ember)
             }
             if !session.notes.isEmpty {
                 Text(session.notes)
-                    .font(.subheadline)
+                    .font(.system(.subheadline, design: .serif))
                     .lineLimit(2)
             }
         }

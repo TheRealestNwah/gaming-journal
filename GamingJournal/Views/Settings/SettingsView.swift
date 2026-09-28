@@ -32,6 +32,7 @@ struct SettingsView: View {
                 } footer: {
                     Text("A JSON backup holds every session and photo. Importing merges by session, so nothing is duplicated. CSV is for spreadsheets and leaves out photos.")
                 }
+                .listRowBackground(Theme.vellum)
 
                 Section {
                     Toggle("iCloud Sync", systemImage: "icloud", isOn: $syncEnabled)
@@ -40,12 +41,15 @@ struct SettingsView: View {
                 } footer: {
                     Text(syncFooter)
                 }
+                .listRowBackground(Theme.vellum)
 
                 Section("About") {
                     LabeledContent("Sessions", value: "\(sessions.count)")
                     LabeledContent("Version", value: Self.appVersion)
                 }
+                .listRowBackground(Theme.vellum)
             }
+            .parchmentBackground()
             .navigationTitle("Settings")
             .fileExporter(
                 isPresented: Binding(get: { exportDocument != nil }, set: { if !$0 { exportDocument = nil } }),

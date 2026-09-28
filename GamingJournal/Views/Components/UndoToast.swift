@@ -56,7 +56,8 @@ struct UndoToastView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 14))
+            .background(Theme.vellum, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Theme.rule, lineWidth: 1))
             .shadow(color: .black.opacity(0.15), radius: 8, y: 2)
             .padding(.horizontal)
             .transition(.move(edge: .bottom).combined(with: .opacity))

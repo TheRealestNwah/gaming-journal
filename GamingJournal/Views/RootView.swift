@@ -26,6 +26,8 @@ struct RootView: View {
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(RootTab.settings)
         }
+        .foregroundStyle(Theme.ink)
+        .background(ParchmentBackground())
         .widgetSync {
             tab = .journal
             isStartingTimer = true

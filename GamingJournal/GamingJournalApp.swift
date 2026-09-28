@@ -8,6 +8,7 @@ struct GamingJournalApp: App {
     @State private var liveTimer: LiveTimer
 
     init() {
+        Theme.applyAppearance()
         do {
             if LaunchOptions.isUITesting {
                 // Start each UI test from first launch unless it pre-sets values as launch arguments.

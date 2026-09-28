@@ -29,7 +29,9 @@ struct GamesView: View {
                         NavigationLink(value: game.key) {
                             GameRow(game: game)
                         }
+                        .listRowBackground(Theme.vellum)
                     }
+                    .parchmentBackground()
                 }
             }
             .navigationTitle("Games")
@@ -63,7 +65,7 @@ private struct GameRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline) {
-                Text(game.title).font(.headline)
+                Text(game.title).font(Theme.heading)
                 Spacer()
                 Text(PlaytimeFormatter.string(fromMinutes: game.totalMinutes))
                     .font(.subheadline.monospacedDigit())
@@ -109,17 +111,21 @@ struct GameDetailView: View {
         Group {
             if let summary {
                 List {
-                    Section {
-                        StatGrid(summary: summary)
-                    }
-                    Section("Sessions") {
-                        ForEach(sessions) { session in
-                            NavigationLink(value: session) {
-                                SessionRowView(session: session)
+                    Group {
+                        Section {
+                            StatGrid(summary: summary)
+                        }
+                        Section("Sessions") {
+                            ForEach(sessions) { session in
+                                NavigationLink(value: session) {
+                                    SessionRowView(session: session)
+                                }
                             }
                         }
                     }
+                    .listRowBackground(Theme.vellum)
                 }
+                .parchmentBackground()
                 .navigationTitle(summary.title)
                 .toolbar {
                     Button("Rename") {

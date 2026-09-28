@@ -20,6 +20,7 @@ struct SessionDetailView: View {
 
     private var content: some View {
         List {
+            Group {
             Section {
                 LabeledContent("Game", value: session.gameTitle)
                 if !session.platform.isEmpty {
@@ -38,7 +39,7 @@ struct SessionDetailView: View {
                             HStack(spacing: 2) {
                                 ForEach(1...5, id: \.self) { value in
                                     Image(systemName: value <= enjoyment ? "star.fill" : "star")
-                                        .foregroundStyle(value <= enjoyment ? Color.yellow : Color.secondary)
+                                        .foregroundStyle(value <= enjoyment ? Theme.gold : Color.secondary)
                                 }
                             }
                             .accessibilityElement(children: .ignore)
@@ -53,8 +54,12 @@ struct SessionDetailView: View {
 
             if session.isMilestone {
                 Section("Milestone") {
-                    Label(session.milestoneNote.isEmpty ? "Milestone" : session.milestoneNote, systemImage: "flag.fill")
-                        .foregroundStyle(.orange)
+                    HStack(spacing: 10) {
+                        WaxSeal(size: 24)
+                        Text(session.milestoneNote.isEmpty ? "Milestone" : session.milestoneNote)
+                            .font(Theme.heading)
+                            .foregroundStyle(Theme.ember)
+                    }
                 }
             }
 
@@ -68,6 +73,7 @@ struct SessionDetailView: View {
             if !session.notes.isEmpty {
                 Section("Notes") {
                     Text(session.notes)
+                        .font(Theme.prose)
                         .textSelection(.enabled)
                 }
             }
@@ -84,7 +90,10 @@ struct SessionDetailView: View {
                     context.deleteSessions([session], undo: undoCenter)
                 }
             }
+            }
+            .listRowBackground(Theme.vellum)
         }
+        .parchmentBackground()
         .navigationTitle(session.gameTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
