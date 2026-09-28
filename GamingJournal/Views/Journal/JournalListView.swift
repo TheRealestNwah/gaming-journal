@@ -80,6 +80,7 @@ struct JournalListView: View {
                                 NavigationLink(value: session) {
                                     SessionRowView(session: session)
                                 }
+                                .listRowBackground(Theme.vellum)
                             }
                             .onDelete { offsets in
                                 context.deleteSessions(offsets.map { day.sessions[$0] }, undo: undoCenter)
@@ -94,6 +95,7 @@ struct JournalListView: View {
                 }
             }
             .listStyle(.insetGrouped)
+            .parchmentBackground()
         }
     }
 }
@@ -108,7 +110,7 @@ private struct DayHeader: View {
             if let month {
                 HStack(alignment: .firstTextBaseline) {
                     Text(month.date, format: .dateTime.month(.wide).year())
-                        .font(.title3.bold())
+                        .font(Theme.title(.title3))
                         .foregroundStyle(.primary)
                     Spacer()
                     Text(PlaytimeFormatter.string(fromMinutes: month.totalMinutes))

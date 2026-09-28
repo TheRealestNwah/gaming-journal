@@ -42,7 +42,8 @@ struct TimerBanner: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
-            .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 16))
+            .background(Theme.vellum, in: RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.ember.opacity(0.5), lineWidth: 1))
             .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
             .padding(.horizontal)
             .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -82,7 +83,9 @@ struct StartTimerSheet: View {
                 } footer: {
                     Text("The timer keeps running if you leave the app. Stop it to log the session.")
                 }
+                .listRowBackground(Theme.vellum)
             }
+            .parchmentBackground()
             .navigationTitle("Start Playing")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

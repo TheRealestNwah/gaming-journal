@@ -30,13 +30,17 @@ struct SessionEditorView: View {
     var body: some View {
         NavigationStack {
             Form {
-                gameSection
-                timeSection
-                feelSection
-                notesSection
-                PhotoPickerSection(photos: $draft.photos)
-                milestoneSection
+                Group {
+                    gameSection
+                    timeSection
+                    feelSection
+                    notesSection
+                    PhotoPickerSection(photos: $draft.photos)
+                    milestoneSection
+                }
+                .listRowBackground(Theme.vellum)
             }
+            .parchmentBackground()
             .navigationTitle(session == nil ? "New Session" : "Edit Session")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -120,6 +124,7 @@ struct SessionEditorView: View {
     private var notesSection: some View {
         Section {
             TextField("What happened?", text: $draft.notes, axis: .vertical)
+                .font(Theme.prose)
                 .lineLimit(4...12)
             TextField("Tags (comma separated)", text: $draft.tagsText)
                 .textInputAutocapitalization(.never)
@@ -197,7 +202,7 @@ struct StarRatingControl: View {
                     rating = rating == value ? nil : value
                 } label: {
                     Image(systemName: value <= (rating ?? 0) ? "star.fill" : "star")
-                        .foregroundStyle(value <= (rating ?? 0) ? Color.yellow : Color.secondary)
+                        .foregroundStyle(value <= (rating ?? 0) ? Theme.gold : Color.secondary)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("\(value) star\(value == 1 ? "" : "s")")
