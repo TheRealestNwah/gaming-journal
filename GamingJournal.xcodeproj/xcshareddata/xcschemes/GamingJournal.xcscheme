@@ -41,6 +41,17 @@
                ReferencedContainer = "container:GamingJournal.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "6A0000000000000000000021"
+               BuildableName = "GamingJournalUITests.xctest"
+               BlueprintName = "GamingJournalUITests"
+               ReferencedContainer = "container:GamingJournal.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

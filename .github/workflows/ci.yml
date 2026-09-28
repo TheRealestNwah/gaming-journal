@@ -50,9 +50,23 @@ jobs:
             -scheme GamingJournal \
             -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }}" \
             -derivedDataPath build \
+            -skip-testing:GamingJournalUITests \
             CODE_SIGNING_ALLOWED=NO \
             | tee test.log | grep -E "Test Case|error:|failed|passed|\*\*" || true
           grep -qE "TEST (EXECUTE )?SUCCEEDED" test.log
+
+      - name: UI smoke tests
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project GamingJournal.xcodeproj \
+            -scheme GamingJournal \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }}" \
+            -derivedDataPath build \
+            -only-testing:GamingJournalUITests/SmokeTests \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee uitest.log | grep -E "Test Case|error:|failed|passed|\*\*" || true
+          grep -qE "TEST (EXECUTE )?SUCCEEDED" uitest.log
 
       - name: Upload logs on failure
         if: failure()
@@ -62,3 +76,4 @@ jobs:
           path: |
             build.log
             test.log
+            uitest.log

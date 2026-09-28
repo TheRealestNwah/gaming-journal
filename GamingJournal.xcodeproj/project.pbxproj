@@ -25,6 +25,13 @@
 			remoteGlobalIDString = 6A0000000000000000000001;
 			remoteInfo = GamingJournal;
 		};
+		6A00000000000000000000A3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6A000000000000000000000A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6A0000000000000000000001;
+			remoteInfo = GamingJournal;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -45,6 +52,7 @@
 		6A0000000000000000000002 /* GamingJournal.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GamingJournal.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6A0000000000000000000012 /* GamingJournalTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GamingJournalTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6A0000000000000000000032 /* GamingJournalWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GamingJournalWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		6A0000000000000000000022 /* GamingJournalUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GamingJournalUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -87,6 +95,11 @@
 			path = GamingJournalWidgets;
 			sourceTree = "<group>";
 		};
+		6A0000000000000000000023 /* GamingJournalUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = GamingJournalUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,6 +124,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6A0000000000000000000024 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -119,6 +139,7 @@
 			children = (
 				6A0000000000000000000003 /* GamingJournal */,
 				6A0000000000000000000013 /* GamingJournalTests */,
+				6A0000000000000000000023 /* GamingJournalUITests */,
 				6A0000000000000000000033 /* GamingJournalWidgets */,
 				6A0000000000000000000006 /* Products */,
 			);
@@ -129,6 +150,7 @@
 			children = (
 				6A0000000000000000000002 /* GamingJournal.app */,
 				6A0000000000000000000012 /* GamingJournalTests.xctest */,
+				6A0000000000000000000022 /* GamingJournalUITests.xctest */,
 				6A0000000000000000000032 /* GamingJournalWidgets.appex */,
 			);
 			name = Products;
@@ -206,6 +228,29 @@
 			productReference = 6A0000000000000000000032 /* GamingJournalWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		6A0000000000000000000021 /* GamingJournalUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6A0000000000000000000027 /* Build configuration list for PBXNativeTarget "GamingJournalUITests" */;
+			buildPhases = (
+				6A0000000000000000000028 /* Sources */,
+				6A0000000000000000000024 /* Frameworks */,
+				6A0000000000000000000029 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6A00000000000000000000A4 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				6A0000000000000000000023 /* GamingJournalUITests */,
+			);
+			name = GamingJournalUITests;
+			packageProductDependencies = (
+			);
+			productName = GamingJournalUITests;
+			productReference = 6A0000000000000000000022 /* GamingJournalUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -226,6 +271,10 @@
 					6A0000000000000000000031 = {
 						CreatedOnToolsVersion = 16.0;
 					};
+					6A0000000000000000000021 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = 6A0000000000000000000001;
+					};
 				};
 			};
 			buildConfigurationList = 6A000000000000000000000B /* Build configuration list for PBXProject "GamingJournal" */;
@@ -245,6 +294,7 @@
 				6A0000000000000000000001 /* GamingJournal */,
 				6A0000000000000000000011 /* GamingJournalTests */,
 				6A0000000000000000000031 /* GamingJournalWidgets */,
+				6A0000000000000000000021 /* GamingJournalUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -265,6 +315,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		6A0000000000000000000039 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6A0000000000000000000029 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -295,6 +352,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6A0000000000000000000028 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -307,6 +371,11 @@
 			isa = PBXTargetDependency;
 			target = 6A0000000000000000000031 /* GamingJournalWidgets */;
 			targetProxy = 6A00000000000000000000A5 /* PBXContainerItemProxy */;
+		};
+		6A00000000000000000000A4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6A0000000000000000000001 /* GamingJournal */;
+			targetProxy = 6A00000000000000000000A3 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -579,6 +648,40 @@
 			};
 			name = Release;
 		};
+		6A000000000000000000002E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gamingjournal.GamingJournalUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = GamingJournal;
+			};
+			name = Debug;
+		};
+		6A000000000000000000002F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gamingjournal.GamingJournalUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = GamingJournal;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -614,6 +717,15 @@
 			buildConfigurations = (
 				6A000000000000000000003E /* Debug */,
 				6A000000000000000000003F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6A0000000000000000000027 /* Build configuration list for PBXNativeTarget "GamingJournalUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6A000000000000000000002E /* Debug */,
+				6A000000000000000000002F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
