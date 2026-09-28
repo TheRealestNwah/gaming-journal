@@ -68,6 +68,13 @@ struct EntryEditorView: View {
                         }
                     }
 
+                    if !notebook.party.isEmpty || !draft.bonds.isEmpty {
+                        BondsSection(
+                            bonds: $draft.bonds,
+                            others: notebook.party.filter { $0.id != draft.authorID }
+                        )
+                    }
+
                     PhotoPickerSection(photos: $draft.photos)
 
                     Section {
