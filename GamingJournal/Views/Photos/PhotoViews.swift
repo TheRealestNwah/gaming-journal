@@ -85,10 +85,41 @@ struct ThumbnailImage: View {
     }
 }
 
-/// Horizontal strip of a session's photos; tapping one opens the full-screen viewer.
+/// A stored photo from a session or an entry, for the strip and viewer.
+struct PhotoItem: Identifiable {
+    let id: UUID
+    let thumbnailData: Data?
+    let imageData: Data?
+
+    init(_ photo: SessionPhoto) {
+        id = photo.id
+        thumbnailData = photo.thumbnailData
+        imageData = photo.imageData
+    }
+
+    init(_ photo: EntryPhoto) {
+        id = photo.id
+        thumbnailData = photo.thumbnailData
+        imageData = photo.imageData
+    }
+}
+
+/// Horizontal strip of photos; tapping one opens the full-screen viewer.
 struct PhotoStrip: View {
-    let photos: [SessionPhoto]
+    let photos: [PhotoItem]
     @State private var viewerStart: UUID?
+
+    init(photos: [PhotoItem]) {
+        self.photos = photos
+    }
+
+    init(photos: [SessionPhoto]) {
+        self.photos = photos.map(PhotoItem.init)
+    }
+
+    init(photos: [EntryPhoto]) {
+        self.photos = photos.map(PhotoItem.init)
+    }
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -107,7 +138,7 @@ struct PhotoStrip: View {
         }
     }
 
-    private func thumbnail(_ photo: SessionPhoto, number: Int) -> some View {
+    private func thumbnail(_ photo: PhotoItem, number: Int) -> some View {
         let id: UUID = photo.id
         let data: Data? = photo.thumbnailData ?? photo.imageData
         return Button {
@@ -126,7 +157,7 @@ struct PhotoStrip: View {
 
 /// Swipeable full-screen photo viewer.
 struct PhotoViewer: View {
-    let photos: [SessionPhoto]
+    let photos: [PhotoItem]
     @State var selection: UUID
     @Environment(\.dismiss) private var dismiss
 
