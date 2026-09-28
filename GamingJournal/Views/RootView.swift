@@ -8,6 +8,8 @@ struct RootView: View {
                 .tabItem { Label("Journal", systemImage: "book") }
             GamesView()
                 .tabItem { Label("Games", systemImage: "square.stack") }
+            StatsView()
+                .tabItem { Label("Stats", systemImage: "chart.bar") }
         }
     }
 }
