@@ -1,4 +1,5 @@
 import Foundation
+import WidgetKit
 
 /// The notebooks and characters Siri and Shortcuts can offer for "Write as…", kept in the App
 /// Group so intents can list them without opening the journal's store.
@@ -69,6 +70,8 @@ struct QuickWriteRoster: Codable, Equatable {
     func save(to defaults: UserDefaults? = UserDefaults(suiteName: WidgetSnapshot.appGroup)) -> Bool {
         guard let defaults, Self.load(from: defaults) != self, let data = try? JSONEncoder().encode(self) else { return false }
         defaults.set(data, forKey: Self.key)
+        // The "Write as…" widget shows party members.
+        WidgetCenter.shared.reloadTimelines(ofKind: "WriteAs")
         return true
     }
 }
