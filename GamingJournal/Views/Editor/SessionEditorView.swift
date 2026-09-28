@@ -34,6 +34,7 @@ struct SessionEditorView: View {
                 timeSection
                 feelSection
                 notesSection
+                PhotoPickerSection(photos: $draft.photos)
                 milestoneSection
             }
             .navigationTitle(session == nil ? "New Session" : "Edit Session")

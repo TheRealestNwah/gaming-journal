@@ -70,7 +70,7 @@ struct UndoToastView: View {
 extension PlaySession {
     /// A detached copy with the same values and id, taken before deleting so undo can re-insert it.
     func restorableCopy() -> PlaySession {
-        PlaySession(
+        let copy = PlaySession(
             id: id,
             gameTitle: gameTitle,
             platform: platform,
@@ -84,6 +84,16 @@ extension PlaySession {
             milestoneNote: milestoneNote,
             createdAt: createdAt
         )
+        copy.photos = sortedPhotos.map { photo in
+            SessionPhoto(
+                id: photo.id,
+                imageData: photo.imageData,
+                thumbnailData: photo.thumbnailData,
+                sortIndex: photo.sortIndex,
+                createdAt: photo.createdAt
+            )
+        }
+        return copy
     }
 }
 

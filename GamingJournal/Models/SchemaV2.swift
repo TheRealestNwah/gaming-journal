@@ -1,13 +1,12 @@
 import Foundation
 import SwiftData
 
-/// First shipped schema. Every stored property has a default and there are no
-/// unique constraints so the store can be mirrored to CloudKit later.
-enum SchemaV1: VersionedSchema {
-    static let versionIdentifier = Schema.Version(1, 0, 0)
+/// Adds photos to sessions. Same CloudKit rules as V1: defaults everywhere, optional relationships.
+enum SchemaV2: VersionedSchema {
+    static let versionIdentifier = Schema.Version(2, 0, 0)
 
     static var models: [any PersistentModel.Type] {
-        [PlaySession.self]
+        [PlaySession.self, SessionPhoto.self]
     }
 
     /// One sitting with one game.
@@ -28,6 +27,8 @@ enum SchemaV1: VersionedSchema {
         var isMilestone: Bool = false
         var milestoneNote: String = ""
         var createdAt: Date = Date()
+        @Relationship(deleteRule: .cascade, inverse: \SessionPhoto.session)
+        var photos: [SessionPhoto]? = []
 
         init(
             id: UUID = UUID(),
@@ -48,12 +49,38 @@ enum SchemaV1: VersionedSchema {
             self.platform = platform.trimmingCharacters(in: .whitespacesAndNewlines)
             self.startDate = startDate
             self.durationMinutes = max(0, durationMinutes)
-            self.enjoyment = enjoyment.map { min(5, max(1, $0)) }
+            self.enjoyment = PlaySession.clampedEnjoyment(enjoyment)
             self.moodRaw = mood?.rawValue
             self.notes = notes
             self.tags = TagParser.normalize(tags)
             self.isMilestone = isMilestone
             self.milestoneNote = milestoneNote
+            self.createdAt = createdAt
+        }
+    }
+
+    /// A screenshot or photo attached to a session. Image bytes live outside the store file.
+    @Model
+    final class SessionPhoto {
+        var id: UUID = UUID()
+        @Attribute(.externalStorage) var imageData: Data?
+        @Attribute(.externalStorage) var thumbnailData: Data?
+        /// Position in the session's strip.
+        var sortIndex: Int = 0
+        var createdAt: Date = Date()
+        var session: PlaySession?
+
+        init(
+            id: UUID = UUID(),
+            imageData: Data?,
+            thumbnailData: Data?,
+            sortIndex: Int = 0,
+            createdAt: Date = .now
+        ) {
+            self.id = id
+            self.imageData = imageData
+            self.thumbnailData = thumbnailData
+            self.sortIndex = sortIndex
             self.createdAt = createdAt
         }
     }

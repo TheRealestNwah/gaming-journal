@@ -58,6 +58,13 @@ struct SessionDetailView: View {
                 }
             }
 
+            let photos = session.sortedPhotos
+            if !photos.isEmpty {
+                Section("Photos") {
+                    PhotoStrip(photos: photos)
+                }
+            }
+
             if !session.notes.isEmpty {
                 Section("Notes") {
                     Text(session.notes)
