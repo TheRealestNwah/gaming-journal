@@ -13,8 +13,14 @@ final class SmokeTests: XCTestCase {
             + (skipOnboarding ? ["-onboarding.completed", "YES"] : [])
         app.launch()
         if !skipOnboarding { return app }
-        XCTAssertTrue(app.tabBars.buttons["Journal"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.tabBars.buttons["Library"].waitForExistence(timeout: 20))
         return app
+    }
+
+    /// Opens the session journal tab (the app starts on the Library).
+    private func openJournal(_ app: XCUIApplication) {
+        app.tabBars.buttons["Journal"].tap()
+        XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 5))
     }
 
     /// Rows combine their text into one accessibility label, so match on part of it.
@@ -22,16 +28,17 @@ final class SmokeTests: XCTestCase {
         app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
     }
 
-    func testOnboardingLeadsToTheJournal() {
+    func testOnboardingLeadsToTheLibrary() {
         let app = launch(skipOnboarding: false)
         let start = app.buttons["Get Started"]
         XCTAssertTrue(start.waitForExistence(timeout: 20))
         start.tap()
-        XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Library"].waitForExistence(timeout: 5))
     }
 
     func testAddingASessionShowsItInTheJournal() {
         let app = launch()
+        openJournal(app)
         app.navigationBars["Journal"].buttons["Add Session"].tap()
 
         let title = app.textFields["Game title"]
@@ -45,6 +52,7 @@ final class SmokeTests: XCTestCase {
 
     func testStoppingTheTimerOpensThePrefilledEditor() {
         let app = launch()
+        openJournal(app)
         app.navigationBars["Journal"].buttons["Start Timer"].tap()
 
         let title = app.textFields["Game title (optional)"]
@@ -65,6 +73,7 @@ final class SmokeTests: XCTestCase {
 
     func testEveryTabOpensWithDemoData() {
         let app = launch(demoData: true)
+        openJournal(app)
         XCTAssertTrue(element(containing: "Stardew Valley", in: app).waitForExistence(timeout: 5))
 
         app.tabBars.buttons["Games"].tap()
