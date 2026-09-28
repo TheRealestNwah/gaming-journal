@@ -11,6 +11,9 @@ struct NotebookView: View {
     @State private var section = NotebookSection.chronicle
     @State private var filter = ChronicleFilter()
     @State private var bookExport: ExportDocument?
+    @State private var isReadingRecap = false
+    /// Status when the editor opened, to notice the tale being marked completed.
+    @State private var statusBeforeEditing: NotebookStatus?
 
     enum NotebookSection: String, CaseIterable, Identifiable {
         case chronicle, atlas, sessions
@@ -39,6 +42,14 @@ struct NotebookView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 header
+                if notebook.status == .completed {
+                    Button {
+                        isReadingRecap = true
+                    } label: {
+                        Label("Read the tale's end", systemImage: "crown")
+                    }
+                    .buttonStyle(.ember)
+                }
                 if !notebook.summary.isEmpty {
                     Text(notebook.summary)
                         .font(Theme.prose)
@@ -96,8 +107,9 @@ struct NotebookView: View {
             contentType: .markdownText,
             defaultFilename: bookExport?.filename
         ) { _ in }
-        .sheet(isPresented: $isEditing) {
+        .sheet(isPresented: $isEditing, onDismiss: openRecapIfJustCompleted) {
             NotebookEditorView(notebook: notebook)
+                .onAppear { statusBeforeEditing = notebook.status }
         }
         .navigationDestination(item: $selectedMember) { member in
             CharacterSheetView(member: member)
@@ -105,7 +117,17 @@ struct NotebookView: View {
         .sheet(isPresented: $isWriting) {
             EntryEditorView(notebook: notebook)
         }
+        .sheet(isPresented: $isReadingRecap) {
+            TaleRecapView(notebook: notebook)
+        }
         .sensoryFeedback(.success, trigger: notebook.entries?.count ?? 0) { old, new in new > old }
+    }
+
+    /// Finishing the tale in the editor opens its closing pages once the editor is gone.
+    private func openRecapIfJustCompleted() {
+        if statusBeforeEditing != .completed && notebook.status == .completed {
+            isReadingRecap = true
+        }
     }
 
     private var header: some View {
