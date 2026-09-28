@@ -20,9 +20,9 @@ struct JournalListView: View {
         Group {
             if sessions.isEmpty {
                 ContentUnavailableView(
-                    "No sessions yet",
+                    "The road is quiet",
                     systemImage: "gamecontroller",
-                    description: Text("Log a play session to start your journal.")
+                    description: Text("Log a play session, or start the timer from a notebook when you pick up the controller.")
                 )
             } else {
                 timeline

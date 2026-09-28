@@ -105,6 +105,7 @@ struct NotebookView: View {
         .sheet(isPresented: $isWriting) {
             EntryEditorView(notebook: notebook)
         }
+        .sensoryFeedback(.success, trigger: notebook.entries?.count ?? 0) { old, new in new > old }
     }
 
     private var header: some View {

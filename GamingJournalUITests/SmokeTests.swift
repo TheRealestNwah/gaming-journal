@@ -32,7 +32,7 @@ final class SmokeTests: XCTestCase {
 
     func testOnboardingLeadsToTheLibrary() {
         let app = launch(skipOnboarding: false)
-        let start = app.buttons["Get Started"]
+        let start = app.buttons["Begin your tale"]
         XCTAssertTrue(start.waitForExistence(timeout: 20))
         start.tap()
         XCTAssertTrue(app.navigationBars["Library"].waitForExistence(timeout: 5))
