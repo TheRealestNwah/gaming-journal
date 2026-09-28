@@ -150,6 +150,7 @@ struct EntryEditorView: View {
             let newEntry = draft.makeEntry(in: notebook)
             context.insert(newEntry)
             newEntry.notebook = notebook
+            CampfireReminders.shared.entryWritten(in: notebook.id)
         }
         try? context.save()
         dismiss()

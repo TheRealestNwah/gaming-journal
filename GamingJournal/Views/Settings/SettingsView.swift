@@ -63,6 +63,8 @@ struct SettingsView: View {
                 }
                 .listRowBackground(Theme.vellum)
 
+                RemindersSection()
+
                 Section("About") {
                     LabeledContent("Notebooks", value: "\(notebooks.count)")
                     LabeledContent("Sessions", value: "\(sessions.count)")
