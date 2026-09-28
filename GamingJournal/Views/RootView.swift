@@ -28,6 +28,7 @@ struct RootView: View {
         }
         .foregroundStyle(Theme.ink)
         .background(ParchmentBackground())
+        .spotlightSync()
         .widgetSync(
             onStartTimer: {
                 isStartingTimer = true
@@ -39,7 +40,6 @@ struct RootView: View {
                     ?? notebooks.first
             }
         )
-        .spotlightSync()
         .sheet(item: $writingIn) { notebook in
             EntryEditorView(notebook: notebook)
         }
