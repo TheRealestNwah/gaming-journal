@@ -1,12 +1,27 @@
 import SwiftUI
 import SwiftData
 
-/// One playthrough: its cover, details and (in later steps) chronicle, party and sessions.
+/// One playthrough: its cover, party, chronicle and atlas.
 struct NotebookView: View {
-    @Environment(\.dismiss) private var dismiss
     let notebook: Notebook
     @State private var isEditing = false
     @State private var selectedMember: PartyMember?
+    @State private var isWriting = false
+    @State private var section = NotebookSection.chronicle
+    @State private var filter = ChronicleFilter()
+
+    enum NotebookSection: String, CaseIterable, Identifiable {
+        case chronicle, atlas
+
+        var id: String { rawValue }
+
+        var label: LocalizedStringKey {
+            switch self {
+            case .chronicle: "Chronicle"
+            case .atlas: "Atlas"
+            }
+        }
+    }
 
     var body: some View {
         // After a delete the view may redraw once more before it's popped; don't touch the model then.
@@ -27,18 +42,32 @@ struct NotebookView: View {
                         .parchmentCard()
                 }
                 PartySection(notebook: notebook) { selectedMember = $0 }
-                SectionFlourish(title: "Chronicle")
-                Text("No entries yet. Soon you'll write here as your party.")
-                    .font(Theme.prose)
-                    .foregroundStyle(Theme.fadedInk)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 24)
+
+                Picker("Section", selection: $section) {
+                    ForEach(NotebookSection.allCases) { section in
+                        Text(section.label).tag(section)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                switch section {
+                case .chronicle:
+                    ChronicleSection(notebook: notebook, filter: $filter) { isWriting = true }
+                case .atlas:
+                    AtlasSection(notebook: notebook) { place in
+                        filter = ChronicleFilter(place: place)
+                        section = .chronicle
+                    }
+                }
             }
             .padding()
         }
         .background(ParchmentBackground())
         .navigationTitle(notebook.title)
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(for: Entry.self) { entry in
+            EntryDetailView(entry: entry)
+        }
         .toolbar {
             Button("Edit") { isEditing = true }
         }
@@ -47,6 +76,9 @@ struct NotebookView: View {
         }
         .sheet(item: $selectedMember) { member in
             MemberEditorView(notebook: notebook, member: member)
+        }
+        .sheet(isPresented: $isWriting) {
+            EntryEditorView(notebook: notebook)
         }
     }
 
