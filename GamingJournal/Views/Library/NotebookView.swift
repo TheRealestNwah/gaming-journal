@@ -6,6 +6,7 @@ struct NotebookView: View {
     @Environment(\.dismiss) private var dismiss
     let notebook: Notebook
     @State private var isEditing = false
+    @State private var selectedMember: PartyMember?
 
     var body: some View {
         // After a delete the view may redraw once more before it's popped; don't touch the model then.
@@ -25,6 +26,7 @@ struct NotebookView: View {
                         .font(Theme.prose)
                         .parchmentCard()
                 }
+                PartySection(notebook: notebook) { selectedMember = $0 }
                 SectionFlourish(title: "Chronicle")
                 Text("No entries yet. Soon you'll write here as your party.")
                     .font(Theme.prose)
@@ -42,6 +44,9 @@ struct NotebookView: View {
         }
         .sheet(isPresented: $isEditing) {
             NotebookEditorView(notebook: notebook)
+        }
+        .sheet(item: $selectedMember) { member in
+            MemberEditorView(notebook: notebook, member: member)
         }
     }
 
