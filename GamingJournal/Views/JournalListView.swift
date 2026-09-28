@@ -3,62 +3,62 @@ import SwiftData
 
 struct JournalListView: View {
     @Environment(\.modelContext) private var context
-    @Query(sort: \JournalEntry.date, order: .reverse) private var entries: [JournalEntry]
+    @Query(sort: \PlaySession.startDate, order: .reverse) private var sessions: [PlaySession]
     @State private var isAdding = false
 
     var body: some View {
         NavigationStack {
             Group {
-                if entries.isEmpty {
+                if sessions.isEmpty {
                     ContentUnavailableView(
-                        "No entries yet",
+                        "No sessions yet",
                         systemImage: "gamecontroller",
                         description: Text("Log a play session to start your journal.")
                     )
                 } else {
                     List {
-                        ForEach(entries) { entry in
+                        ForEach(sessions) { session in
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(entry.gameTitle).font(.headline)
+                                Text(session.gameTitle).font(.headline)
                                 HStack {
-                                    Text(entry.date, style: .date)
+                                    Text(session.startDate, style: .date)
                                     Text("·")
-                                    Text(entry.formattedDuration)
-                                    if !entry.platform.isEmpty {
+                                    Text(session.formattedDuration)
+                                    if !session.platform.isEmpty {
                                         Text("·")
-                                        Text(entry.platform)
+                                        Text(session.platform)
                                     }
                                 }
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
-                                if !entry.notes.isEmpty {
-                                    Text(entry.notes).lineLimit(2)
+                                if !session.notes.isEmpty {
+                                    Text(session.notes).lineLimit(2)
                                 }
                             }
                         }
                         .onDelete { offsets in
-                            offsets.map { entries[$0] }.forEach(context.delete)
+                            offsets.map { sessions[$0] }.forEach(context.delete)
                         }
                     }
                 }
             }
             .navigationTitle("Gaming Journal")
             .toolbar {
-                Button("Add Entry", systemImage: "plus") { isAdding = true }
+                Button("Add Session", systemImage: "plus") { isAdding = true }
             }
             .sheet(isPresented: $isAdding) {
-                NewEntryView()
+                NewSessionView()
             }
         }
     }
 }
 
-struct NewEntryView: View {
+struct NewSessionView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @State private var gameTitle = ""
     @State private var platform = ""
-    @State private var minutesPlayed = 60
+    @State private var durationMinutes = 60
     @State private var notes = ""
 
     private var trimmedTitle: String {
@@ -70,22 +70,22 @@ struct NewEntryView: View {
             Form {
                 TextField("Game", text: $gameTitle)
                 TextField("Platform", text: $platform)
-                Stepper("Played: \(PlaytimeFormatter.string(fromMinutes: minutesPlayed))",
-                        value: $minutesPlayed, in: 0...1440, step: 15)
+                Stepper("Played: \(PlaytimeFormatter.string(fromMinutes: durationMinutes))",
+                        value: $durationMinutes, in: 0...1440, step: 15)
                 TextField("Notes", text: $notes, axis: .vertical)
                     .lineLimit(3...8)
             }
-            .navigationTitle("New Entry")
+            .navigationTitle("New Session")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        context.insert(JournalEntry(
+                        context.insert(PlaySession(
                             gameTitle: trimmedTitle,
                             platform: platform,
-                            minutesPlayed: minutesPlayed,
+                            durationMinutes: durationMinutes,
                             notes: notes
                         ))
                         dismiss()
@@ -99,5 +99,5 @@ struct NewEntryView: View {
 
 #Preview {
     JournalListView()
-        .modelContainer(for: JournalEntry.self, inMemory: true)
+        .modelContainer(try! Persistence.makeContainer(inMemory: true))
 }
