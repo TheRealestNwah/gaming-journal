@@ -5,6 +5,7 @@ import SwiftData
 struct GamingJournalApp: App {
     let container: ModelContainer
     @State private var undoCenter = UndoCenter()
+    @State private var liveTimer = LiveTimer()
 
     init() {
         do {
@@ -18,6 +19,7 @@ struct GamingJournalApp: App {
         WindowGroup {
             JournalListView()
                 .environment(undoCenter)
+                .environment(liveTimer)
         }
         .modelContainer(container)
     }

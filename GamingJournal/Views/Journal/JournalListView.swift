@@ -5,9 +5,18 @@ import SwiftData
 struct JournalListView: View {
     @Environment(\.modelContext) private var context
     @Environment(UndoCenter.self) private var undoCenter
+    @Environment(LiveTimer.self) private var timer
     @Query(sort: \PlaySession.startDate, order: .reverse) private var sessions: [PlaySession]
     @State private var isAdding = false
     @State private var filter = JournalFilter()
+    @State private var isStartingTimer = false
+    @State private var finishedTimer: FinishedTimer?
+
+    /// The session a stopped timer produced, waiting for review in the editor.
+    private struct FinishedTimer: Identifiable {
+        let id = UUID()
+        let draft: SessionDraft
+    }
 
     private var filtered: [PlaySession] {
         filter.apply(to: sessions)
@@ -36,17 +45,31 @@ struct JournalListView: View {
                     JournalFilterMenu(filter: $filter, facets: JournalFacets(sessions: sessions))
                         .disabled(sessions.isEmpty)
                 }
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItemGroup(placement: .primaryAction) {
+                    if !timer.isActive {
+                        Button("Start Timer", systemImage: "timer") { isStartingTimer = true }
+                    }
                     Button("Add Session", systemImage: "plus") { isAdding = true }
                 }
             }
             .sheet(isPresented: $isAdding) {
                 SessionEditorView()
             }
+            .sheet(isPresented: $isStartingTimer) {
+                StartTimerSheet()
+                    .environment(timer)
+            }
+            .sheet(item: $finishedTimer) { finished in
+                SessionEditorView(prefill: finished.draft) { timer.clear() }
+            }
         }
         .safeAreaInset(edge: .bottom) {
-            UndoToastView()
-                .animation(.spring(duration: 0.3), value: undoCenter.toast)
+            VStack(spacing: 8) {
+                UndoToastView()
+                TimerBanner { draft in finishedTimer = FinishedTimer(draft: draft) }
+            }
+            .animation(.spring(duration: 0.3), value: undoCenter.toast)
+            .animation(.spring(duration: 0.3), value: timer.state)
         }
     }
 
@@ -222,5 +245,6 @@ private struct JournalFilterMenu: View {
 #Preview {
     JournalListView()
         .environment(UndoCenter())
+        .environment(LiveTimer(defaults: UserDefaults(suiteName: "preview")!))
         .modelContainer(try! Persistence.makeContainer(inMemory: true))
 }

@@ -12,4 +12,15 @@ enum PlaytimeFormatter {
         default: return "\(hours)h \(rest)m"
         }
     }
+
+    /// Stopwatch style: "4:05", "1:02:03". Negative input shows as zero.
+    static func clock(fromSeconds seconds: TimeInterval) -> String {
+        let total = max(0, Int(seconds))
+        let hours = total / 3600
+        let minutes = (total % 3600) / 60
+        let secs = total % 60
+        return hours > 0
+            ? String(format: "%d:%02d:%02d", hours, minutes, secs)
+            : String(format: "%d:%02d", minutes, secs)
+    }
 }
