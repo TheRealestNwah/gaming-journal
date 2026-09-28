@@ -9,6 +9,10 @@ struct SettingsView: View {
     @State private var exportDocument: ExportDocument?
     @State private var isImporting = false
     @State private var message: Message?
+    @AppStorage(SyncSettings.enabledKey) private var syncEnabled = false
+    /// Sync state the store was opened with at launch.
+    @State private var syncAtLaunch = SyncSettings().isEnabled
+    @State private var syncFellBack = SyncSettings().lastLaunchFellBack
 
     private struct Message: Identifiable {
         let id = UUID()
@@ -27,6 +31,14 @@ struct SettingsView: View {
                     Text("Your data")
                 } footer: {
                     Text("A JSON backup holds every session and photo. Importing merges by session, so nothing is duplicated. CSV is for spreadsheets and leaves out photos.")
+                }
+
+                Section {
+                    Toggle("iCloud Sync", systemImage: "icloud", isOn: $syncEnabled)
+                } header: {
+                    Text("Sync")
+                } footer: {
+                    Text(syncFooter)
                 }
 
                 Section("About") {
@@ -56,6 +68,18 @@ struct SettingsView: View {
             }
         }
         .sessionOverlays()
+    }
+
+    private var syncFooter: String {
+        if syncEnabled != syncAtLaunch {
+            return "Quit and reopen Gaming Journal to \(syncEnabled ? "start" : "stop") syncing."
+        }
+        if syncEnabled && syncFellBack {
+            return "iCloud isn't available right now (check you're signed in to iCloud), so your journal is only on this device."
+        }
+        return syncEnabled
+            ? "Your journal syncs across devices signed in to the same iCloud account."
+            : "Keep your journal in step across your devices using your iCloud account."
     }
 
     private static var appVersion: String {

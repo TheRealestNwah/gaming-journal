@@ -9,7 +9,7 @@ struct GamingJournalApp: App {
 
     init() {
         do {
-            container = try Persistence.makeContainer()
+            container = try Persistence.makeAppContainer()
         } catch {
             fatalError("Could not open the journal store: \(error)")
         }
