@@ -28,6 +28,12 @@ struct SessionRowView: View {
                     Text("·")
                     Text(mood.emoji).accessibilityLabel(mood.label)
                 }
+                if let count = session.photos?.count, count > 0 {
+                    Text("·")
+                    Label("\(count)", systemImage: "photo")
+                        .labelStyle(.titleAndIcon)
+                        .accessibilityLabel("\(count) photo\(count == 1 ? "" : "s")")
+                }
                 if let enjoyment = session.enjoyment {
                     Text("·")
                     Label("\(enjoyment)", systemImage: "star.fill")
