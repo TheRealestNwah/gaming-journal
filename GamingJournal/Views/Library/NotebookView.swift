@@ -74,8 +74,8 @@ struct NotebookView: View {
         .sheet(isPresented: $isEditing) {
             NotebookEditorView(notebook: notebook)
         }
-        .sheet(item: $selectedMember) { member in
-            MemberEditorView(notebook: notebook, member: member)
+        .navigationDestination(item: $selectedMember) { member in
+            CharacterSheetView(member: member)
         }
         .sheet(isPresented: $isWriting) {
             EntryEditorView(notebook: notebook)
