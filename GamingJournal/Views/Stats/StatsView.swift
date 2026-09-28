@@ -2,79 +2,145 @@ import SwiftUI
 import SwiftData
 import Charts
 
-/// Totals, charts, streaks and a heatmap of play time.
+/// The journey so far: days on the road, writing and feelings across notebooks, then play time.
 struct StatsView: View {
     @Query private var sessions: [PlaySession]
+    @Query(sort: \Notebook.updatedAt, order: .reverse) private var notebooks: [Notebook]
     @State private var range: StatsRange = .month
+    /// Nil shows every tale.
+    @State private var notebookID: UUID?
+
+    private var scopedNotebooks: [Notebook] {
+        guard let notebookID else { return notebooks }
+        return notebooks.filter { $0.id == notebookID }
+    }
+
+    /// Sessions in scope: all of them, or just the chosen notebook's.
+    private var scopedSessions: [PlaySession] {
+        guard let notebookID else { return sessions }
+        return sessions.filter { $0.notebook?.id == notebookID }
+    }
 
     var body: some View {
         NavigationStack {
             Group {
-                if sessions.isEmpty {
+                if sessions.isEmpty && notebooks.isEmpty {
                     ContentUnavailableView(
-                        "No stats yet",
-                        systemImage: "chart.bar",
-                        description: Text("Charts appear once you log a few sessions.")
+                        "The road ahead is empty",
+                        systemImage: "map",
+                        description: Text("Start a notebook or log a session and your journey will take shape here.")
                     )
                 } else {
                     content
                 }
             }
-            .navigationTitle("Stats")
+            .background(ParchmentBackground())
+            .navigationTitle("Journey")
+            .toolbar {
+                if notebooks.count > 1 {
+                    Menu {
+                        Picker("Tale", selection: $notebookID) {
+                            Text("All tales").tag(UUID?.none)
+                            ForEach(notebooks) { notebook in
+                                Text(notebook.title).tag(UUID?.some(notebook.id))
+                            }
+                        }
+                    } label: {
+                        Label("Tale", systemImage: "books.vertical")
+                    }
+                }
+            }
         }
         .sessionOverlays()
     }
 
+    @ViewBuilder
+    private var journey: some View {
+        let journeyCalculator = JourneyCalculator()
+        let entries = scopedNotebooks.flatMap { $0.entries ?? [] }
+        if !scopedNotebooks.isEmpty {
+            if let notebookID, let notebook = notebooks.first(where: { $0.id == notebookID }) {
+                Text(notebook.title)
+                    .font(Theme.title(.title2))
+            }
+            JourneyTiles(summary: journeyCalculator.summary(of: scopedNotebooks), showsNotebookCount: notebookID == nil)
+
+            let groups = journeyCalculator.emotionGroups(in: entries)
+            if !groups.isEmpty {
+                StatsCard(title: "What the party felt") {
+                    EmotionGroupChart(shares: groups)
+                    let mostFelt = CharacterArc.mostFelt(in: entries)
+                    FlowLayout(spacing: 6) {
+                        ForEach(mostFelt) { item in
+                            EmotionChip(emotion: item.emotion, intensity: min(3, max(1, item.weight)))
+                        }
+                    }
+                }
+            }
+
+            let months = journeyCalculator.entriesPerMonth(entries)
+            if months.count > 1 {
+                StatsCard(title: "Pages written") {
+                    EntriesPerMonthChart(months: months)
+                }
+            }
+        }
+    }
+
     private var content: some View {
         let calculator = StatsCalculator()
-        let all = sessions.map(StatsRecord.init(session:))
+        let all = scopedSessions.map(StatsRecord.init(session:))
         let inRange = calculator.records(all, in: range)
         let summary = calculator.summary(of: inRange)
         let streaks = calculator.streaks(all)
 
         return ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Picker("Range", selection: $range) {
-                    ForEach(StatsRange.allCases) { range in
-                        Text(range.label).tag(range)
+                journey
+
+                if !all.isEmpty {
+                    SectionFlourish(title: "Play time")
+                    Picker("Range", selection: $range) {
+                        ForEach(StatsRange.allCases) { range in
+                            Text(range.label).tag(range)
+                        }
                     }
-                }
-                .pickerStyle(.segmented)
+                    .pickerStyle(.segmented)
 
-                SummaryTiles(summary: summary, streaks: streaks)
+                    SummaryTiles(summary: summary, streaks: streaks)
 
-                StatsCard(title: "Time played") {
-                    TimeChart(buckets: calculator.timeBuckets(all, range: range), range: range)
-                }
-
-                let games = calculator.topGames(inRange)
-                if !games.isEmpty {
-                    StatsCard(title: "Top games") {
-                        ShareBars(shares: games)
+                    StatsCard(title: "Time played") {
+                        TimeChart(buckets: calculator.timeBuckets(all, range: range), range: range)
                     }
-                }
 
-                let platforms = calculator.platformShares(inRange)
-                if !platforms.isEmpty {
-                    StatsCard(title: "Platforms") {
-                        ShareBars(shares: platforms)
+                    let games = calculator.topGames(inRange)
+                    if !games.isEmpty {
+                        StatsCard(title: "Top games") {
+                            ShareBars(shares: games)
+                        }
                     }
-                }
 
-                let trend = calculator.enjoymentTrend(all, range: range)
-                if trend.count > 1 {
-                    StatsCard(title: "Enjoyment") {
-                        EnjoymentChart(points: trend, range: range)
+                    let platforms = calculator.platformShares(inRange)
+                    if !platforms.isEmpty {
+                        StatsCard(title: "Platforms") {
+                            ShareBars(shares: platforms)
+                        }
                     }
-                }
 
-                StatsCard(title: "Days played") {
-                    HeatmapGrid(days: calculator.heatmap(all), calendar: calculator.calendar)
+                    let trend = calculator.enjoymentTrend(all, range: range)
+                    if trend.count > 1 {
+                        StatsCard(title: "Enjoyment") {
+                            EnjoymentChart(points: trend, range: range)
+                        }
+                    }
+
+                    StatsCard(title: "Days played") {
+                        HeatmapGrid(days: calculator.heatmap(all), calendar: calculator.calendar)
+                    }
                 }
             }
             .padding()
         }
-        .background(ParchmentBackground())
     }
 }
 

@@ -80,8 +80,8 @@ final class SmokeTests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Games"].waitForExistence(timeout: 5))
         XCTAssertTrue(element(containing: "Hades", in: app).waitForExistence(timeout: 5))
 
-        app.tabBars.buttons["Stats"].tap()
-        XCTAssertTrue(app.navigationBars["Stats"].waitForExistence(timeout: 5))
+        app.tabBars.buttons["Journey"].tap()
+        XCTAssertTrue(app.navigationBars["Journey"].waitForExistence(timeout: 5))
 
         app.tabBars.buttons["Settings"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))

@@ -23,7 +23,7 @@ struct RootView: View {
                 .tabItem { Label("Games", systemImage: "square.stack") }
                 .tag(RootTab.games)
             StatsView()
-                .tabItem { Label("Stats", systemImage: "chart.bar") }
+                .tabItem { Label("Journey", systemImage: "map") }
                 .tag(RootTab.stats)
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape") }
