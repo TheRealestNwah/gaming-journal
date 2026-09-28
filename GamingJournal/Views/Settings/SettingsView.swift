@@ -36,6 +36,8 @@ struct SettingsView: View {
                 }
                 .listRowBackground(Theme.vellum)
 
+                LockSection()
+
                 Section {
                     Toggle("Writing prompts", systemImage: "flame", isOn: $promptsEnabled)
                 } header: {
