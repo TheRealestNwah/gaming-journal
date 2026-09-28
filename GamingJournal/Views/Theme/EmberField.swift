@@ -1,13 +1,13 @@
 import SwiftUI
 
 /// Embers drifting up from a campfire below the screen. Decorative only; drawn as nothing when
-/// Reduce Motion is on.
+/// Reduce Motion is on, and during UI tests (endless animation keeps the app from going idle).
 struct EmberField: View {
     var count = 24
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        if reduceMotion {
+        if reduceMotion || LaunchOptions.isUITesting {
             Color.clear
                 .accessibilityHidden(true)
         } else {
