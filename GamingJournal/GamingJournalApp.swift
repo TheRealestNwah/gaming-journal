@@ -4,6 +4,7 @@ import SwiftData
 @main
 struct GamingJournalApp: App {
     let container: ModelContainer
+    @State private var undoCenter = UndoCenter()
 
     init() {
         do {
@@ -16,6 +17,7 @@ struct GamingJournalApp: App {
     var body: some Scene {
         WindowGroup {
             JournalListView()
+                .environment(undoCenter)
         }
         .modelContainer(container)
     }
