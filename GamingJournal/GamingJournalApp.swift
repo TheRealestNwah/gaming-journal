@@ -5,13 +5,23 @@ import SwiftData
 struct GamingJournalApp: App {
     let container: ModelContainer
     @State private var undoCenter = UndoCenter()
-    @State private var liveTimer = LiveTimer()
+    @State private var liveTimer: LiveTimer
 
     init() {
         do {
-            container = try Persistence.makeAppContainer()
+            if LaunchOptions.isUITesting {
+                container = try Persistence.makeContainer(inMemory: true)
+                _liveTimer = State(initialValue: LiveTimer(defaults: LaunchOptions.uiTestingDefaults()))
+            } else {
+                container = try Persistence.makeAppContainer()
+                _liveTimer = State(initialValue: LiveTimer())
+            }
         } catch {
             fatalError("Could not open the journal store: \(error)")
+        }
+        if LaunchOptions.seedsDemoData {
+            DemoData.sessions().forEach(container.mainContext.insert)
+            try? container.mainContext.save()
         }
     }
 
