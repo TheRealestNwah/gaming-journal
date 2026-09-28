@@ -37,16 +37,25 @@ struct StatsView: View {
             .background(ParchmentBackground())
             .navigationTitle("Journey")
             .toolbar {
-                if notebooks.count > 1 {
-                    Menu {
-                        Picker("Tale", selection: $notebookID) {
-                            Text("All tales").tag(UUID?.none)
-                            ForEach(notebooks) { notebook in
-                                Text(notebook.title).tag(UUID?.some(notebook.id))
-                            }
-                        }
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink {
+                        JournalListView()
                     } label: {
-                        Label("Tale", systemImage: "books.vertical")
+                        Label("Play Log", systemImage: "list.bullet.rectangle")
+                    }
+                }
+                if notebooks.count > 1 {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            Picker("Tale", selection: $notebookID) {
+                                Text("All tales").tag(UUID?.none)
+                                ForEach(notebooks) { notebook in
+                                    Text(notebook.title).tag(UUID?.some(notebook.id))
+                                }
+                            }
+                        } label: {
+                            Label("Tale", systemImage: "books.vertical")
+                        }
                     }
                 }
             }

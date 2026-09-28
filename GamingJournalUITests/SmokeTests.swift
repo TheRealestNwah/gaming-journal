@@ -17,10 +17,12 @@ final class SmokeTests: XCTestCase {
         return app
     }
 
-    /// Opens the session journal tab (the app starts on the Library).
-    private func openJournal(_ app: XCUIApplication) {
-        app.tabBars.buttons["Journal"].tap()
-        XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 5))
+    /// Opens the play log of every session, reached from the Journey tab.
+    private func openPlayLog(_ app: XCUIApplication) {
+        app.tabBars.buttons["Journey"].tap()
+        XCTAssertTrue(app.navigationBars["Journey"].waitForExistence(timeout: 5))
+        app.navigationBars["Journey"].buttons["Play Log"].tap()
+        XCTAssertTrue(app.navigationBars["Play Log"].waitForExistence(timeout: 5))
     }
 
     /// Rows combine their text into one accessibility label, so match on part of it.
@@ -36,10 +38,10 @@ final class SmokeTests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Library"].waitForExistence(timeout: 5))
     }
 
-    func testAddingASessionShowsItInTheJournal() {
+    func testAddingASessionShowsItInThePlayLog() {
         let app = launch()
-        openJournal(app)
-        app.navigationBars["Journal"].buttons["Add Session"].tap()
+        openPlayLog(app)
+        app.navigationBars["Play Log"].buttons["Add Session"].tap()
 
         let title = app.textFields["Game title"]
         XCTAssertTrue(title.waitForExistence(timeout: 5))
@@ -52,8 +54,8 @@ final class SmokeTests: XCTestCase {
 
     func testStoppingTheTimerOpensThePrefilledEditor() {
         let app = launch()
-        openJournal(app)
-        app.navigationBars["Journal"].buttons["Start Timer"].tap()
+        openPlayLog(app)
+        app.navigationBars["Play Log"].buttons["Start Timer"].tap()
 
         let title = app.textFields["Game title (optional)"]
         XCTAssertTrue(title.waitForExistence(timeout: 5))
@@ -73,15 +75,10 @@ final class SmokeTests: XCTestCase {
 
     func testEveryTabOpensWithDemoData() {
         let app = launch(demoData: true)
-        openJournal(app)
+        XCTAssertTrue(app.navigationBars["Library"].waitForExistence(timeout: 5))
+
+        openPlayLog(app)
         XCTAssertTrue(element(containing: "Stardew Valley", in: app).waitForExistence(timeout: 5))
-
-        app.tabBars.buttons["Games"].tap()
-        XCTAssertTrue(app.navigationBars["Games"].waitForExistence(timeout: 5))
-        XCTAssertTrue(element(containing: "Hades", in: app).waitForExistence(timeout: 5))
-
-        app.tabBars.buttons["Journey"].tap()
-        XCTAssertTrue(app.navigationBars["Journey"].waitForExistence(timeout: 5))
 
         app.tabBars.buttons["Settings"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))

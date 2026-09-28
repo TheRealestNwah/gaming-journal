@@ -11,7 +11,7 @@ struct RootView: View {
     @Query(sort: \Notebook.updatedAt, order: .reverse) private var notebooks: [Notebook]
 
     enum RootTab: Hashable {
-        case library, journal, games, stats, settings
+        case library, journey, settings
     }
 
     var body: some View {
@@ -19,15 +19,9 @@ struct RootView: View {
             LibraryView()
                 .tabItem { Label("Library", systemImage: "books.vertical") }
                 .tag(RootTab.library)
-            JournalListView()
-                .tabItem { Label("Journal", systemImage: "book") }
-                .tag(RootTab.journal)
-            GamesView()
-                .tabItem { Label("Games", systemImage: "square.stack") }
-                .tag(RootTab.games)
             StatsView()
                 .tabItem { Label("Journey", systemImage: "map") }
-                .tag(RootTab.stats)
+                .tag(RootTab.journey)
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(RootTab.settings)
@@ -36,7 +30,6 @@ struct RootView: View {
         .background(ParchmentBackground())
         .widgetSync(
             onStartTimer: {
-                tab = .journal
                 isStartingTimer = true
             },
             onWrite: { notebookID in
