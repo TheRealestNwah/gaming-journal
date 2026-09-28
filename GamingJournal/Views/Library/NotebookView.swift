@@ -11,6 +11,7 @@ struct NotebookView: View {
     @State private var section = NotebookSection.chronicle
     @State private var filter = ChronicleFilter()
     @State private var bookExport: ExportDocument?
+    @State private var pdfExport: ExportDocument?
     @State private var isEditingChapters = false
 
     enum NotebookSection: String, CaseIterable, Identifiable {
@@ -85,7 +86,16 @@ struct NotebookView: View {
                 Button("Chapters", systemImage: "bookmark") { isEditingChapters = true }
             }
             ToolbarItem(placement: .secondaryAction) {
-                Button("Export as Book", systemImage: "book.pages") {
+                Button("Export as PDF Book", systemImage: "book.closed") {
+                    pdfExport = ExportDocument(
+                        data: PDFBook.render(notebook),
+                        contentType: .pdf,
+                        filename: PDFBook.filename(for: notebook)
+                    )
+                }
+            }
+            ToolbarItem(placement: .secondaryAction) {
+                Button("Export as Markdown", systemImage: "doc.text") {
                     bookExport = ExportDocument(
                         data: Data(NotebookMarkdown.render(notebook).utf8),
                         contentType: .markdownText,
@@ -99,6 +109,12 @@ struct NotebookView: View {
             document: bookExport,
             contentType: .markdownText,
             defaultFilename: bookExport?.filename
+        ) { _ in }
+        .fileExporter(
+            isPresented: Binding(get: { pdfExport != nil }, set: { if !$0 { pdfExport = nil } }),
+            document: pdfExport,
+            contentType: .pdf,
+            defaultFilename: pdfExport?.filename
         ) { _ in }
         .sheet(isPresented: $isEditing) {
             NotebookEditorView(notebook: notebook)
