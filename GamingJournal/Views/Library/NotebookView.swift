@@ -11,7 +11,6 @@ struct NotebookView: View {
     @State private var section = NotebookSection.chronicle
     @State private var filter = ChronicleFilter()
     @State private var bookExport: ExportDocument?
-    @State private var pdfExport: ExportDocument?
     @State private var isEditingChapters = false
 
     enum NotebookSection: String, CaseIterable, Identifiable {
@@ -87,7 +86,7 @@ struct NotebookView: View {
             }
             ToolbarItem(placement: .secondaryAction) {
                 Button("Export as PDF Book", systemImage: "book.closed") {
-                    pdfExport = ExportDocument(
+                    bookExport = ExportDocument(
                         data: PDFBook.render(notebook),
                         contentType: .pdf,
                         filename: PDFBook.filename(for: notebook)
@@ -107,14 +106,9 @@ struct NotebookView: View {
         .fileExporter(
             isPresented: Binding(get: { bookExport != nil }, set: { if !$0 { bookExport = nil } }),
             document: bookExport,
-            contentType: .markdownText,
+            // One exporter for both books: SwiftUI honours only one per view.
+            contentType: bookExport?.contentType ?? .markdownText,
             defaultFilename: bookExport?.filename
-        ) { _ in }
-        .fileExporter(
-            isPresented: Binding(get: { pdfExport != nil }, set: { if !$0 { pdfExport = nil } }),
-            document: pdfExport,
-            contentType: .pdf,
-            defaultFilename: pdfExport?.filename
         ) { _ in }
         .sheet(isPresented: $isEditing) {
             NotebookEditorView(notebook: notebook)
