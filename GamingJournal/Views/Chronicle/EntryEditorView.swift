@@ -67,6 +67,7 @@ struct EntryEditorView: View {
                             .font(Theme.prose)
                             .lineLimit(8...40)
                             .focused($focusedField, equals: .body)
+                        DictationRow(text: $draft.body)
                     }
 
                     Section("How they feel") {
