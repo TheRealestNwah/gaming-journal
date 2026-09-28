@@ -93,29 +93,30 @@ final class SessionPhotoDraftTests: XCTestCase {
     }
 }
 
-final class SchemaMigrationTests: XCTestCase {
-    func testV1StoreOpensWithCurrentSchema() throws {
+final class StoreOnDiskTests: XCTestCase {
+    func testStoreFileReopensWithSessionsAndNotebooks() throws {
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("migration-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("store-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let url = directory.appendingPathComponent("journal.store")
 
         do {
-            let v1Schema = Schema(versionedSchema: SchemaV1.self)
-            let v1 = try ModelContainer(
-                for: v1Schema,
-                configurations: ModelConfiguration(schema: v1Schema, url: url, cloudKitDatabase: .none)
-            )
-            let context = ModelContext(v1)
-            context.insert(SchemaV1.PlaySession(gameTitle: "Outer Wilds", durationMinutes: 90, tags: ["space"]))
+            let container = try Persistence.makeContainer(url: url)
+            let context = ModelContext(container)
+            let notebook = Notebook(title: "The Long Road", gameTitle: "Outer Wilds")
+            let session = PlaySession(gameTitle: "Outer Wilds", durationMinutes: 90, tags: ["space"])
+            context.insert(notebook)
+            context.insert(session)
+            session.notebook = notebook
             try context.save()
         }
 
-        let current = try Persistence.makeContainer(url: url)
-        let sessions = try ModelContext(current).fetch(FetchDescriptor<PlaySession>())
+        let reopened = try Persistence.makeContainer(url: url)
+        let context = ModelContext(reopened)
+        let sessions = try context.fetch(FetchDescriptor<PlaySession>())
         XCTAssertEqual(sessions.map(\.gameTitle), ["Outer Wilds"])
-        XCTAssertEqual(sessions.first?.durationMinutes, 90)
-        XCTAssertEqual(sessions.first?.sortedPhotos.count, 0)
+        XCTAssertEqual(sessions.first?.notebook?.title, "The Long Road")
+        XCTAssertEqual(try context.fetch(FetchDescriptor<Notebook>()).first?.sessions?.count, 1)
     }
 }

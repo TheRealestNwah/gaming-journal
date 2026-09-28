@@ -3,18 +3,26 @@ import SwiftData
 
 enum Persistence {
     static let cloudKitContainerID = "iCloud.com.gamingjournal.GamingJournal"
+    /// Store file name. The notebook redesign started a fresh store rather than migrating the old
+    /// session-only one (nothing had shipped).
+    static let storeName = "Notebooks"
 
     /// Opens the journal store, migrating older schema versions. Pass `url` to use a specific file
     /// (tests); otherwise the default store location is used. `cloudSync` mirrors the store to the
     /// user's private CloudKit database.
     static func makeContainer(inMemory: Bool = false, url: URL? = nil, cloudSync: Bool = false) throws -> ModelContainer {
-        let schema = Schema(versionedSchema: SchemaV2.self)
+        let schema = Schema(versionedSchema: JournalSchemaV1.self)
         let database: ModelConfiguration.CloudKitDatabase = cloudSync ? .private(cloudKitContainerID) : .none
         let configuration: ModelConfiguration
         if let url {
             configuration = ModelConfiguration(schema: schema, url: url, cloudKitDatabase: database)
         } else {
-            configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: inMemory, cloudKitDatabase: database)
+            configuration = ModelConfiguration(
+                storeName,
+                schema: schema,
+                isStoredInMemoryOnly: inMemory,
+                cloudKitDatabase: database
+            )
         }
         return try ModelContainer(
             for: schema,
