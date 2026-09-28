@@ -88,19 +88,13 @@ struct ThumbnailImage: View {
 /// Horizontal strip of a session's photos; tapping one opens the full-screen viewer.
 struct PhotoStrip: View {
     let photos: [SessionPhoto]
-    @State private var viewerStart: SessionPhoto.ID?
+    @State private var viewerStart: UUID?
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(photos) { photo in
-                    Button {
-                        viewerStart = photo.id
-                    } label: {
-                        ThumbnailImage(data: photo.thumbnailData ?? photo.imageData, side: 96)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Photo \((photos.firstIndex(of: photo) ?? 0) + 1) of \(photos.count)")
+                ForEach(Array(photos.enumerated()), id: \.element.id) { index, photo in
+                    thumbnail(photo, number: index + 1)
                 }
             }
             .padding(.vertical, 4)
@@ -111,6 +105,18 @@ struct PhotoStrip: View {
         )) { start in
             PhotoViewer(photos: photos, selection: start.id)
         }
+    }
+
+    private func thumbnail(_ photo: SessionPhoto, number: Int) -> some View {
+        let id: UUID = photo.id
+        let data: Data? = photo.thumbnailData ?? photo.imageData
+        return Button {
+            viewerStart = id
+        } label: {
+            ThumbnailImage(data: data, side: 96)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Photo \(number) of \(photos.count)")
     }
 
     private struct ViewerStart: Identifiable {
