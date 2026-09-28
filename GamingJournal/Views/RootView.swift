@@ -39,6 +39,7 @@ struct RootView: View {
                     ?? notebooks.first
             }
         )
+        .spotlightSync()
         .sheet(item: $writingIn) { notebook in
             EntryEditorView(notebook: notebook)
         }
