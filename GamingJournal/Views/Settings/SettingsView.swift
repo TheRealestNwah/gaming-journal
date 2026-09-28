@@ -10,6 +10,7 @@ struct SettingsView: View {
     @State private var isImporting = false
     @State private var message: Message?
     @AppStorage(SyncSettings.enabledKey) private var syncEnabled = false
+    @AppStorage(WritingPrompts.enabledKey) private var promptsEnabled = true
     /// Sync state the store was opened with at launch.
     @State private var syncAtLaunch = SyncSettings().isEnabled
     @State private var syncFellBack = SyncSettings().lastLaunchFellBack
@@ -31,6 +32,15 @@ struct SettingsView: View {
                     Text("Your data")
                 } footer: {
                     Text("A JSON backup holds every session and photo. Importing merges by session, so nothing is duplicated. CSV is for spreadsheets and leaves out photos.")
+                }
+                .listRowBackground(Theme.vellum)
+
+                Section {
+                    Toggle("Writing prompts", systemImage: "flame", isOn: $promptsEnabled)
+                } header: {
+                    Text("Writing")
+                } footer: {
+                    Text("Suggest an in-character question when you start a new entry.")
                 }
                 .listRowBackground(Theme.vellum)
 

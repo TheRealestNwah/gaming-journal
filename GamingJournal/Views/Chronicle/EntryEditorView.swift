@@ -10,6 +10,8 @@ struct EntryEditorView: View {
     @State private var draft: EntryDraft
     @State private var showsDetails: Bool
     @FocusState private var focusedField: Field?
+    @AppStorage(WritingPrompts.enabledKey) private var promptsEnabled = true
+    @State private var promptDismissed = false
 
     private enum Field { case title, body, place, quest }
 
@@ -24,6 +26,11 @@ struct EntryEditorView: View {
 
     private var entries: [Entry] { notebook.entries ?? [] }
 
+    /// Prompts appear on a fresh entry until the writer starts, uses one or waves it away.
+    private var showsPrompt: Bool {
+        entry == nil && promptsEnabled && !promptDismissed && draft.title.isEmpty && draft.body.isEmpty
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -31,6 +38,22 @@ struct EntryEditorView: View {
                     if !notebook.party.isEmpty {
                         Section("Written by") {
                             AuthorPicker(members: notebook.party, selection: $draft.authorID)
+                        }
+                    }
+
+                    if showsPrompt {
+                        Section {
+                            PromptCard(
+                                context: WritingPrompts.context(
+                                    for: notebook.party.first { $0.id == draft.authorID },
+                                    in: notebook
+                                ),
+                                onUse: { prompt in
+                                    draft.title = prompt
+                                    focusedField = .body
+                                },
+                                onDismiss: { withAnimation { promptDismissed = true } }
+                            )
                         }
                     }
 
