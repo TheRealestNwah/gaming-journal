@@ -37,6 +37,13 @@ struct StatsView: View {
             .background(ParchmentBackground())
             .navigationTitle("Journey")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink {
+                        JournalListView()
+                    } label: {
+                        Label("Play Log", systemImage: "list.bullet.rectangle")
+                    }
+                }
                 if notebooks.count > 1 {
                     Menu {
                         Picker("Tale", selection: $notebookID) {

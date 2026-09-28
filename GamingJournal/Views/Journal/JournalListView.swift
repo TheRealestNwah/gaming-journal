@@ -1,7 +1,8 @@
 import SwiftUI
 import SwiftData
 
-/// The journal timeline: sessions grouped by month and day, with search and filters.
+/// Every play session, grouped by month and day, with search and filters. Pushed from Journey;
+/// sessions also appear inside their notebooks.
 struct JournalListView: View {
     @Environment(\.modelContext) private var context
     @Environment(UndoCenter.self) private var undoCenter
@@ -16,44 +17,42 @@ struct JournalListView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if sessions.isEmpty {
-                    ContentUnavailableView(
-                        "No sessions yet",
-                        systemImage: "gamecontroller",
-                        description: Text("Log a play session to start your journal.")
-                    )
-                } else {
-                    timeline
-                }
-            }
-            .navigationTitle("Journal")
-            .navigationDestination(for: PlaySession.self) { session in
-                SessionDetailView(session: session)
-            }
-            .searchable(text: $filter.searchText, prompt: "Titles, notes, tags")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    JournalFilterMenu(filter: $filter, facets: JournalFacets(sessions: sessions))
-                        .disabled(sessions.isEmpty)
-                }
-                ToolbarItemGroup(placement: .primaryAction) {
-                    if !timer.isActive {
-                        Button("Start Timer", systemImage: "timer") { isStartingTimer = true }
-                    }
-                    Button("Add Session", systemImage: "plus") { isAdding = true }
-                }
-            }
-            .sheet(isPresented: $isAdding) {
-                SessionEditorView()
-            }
-            .sheet(isPresented: $isStartingTimer) {
-                StartTimerSheet()
-                    .environment(timer)
+        Group {
+            if sessions.isEmpty {
+                ContentUnavailableView(
+                    "No sessions yet",
+                    systemImage: "gamecontroller",
+                    description: Text("Log a play session to start your journal.")
+                )
+            } else {
+                timeline
             }
         }
-        .sessionOverlays()
+        .background(ParchmentBackground())
+        .navigationTitle("Play Log")
+        .navigationDestination(for: PlaySession.self) { session in
+            SessionDetailView(session: session)
+        }
+        .searchable(text: $filter.searchText, prompt: "Titles, notes, tags")
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                JournalFilterMenu(filter: $filter, facets: JournalFacets(sessions: sessions))
+                    .disabled(sessions.isEmpty)
+            }
+            ToolbarItemGroup(placement: .primaryAction) {
+                if !timer.isActive {
+                    Button("Start Timer", systemImage: "timer") { isStartingTimer = true }
+                }
+                Button("Add Session", systemImage: "plus") { isAdding = true }
+            }
+        }
+        .sheet(isPresented: $isAdding) {
+            SessionEditorView()
+        }
+        .sheet(isPresented: $isStartingTimer) {
+            StartTimerSheet()
+                .environment(timer)
+        }
         .sensoryFeedback(.success, trigger: sessions.count) { old, new in new > old }
     }
 
@@ -229,7 +228,7 @@ private struct JournalFilterMenu: View {
 }
 
 #Preview {
-    JournalListView()
+    NavigationStack { JournalListView() }
         .environment(UndoCenter())
         .environment(LiveTimer(defaults: UserDefaults(suiteName: "preview")!))
         .modelContainer(try! Persistence.makeContainer(inMemory: true))

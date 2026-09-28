@@ -59,7 +59,10 @@ struct StartTimerSheet: View {
     @Environment(LiveTimer.self) private var timer
     @Environment(\.dismiss) private var dismiss
     @Query private var sessions: [PlaySession]
+    @Query(sort: \Notebook.updatedAt, order: .reverse) private var notebooks: [Notebook]
     @State private var title = ""
+    @State private var notebookID: UUID?
+    @State private var choseNotebook = false
     @FocusState private var focused: Bool
 
     private var index: GameTitleIndex {
@@ -84,6 +87,26 @@ struct StartTimerSheet: View {
                     Text("The timer keeps running if you leave the app. Stop it to log the session.")
                 }
                 .listRowBackground(Theme.vellum)
+
+                if !notebooks.isEmpty {
+                    Section {
+                        Picker("Notebook", selection: $notebookID) {
+                            Text("None").tag(UUID?.none)
+                            ForEach(notebooks) { notebook in
+                                Text(notebook.title).tag(UUID?.some(notebook.id))
+                            }
+                        }
+                        .onChange(of: notebookID) { _, id in
+                            choseNotebook = true
+                            if title.isEmpty, let game = notebooks.first(where: { $0.id == id })?.gameTitle {
+                                title = game
+                            }
+                        }
+                    } footer: {
+                        Text("The session will be filed under this playthrough.")
+                    }
+                    .listRowBackground(Theme.vellum)
+                }
             }
             .parchmentBackground()
             .navigationTitle("Start Playing")
@@ -96,14 +119,19 @@ struct StartTimerSheet: View {
                     Button("Start", action: start)
                 }
             }
-            .onAppear { focused = true }
+            .onAppear {
+                focused = true
+                if !choseNotebook {
+                    notebookID = notebooks.first { $0.status == .ongoing }?.id
+                }
+            }
         }
         .presentationDetents([.medium])
     }
 
     private func start() {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        timer.start(gameTitle: trimmed.isEmpty ? "" : index.canonicalTitle(for: trimmed))
+        timer.start(gameTitle: trimmed.isEmpty ? "" : index.canonicalTitle(for: trimmed), notebookID: notebookID)
         dismiss()
     }
 }
