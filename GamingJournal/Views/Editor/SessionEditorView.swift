@@ -8,12 +8,14 @@ struct SessionEditorView: View {
     @Query private var allSessions: [PlaySession]
 
     private let session: PlaySession?
+    private let onSave: (() -> Void)?
     @State private var draft: SessionDraft
     @State private var platformTouched = false
     @FocusState private var titleFocused: Bool
 
-    init(session: PlaySession? = nil, prefill: SessionDraft? = nil) {
+    init(session: PlaySession? = nil, prefill: SessionDraft? = nil, onSave: (() -> Void)? = nil) {
         self.session = session
+        self.onSave = onSave
         _draft = State(initialValue: session.map(SessionDraft.init(session:)) ?? prefill ?? SessionDraft())
     }
 
@@ -155,6 +157,7 @@ struct SessionEditorView: View {
         } else {
             context.insert(draft.makeSession(index: index))
         }
+        onSave?()
         dismiss()
     }
 }
