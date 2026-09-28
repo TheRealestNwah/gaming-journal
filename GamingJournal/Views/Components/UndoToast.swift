@@ -63,6 +63,7 @@ struct UndoToastView: View {
             .id(toast.id)
             .accessibilityElement(children: .combine)
             .accessibilityAction(named: "Undo") { center.undo() }
+            .sensoryFeedback(.warning, trigger: toast.id)
         }
     }
 }

@@ -48,6 +48,7 @@ struct TimerBanner: View {
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .accessibilityElement(children: .contain)
             .accessibilityLabel(state.isPaused ? "Timer paused" : "Timer running")
+            .sensoryFeedback(.impact(weight: .light), trigger: state.isPaused)
         }
     }
 }

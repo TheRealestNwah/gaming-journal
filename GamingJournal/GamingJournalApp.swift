@@ -10,6 +10,8 @@ struct GamingJournalApp: App {
     init() {
         do {
             if LaunchOptions.isUITesting {
+                // Start each UI test from first launch unless it pre-sets values as launch arguments.
+                UserDefaults.standard.removeObject(forKey: OnboardingView.completedKey)
                 container = try Persistence.makeContainer(inMemory: true)
                 _liveTimer = State(initialValue: LiveTimer(defaults: LaunchOptions.uiTestingDefaults()))
             } else {

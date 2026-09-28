@@ -6,10 +6,13 @@ final class SmokeTests: XCTestCase {
         continueAfterFailure = false
     }
 
-    private func launch(demoData: Bool = false) -> XCUIApplication {
+    private func launch(demoData: Bool = false, skipOnboarding: Bool = true) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTesting"] + (demoData ? ["-demoData"] : [])
+        app.launchArguments = ["-uiTesting"]
+            + (demoData ? ["-demoData"] : [])
+            + (skipOnboarding ? ["-onboarding.completed", "YES"] : [])
         app.launch()
+        if !skipOnboarding { return app }
         XCTAssertTrue(app.tabBars.buttons["Journal"].waitForExistence(timeout: 20))
         return app
     }
@@ -17,6 +20,14 @@ final class SmokeTests: XCTestCase {
     /// Rows combine their text into one accessibility label, so match on part of it.
     private func element(containing text: String, in app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
+    }
+
+    func testOnboardingLeadsToTheJournal() {
+        let app = launch(skipOnboarding: false)
+        let start = app.buttons["Get Started"]
+        XCTAssertTrue(start.waitForExistence(timeout: 20))
+        start.tap()
+        XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 5))
     }
 
     func testAddingASessionShowsItInTheJournal() {
