@@ -1,20 +1,55 @@
 # Roadmap
 
-Gaming Journal is a **session journal**: a diary of play sessions. A game is just the title on a session — there is no separate game library. All data is entered by hand; there is no online game database.
+## Vision
 
-| # | Milestone | Scope |
-|---|-----------|-------|
-| M0 | Housekeeping | Branch protection, CLAUDE.md, this roadmap |
-| M1 | Session model | `PlaySession` (title, platform, start, duration, enjoyment, mood, notes, tags, milestone), versioned schema, CloudKit-safe |
-| M2 | Session editor | Add/edit form, title autocomplete from history, platform presets remembered per game, quick duration chips |
-| M3 | Journal timeline | Grouped by day with totals, search, filters (game/platform/tag/milestones), undo delete, detail view |
-| M4 | Live timer | Start/pause/stop session timer that survives relaunch, prefills the editor |
-| M5 | Screenshots | Attach photos to sessions (external storage), thumbnails and viewer |
-| M6 | Per-game view | Games derived from sessions: totals, averages, timeline; rename/merge titles |
-| M7 | Stats & charts | Hours per week/month, top games, platform split, streaks, heatmap, enjoyment trend |
-| M8 | Export/import | JSON backup/restore (dedupe by ID), CSV export, Settings screen |
-| M9 | Widgets | Last/current session, weekly hours, start-session button |
-| M10 | iCloud sync | CloudKit-backed store behind a Settings toggle (needs a paid developer team to verify) |
-| M11 | Polish | Onboarding, accessibility, String Catalog, UI smoke tests in CI |
+A notebook for each playthrough, written from a role-playing point of view. You start a notebook for a game, add your party, and write in character: what they did, how they felt, where they are and who they trust. Play-time tracking stays as a quiet extra.
 
-Needs a human: a real app icon, and on-device checks of widgets, photo picking and iCloud sync.
+**Tone:** a leather-bound adventurer's journal by a campfire. Warm parchment, ember orange, deep crimson and gold, serif type, in-world copy ("Begin a new tale").
+
+All data is entered by hand; there is no online game database and no account.
+
+## Data model
+
+A clean-slate schema (nothing has shipped), CloudKit-safe and versioned from here on.
+
+| Model | Key fields |
+|---|---|
+| **Notebook** (one playthrough) | title, game, platform, cover style (Ember / Forest / Frost / Arcane / Blood Moon), status (ongoing / completed / abandoned), started date, summary |
+| **Character** | name, role or class, portrait, backstory, sigil colour, party order |
+| **Entry** | written as a character; title, body, real date plus optional in-game date, emotions, place, quest, photos, turning-point flag |
+| **Emotion** (on an entry) | about 16 emotions in 5 groups (Resolve, Fire, Shadow, Warmth, Doubt), intensity 1–3 |
+| **Bond** (on an entry) | toward a character or an NPC name, affinity −3…+3, note |
+| **PlaySession** | kept; optionally belongs to a notebook |
+
+## Visual system
+
+- Palette: parchment and cream (light), charred wood and dark leather (dark); ember, crimson and gold accents; WCAG AA contrast
+- Type: New York serif for titles and entry text, system font for controls
+- Paper grain drawn in code, drifting embers and page-turn transitions (off under Reduce Motion), wax-seal badge for turning points
+- Shared components: `ParchmentCard`, `EmberButton`, `WaxSeal`, `LeatherCover`, `SectionFlourish`
+
+## Build order
+
+| # | Item | Issue |
+|---|------|-------|
+| R1 | Warm RPG theme system, applied to existing screens | #32 |
+| R2 | Notebook, character and entry data model | #33 |
+| R3 | Library home with notebook covers | #34 |
+| R4 | Party: characters with portraits and backstory | #35 |
+| R5 | Entry editor and Chronicle timeline (with Atlas) | #36 |
+| R6 | Bonds and character sheet with emotional arc | #37 |
+| R7 | In-character writing prompts | #38 |
+| R8 | Play sessions inside notebooks | #39 |
+| R9 | Journey stats per notebook and overall | #40 |
+| R10 | Backup v2, Markdown book export, widgets for notebooks | #41 |
+| R11 | New navigation: retire the Journal and Games tabs | #42 |
+| R12 | Onboarding, empty states and ember effects in the new tone | #43 |
+| R13 | Update UI smoke tests for the notebook flows | #44 |
+
+Open: a new app name (#45).
+
+Needs a human: a real app icon (#27), and on-device checks of widgets, photo picking and iCloud sync (#30).
+
+## Done (first version, session journal)
+
+Session model, editor, timeline, live timer, photos, per-game view, stats, backup/export, widgets, optional iCloud sync, UI smoke tests, onboarding. These are reworked into the notebook app by the items above rather than removed.
