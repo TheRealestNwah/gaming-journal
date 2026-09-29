@@ -11,6 +11,7 @@ struct NotebookView: View {
     @State private var section = NotebookSection.chronicle
     @State private var filter = ChronicleFilter()
     @State private var bookExport: ExportDocument?
+    @State private var isEditingChapters = false
 
     enum NotebookSection: String, CaseIterable, Identifiable {
         case chronicle, atlas, sessions
@@ -26,6 +27,10 @@ struct NotebookView: View {
         }
     }
 
+    @State private var isReadingRecap = false
+    /// Status when the editor opened, to notice the tale being marked completed.
+    @State private var statusBeforeEditing: NotebookStatus?
+
     var body: some View {
         // After a delete the view may redraw once more before it's popped; don't touch the model then.
         if notebook.isDeleted || notebook.modelContext == nil {
@@ -39,6 +44,14 @@ struct NotebookView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 header
+                if notebook.status == .completed {
+                    Button {
+                        isReadingRecap = true
+                    } label: {
+                        Label("Read the tale's end", systemImage: "crown")
+                    }
+                    .buttonStyle(.ember)
+                }
                 if !notebook.summary.isEmpty {
                     Text(notebook.summary)
                         .font(Theme.prose)
@@ -70,15 +83,15 @@ struct NotebookView: View {
         .background(ParchmentBackground())
         .navigationTitle(notebook.title)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(for: Entry.self) { entry in
-            EntryDetailView(entry: entry)
-        }
         .navigationDestination(for: PlaySession.self) { session in
             SessionDetailView(session: session)
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Edit") { isEditing = true }
+            }
+            ToolbarItem(placement: .secondaryAction) {
+                Button("Chapters", systemImage: "bookmark") { isEditingChapters = true }
             }
             ToolbarItem(placement: .secondaryAction) {
                 Button("Export as Book", systemImage: "book.pages") {
@@ -99,13 +112,36 @@ struct NotebookView: View {
         .sheet(isPresented: $isEditing) {
             NotebookEditorView(notebook: notebook)
         }
+        .sheet(isPresented: $isEditingChapters) {
+            ChaptersEditorView(notebook: notebook)
+        }
         .navigationDestination(item: $selectedMember) { member in
             CharacterSheetView(member: member)
         }
         .sheet(isPresented: $isWriting) {
             EntryEditorView(notebook: notebook)
         }
+        .sheet(isPresented: $isReadingRecap) {
+            TaleRecapView(notebook: notebook)
+        }
+        .onChange(of: isEditing) { _, editing in
+            if editing {
+                statusBeforeEditing = notebook.status
+            } else {
+                openRecapIfJustCompleted()
+            }
+        }
         .sensoryFeedback(.success, trigger: notebook.entries?.count ?? 0) { old, new in new > old }
+    }
+
+    /// Finishing the tale in the editor opens its closing pages once the editor has gone (a sheet
+    /// can't be presented while another is still animating away).
+    private func openRecapIfJustCompleted() {
+        guard statusBeforeEditing != .completed && notebook.status == .completed else { return }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(600))
+            isReadingRecap = true
+        }
     }
 
     private var header: some View {

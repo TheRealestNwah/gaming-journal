@@ -46,15 +46,6 @@ struct SettingsView: View {
                 .listRowBackground(Theme.vellum)
 
                 Section {
-                    Toggle("Writing prompts", systemImage: "flame", isOn: $promptsEnabled)
-                } header: {
-                    Text("Writing")
-                } footer: {
-                    Text("Suggest an in-character question when you start a new entry.")
-                }
-                .listRowBackground(Theme.vellum)
-
-                Section {
                     Toggle("iCloud Sync", systemImage: "icloud", isOn: $syncEnabled)
                 } header: {
                     Text("Sync")

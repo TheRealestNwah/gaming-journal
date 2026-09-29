@@ -28,8 +28,7 @@ struct GamingJournalApp: App {
             Task { await CampfireReminders.shared.applyEveningSetting() }
         }
         if LaunchOptions.seedsDemoData {
-            DemoData.sessions().forEach(container.mainContext.insert)
-            try? container.mainContext.save()
+            DemoData.seed(into: container.mainContext)
         }
     }
 

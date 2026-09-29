@@ -20,7 +20,7 @@ struct EntryEditorView: View {
         self.entry = entry
         let initial = entry.map(EntryDraft.init(entry:))
             ?? prefill
-            ?? EntryDraft(authorID: author?.id ?? notebook.party.first(where: { !$0.isRetired })?.id)
+            ?? EntryDraft.new(in: notebook, author: author)
         _draft = State(initialValue: initial)
         _showsDetails = State(initialValue: !(initial.place.isEmpty && initial.quest.isEmpty && initial.inGameDate.isEmpty))
     }
@@ -71,6 +71,17 @@ struct EntryEditorView: View {
 
                     Section("How they feel") {
                         EmotionPicker(draft: $draft)
+                    }
+
+                    if !notebook.orderedChapters.isEmpty {
+                        Section {
+                            Picker("Chapter", systemImage: "bookmark", selection: $draft.chapterID) {
+                                Text("No chapter").tag(UUID?.none)
+                                ForEach(notebook.orderedChapters) { chapter in
+                                    Text(chapter.title).tag(UUID?.some(chapter.id))
+                                }
+                            }
+                        }
                     }
 
                     Section {

@@ -1,7 +1,20 @@
 import SwiftUI
 
 extension EmotionGroup {
+    /// The family's colour, for tints, borders and chart marks.
     var color: Color { Color(hex: hex) }
+
+    /// The family's colour for words: deepened on parchment and brightened on dark leather so
+    /// labels keep WCAG AA contrast (checked in ThemeContrastTests).
+    var inkColor: Color {
+        switch self {
+        case .resolve: Theme.dynamic(light: 0x7A5E0F, dark: 0xC9A227)
+        case .fire: Theme.dynamic(light: 0xA3431A, dark: 0xE8743F)
+        case .shadow: Theme.dynamic(light: 0x5A4E6B, dark: 0xA99BC2)
+        case .warmth: Theme.dynamic(light: 0x9A4A33, dark: 0xD98A70)
+        case .doubt: Theme.dynamic(light: 0x4E5F6B, dark: 0x9AAAB6)
+        }
+    }
 }
 
 /// A felt emotion as a small capsule: icon, name and intensity pips.
@@ -16,7 +29,7 @@ struct EmotionChip: View {
             IntensityPips(intensity: intensity)
         }
         .font(.caption.weight(.medium))
-        .foregroundStyle(emotion.group.color)
+        .foregroundStyle(emotion.group.inkColor)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(emotion.group.color.opacity(0.14), in: Capsule())
@@ -90,7 +103,7 @@ struct EmotionPicker: View {
             .font(.subheadline)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .foregroundStyle(intensity == nil ? Theme.fadedInk : color)
+            .foregroundStyle(intensity == nil ? Theme.fadedInk : emotion.group.inkColor)
             .background(intensity == nil ? Color.clear : color.opacity(0.16), in: Capsule())
             .overlay(Capsule().strokeBorder(intensity == nil ? Theme.rule : color, lineWidth: 1))
         }
@@ -118,11 +131,19 @@ struct FlowLayout: Layout {
         for row in rows {
             var x = bounds.minX
             for index in row.indices {
-                let size = subviews[index].sizeThatFits(.unspecified)
+                let size = fittedSize(of: subviews[index], width: bounds.width)
                 subviews[index].place(at: CGPoint(x: x, y: bounds.minY + row.y), proposal: ProposedViewSize(size))
                 x += size.width + spacing
             }
         }
+    }
+
+    /// A child's natural size, or wrapped to the row's width when it wouldn't fit on its own
+    /// (long labels at the largest text sizes).
+    private func fittedSize(of subview: LayoutSubview, width: CGFloat) -> CGSize {
+        let natural = subview.sizeThatFits(.unspecified)
+        guard width.isFinite, natural.width > width else { return natural }
+        return subview.sizeThatFits(ProposedViewSize(width: width, height: nil))
     }
 
     private struct Row {
@@ -135,7 +156,7 @@ struct FlowLayout: Layout {
     private func arrange(_ subviews: Subviews, width: CGFloat) -> [Row] {
         var rows: [Row] = [Row()]
         for index in subviews.indices {
-            let size = subviews[index].sizeThatFits(.unspecified)
+            let size = fittedSize(of: subviews[index], width: width)
             var row = rows[rows.count - 1]
             let needed = row.indices.isEmpty ? size.width : row.width + spacing + size.width
             if needed > width && !row.indices.isEmpty {
