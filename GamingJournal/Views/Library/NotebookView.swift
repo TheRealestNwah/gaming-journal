@@ -70,9 +70,6 @@ struct NotebookView: View {
         .background(ParchmentBackground())
         .navigationTitle(notebook.title)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(for: Entry.self) { entry in
-            EntryDetailView(entry: entry)
-        }
         .navigationDestination(for: PlaySession.self) { session in
             SessionDetailView(session: session)
         }
