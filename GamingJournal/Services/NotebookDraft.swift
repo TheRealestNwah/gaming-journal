@@ -75,6 +75,7 @@ struct NotebookSnapshot {
             createdAt: source.createdAt
         )
         copy.updatedAt = source.updatedAt
+        copy.isPinned = source.isPinned
 
         var membersByID: [UUID: PartyMember] = [:]
         copy.members = (source.members ?? []).map { member in
@@ -90,6 +91,19 @@ struct NotebookSnapshot {
             clone.portraitData = member.portraitData
             clone.isRetired = member.isRetired
             membersByID[member.id] = clone
+            return clone
+        }
+
+        var chaptersByID: [UUID: Chapter] = [:]
+        copy.chapters = (source.chapters ?? []).map { chapter in
+            let clone = Chapter(
+                id: chapter.id,
+                title: chapter.title,
+                summary: chapter.summary,
+                sortIndex: chapter.sortIndex,
+                createdAt: chapter.createdAt
+            )
+            chaptersByID[chapter.id] = clone
             return clone
         }
 
@@ -109,6 +123,7 @@ struct NotebookSnapshot {
             clone.bondsData = entry.bondsData
             clone.updatedAt = entry.updatedAt
             clone.author = entry.author.flatMap { membersByID[$0.id] }
+            clone.chapter = entry.chapter.flatMap { chaptersByID[$0.id] }
             clone.photos = entry.sortedPhotos.map { photo in
                 EntryPhoto(
                     id: photo.id,
