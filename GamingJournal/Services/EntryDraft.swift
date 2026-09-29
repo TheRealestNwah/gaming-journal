@@ -12,17 +12,29 @@ struct EntryDraft: Equatable {
     var isTurningPoint = false
     /// The party member writing; nil for an unsigned (narrator) entry.
     var authorID: UUID?
+    /// The chapter it belongs to; nil for none.
+    var chapterID: UUID?
     var emotions: [FeltEmotion] = []
     var bonds: [Bond] = []
     var photos: [DraftPhoto] = []
 
-    init(authorID: UUID? = nil) {
+    init(authorID: UUID? = nil, chapterID: UUID? = nil) {
         self.authorID = authorID
+        self.chapterID = chapterID
+    }
+
+    /// A fresh entry in the notebook's current chapter, by `author` or else the party's first
+    /// active member.
+    static func new(in notebook: Notebook, author: PartyMember? = nil) -> EntryDraft {
+        EntryDraft(
+            authorID: author?.id ?? notebook.party.first { !$0.isRetired }?.id,
+            chapterID: ChapterBook.current(in: notebook)?.id
+        )
     }
 
     /// A fresh entry dated to a play session, written by the party's first active member.
     static func afterSession(in notebook: Notebook, startedAt: Date) -> EntryDraft {
-        var draft = EntryDraft(authorID: notebook.party.first { !$0.isRetired }?.id)
+        var draft = EntryDraft.new(in: notebook)
         draft.writtenAt = startedAt
         return draft
     }
@@ -36,6 +48,7 @@ struct EntryDraft: Equatable {
         quest = entry.quest
         isTurningPoint = entry.isTurningPoint
         authorID = entry.author?.id
+        chapterID = entry.chapter?.id
         emotions = entry.emotions
         bonds = entry.bonds
         photos = entry.sortedPhotos.compactMap { photo -> DraftPhoto? in
@@ -95,6 +108,7 @@ struct EntryDraft: Equatable {
         entry.emotions = emotions
         entry.bonds = bonds.filter { !$0.targetName.isEmpty }
         entry.author = authorID.flatMap { id in (notebook.members ?? []).first { $0.id == id } }
+        entry.chapter = chapterID.flatMap { id in (notebook.chapters ?? []).first { $0.id == id } }
         entry.updatedAt = now
         applyPhotos(to: entry)
         notebook.touch(now)
@@ -128,6 +142,7 @@ struct EntrySnapshot {
     private let entry: Entry
     private let notebook: Notebook?
     private let author: PartyMember?
+    private let chapter: Chapter?
 
     init(_ source: Entry) {
         let copy = Entry(
@@ -156,6 +171,7 @@ struct EntrySnapshot {
         entry = copy
         notebook = source.notebook
         author = source.author
+        chapter = source.chapter
     }
 
     var title: String { entry.title }
@@ -167,6 +183,9 @@ struct EntrySnapshot {
         }
         if let author, author.modelContext != nil, !author.isDeleted {
             entry.author = author
+        }
+        if let chapter, chapter.modelContext != nil, !chapter.isDeleted {
+            entry.chapter = chapter
         }
     }
 }

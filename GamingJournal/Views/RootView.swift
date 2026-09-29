@@ -70,5 +70,6 @@ struct RootView: View {
     RootView()
         .environment(UndoCenter())
         .environment(LiveTimer(defaults: UserDefaults(suiteName: "preview")!))
+        .environment(AppLock(defaults: UserDefaults(suiteName: "preview")!))
         .modelContainer(try! Persistence.makeContainer(inMemory: true))
 }
