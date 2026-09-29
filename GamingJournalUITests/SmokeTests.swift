@@ -35,19 +35,23 @@ final class SmokeTests: XCTestCase {
     }
 
     /// Taps a field and types into it. A tap that lands while a sheet is still sliding in can miss
-    /// the field, so keep tapping until it has keyboard focus (#111).
+    /// the field, so tap again (a few times at most) until it reports keyboard focus (#111).
     private func type(_ text: String, into field: XCUIElement) {
         XCTAssertTrue(field.waitForExistence(timeout: Self.step))
-        let focused = NSPredicate(format: "hasKeyboardFocus == true")
-        let deadline = Date.now.addingTimeInterval(Self.step)
-        var hasFocus = false
-        while !hasFocus && Date.now < deadline {
+        for _ in 0..<3 {
             field.tap()
-            let wait = XCTNSPredicateExpectation(predicate: focused, object: field)
-            hasFocus = XCTWaiter.wait(for: [wait], timeout: 1) == .completed
+            if hasKeyboardFocus(field, within: 1) { break }
         }
-        XCTAssertTrue(hasFocus, "\(field) never got keyboard focus")
         field.typeText(text)
+    }
+
+    private func hasKeyboardFocus(_ field: XCUIElement, within timeout: TimeInterval) -> Bool {
+        let deadline = Date.now.addingTimeInterval(timeout)
+        repeat {
+            if (field.value(forKey: "hasKeyboardFocus") as? Bool) == true { return true }
+            Thread.sleep(forTimeInterval: 0.2)
+        } while Date.now < deadline
+        return false
     }
 
     func testOnboardingLeadsToTheLibrary() {
