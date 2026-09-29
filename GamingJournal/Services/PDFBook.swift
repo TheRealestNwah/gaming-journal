@@ -82,7 +82,7 @@ enum PDFBook {
         let format = UIGraphicsPDFRendererFormat()
         format.documentInfo = [
             kCGPDFContextTitle as String: notebook.title,
-            kCGPDFContextCreator as String: "Gaming Journal",
+            kCGPDFContextCreator as String: "Hearthbound",
         ]
         return format
     }
