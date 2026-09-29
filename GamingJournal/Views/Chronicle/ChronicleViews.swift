@@ -110,17 +110,49 @@ struct ChronicleSection: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                 } else {
-                    LazyVStack(spacing: 14) {
-                        ForEach(shown) { entry in
-                            NavigationLink(value: entry) {
-                                EntryCard(entry: entry)
+                    let chapters = notebook.orderedChapters
+                    LazyVStack(alignment: .leading, spacing: 14) {
+                        ForEach(ChapterBook.parts(shown, chapters: chapters, includeEmpty: !filter.isActive)) { part in
+                            if !chapters.isEmpty {
+                                ChapterHeading(chapter: part.chapter)
                             }
-                            .buttonStyle(.plain)
+                            if part.entries.isEmpty {
+                                Text("No pages in this chapter yet.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(Theme.fadedInk)
+                            }
+                            ForEach(part.entries) { entry in
+                                NavigationLink(value: entry) {
+                                    EntryCard(entry: entry)
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+/// Title (and summary) above a chapter's entries; nil heads the entries outside every chapter.
+struct ChapterHeading: View {
+    let chapter: Chapter?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Label(chapter?.title ?? "Loose pages", systemImage: chapter == nil ? "doc.on.doc" : "bookmark.fill")
+                .font(Theme.heading)
+                .foregroundStyle(Theme.ember)
+            if let summary = chapter?.summary, !summary.isEmpty {
+                Text(summary)
+                    .font(Theme.prose)
+                    .foregroundStyle(Theme.fadedInk)
+            }
+        }
+        .padding(.top, 6)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
     }
 }
 
@@ -153,6 +185,17 @@ private struct ChronicleFilterMenu: View {
                     }
                 } label: {
                     Label("Feeling", systemImage: "heart")
+                }
+                .pickerStyle(.menu)
+            }
+            if !notebook.orderedChapters.isEmpty {
+                Picker(selection: $filter.chapterID) {
+                    Text("Any chapter").tag(UUID?.none)
+                    ForEach(notebook.orderedChapters) { chapter in
+                        Text(chapter.title).tag(UUID?.some(chapter.id))
+                    }
+                } label: {
+                    Label("Chapter", systemImage: "bookmark")
                 }
                 .pickerStyle(.menu)
             }
@@ -260,6 +303,7 @@ struct EntryDetailView: View {
     let entry: Entry
     @State private var isEditing = false
     @State private var isConfirmingDelete = false
+    @State private var isSharing = false
 
     var body: some View {
         if entry.isDeleted || entry.modelContext == nil {
@@ -299,6 +343,9 @@ struct EntryDetailView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     if !entry.inGameDate.isEmpty {
                         Label(entry.inGameDate, systemImage: "moon.stars")
+                    }
+                    if let chapter = entry.chapter {
+                        Label(chapter.title, systemImage: "bookmark")
                     }
                     Label(entry.writtenAt.formatted(date: .complete, time: .shortened), systemImage: "calendar")
                     if !entry.place.isEmpty {
@@ -345,6 +392,9 @@ struct EntryDetailView: View {
                 Button("Edit") { isEditing = true }
             }
             ToolbarItem(placement: .secondaryAction) {
+                Button("Share as Image", systemImage: "square.and.arrow.up") { isSharing = true }
+            }
+            ToolbarItem(placement: .secondaryAction) {
                 Button("Delete Entry", systemImage: "trash", role: .destructive) { isConfirmingDelete = true }
             }
         }
@@ -352,6 +402,9 @@ struct EntryDetailView: View {
             if let notebook = entry.notebook {
                 EntryEditorView(notebook: notebook, entry: entry)
             }
+        }
+        .sheet(isPresented: $isSharing) {
+            ShareEntrySheet(entry: entry)
         }
         .confirmationDialog("Delete this entry?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {

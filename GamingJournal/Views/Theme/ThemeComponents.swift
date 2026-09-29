@@ -262,6 +262,9 @@ struct LeatherCover: View {
             .padding(.vertical, 18)
             .padding(.leading, 28)
             .padding(.trailing, 16)
+            // The cover keeps its shape, so its lettering stops growing at the largest text sizes;
+            // the full title is in the label and on the notebook's own page.
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         }
         .aspectRatio(0.72, contentMode: .fit)
         .shadow(color: .black.opacity(0.3), radius: 8, x: 2, y: 5)

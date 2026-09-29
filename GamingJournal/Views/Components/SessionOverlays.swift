@@ -54,6 +54,16 @@ private struct SessionOverlays: ViewModifier {
                 presenting: entryPrompt
             ) { prompt in
                 Button("Write") { writing = prompt }
+                if CampfireReminders.shared.remindsAfterSessions {
+                    Button("Remind me later") {
+                        Task {
+                            await CampfireReminders.shared.sessionLogged(
+                                notebookID: prompt.notebook.id,
+                                notebookTitle: prompt.notebook.title
+                            )
+                        }
+                    }
+                }
                 Button("Not now", role: .cancel) {}
             } message: { prompt in
                 Text("Add to \(prompt.notebook.title) while it's fresh.")
