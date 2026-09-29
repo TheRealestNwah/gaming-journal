@@ -12,6 +12,12 @@ struct LibraryView: View {
     @State private var searchText = ""
 
     private let columns = [GridItem(.adaptive(minimum: 140, maximum: 200), spacing: 20)]
+    @AppStorage(LibraryShelf.filterKey) private var filter = LibraryShelf.Filter.all
+    @AppStorage(LibraryShelf.sortKey) private var sort = LibraryShelf.Sort.lastWritten
+
+    private var shelved: [Notebook] {
+        LibraryShelf(filter: filter, sort: sort).arrange(notebooks)
+    }
 
     /// Most recently touched notebook that's still being played.
     private var current: Notebook? {
@@ -49,6 +55,11 @@ struct LibraryView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button("New Notebook", systemImage: "plus") { isCreating = true }
+                }
+                if !notebooks.isEmpty {
+                    ToolbarItem(placement: .topBarLeading) {
+                        shelfMenu
+                    }
                 }
             }
             .sheet(isPresented: $isCreating) {
@@ -101,14 +112,27 @@ struct LibraryView: View {
                 if let current {
                     ContinueCard(notebook: current)
                 }
-                SectionFlourish(title: "Your notebooks")
+                SectionFlourish(title: LocalizedStringKey(filter == .all ? "Your notebooks" : filter.label))
+                if shelved.isEmpty {
+                    VStack(spacing: 8) {
+                        Text("No \(filter.label.lowercased()) tales on the shelf.")
+                            .font(Theme.prose)
+                            .foregroundStyle(Theme.fadedInk)
+                        Button("Show all tales") { filter = .all }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                }
                 LazyVGrid(columns: columns, spacing: 24) {
-                    ForEach(notebooks) { notebook in
+                    ForEach(shelved) { notebook in
                         NavigationLink(value: notebook) {
                             ShelfCover(notebook: notebook)
                         }
                         .buttonStyle(.plain)
                         .contextMenu {
+                            Button(notebook.isPinned ? "Unpin" : "Pin to Top", systemImage: notebook.isPinned ? "pin.slash" : "pin") {
+                                withAnimation { notebook.isPinned.toggle() }
+                            }
                             Button("Edit", systemImage: "pencil") { editing = notebook }
                             Menu("Status", systemImage: "flag") {
                                 ForEach(NotebookStatus.allCases) { status in
@@ -128,6 +152,28 @@ struct LibraryView: View {
     }
 }
 
+extension LibraryView {
+    /// Filter and sort for the shelf.
+    private var shelfMenu: some View {
+        Menu {
+            Picker("Show", selection: $filter) {
+                ForEach(LibraryShelf.Filter.allCases) { option in
+                    Text(option.label).tag(option)
+                }
+            }
+            Picker("Sort by", selection: $sort) {
+                ForEach(LibraryShelf.Sort.allCases) { option in
+                    Text(option.label).tag(option)
+                }
+            }
+        } label: {
+            Label("Sort and Filter", systemImage: filter == .all
+                  ? "line.3.horizontal.decrease.circle"
+                  : "line.3.horizontal.decrease.circle.fill")
+        }
+    }
+}
+
 /// A cover on the shelf with the notebook's status underneath.
 private struct ShelfCover: View {
     let notebook: Notebook
@@ -135,6 +181,15 @@ private struct ShelfCover: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             LeatherCover(title: notebook.title, subtitle: notebook.gameTitle, style: notebook.coverStyle)
+                .overlay(alignment: .topTrailing) {
+                    if notebook.isPinned {
+                        Image(systemName: "pin.fill")
+                            .font(.caption)
+                            .foregroundStyle(Theme.gold)
+                            .padding(8)
+                            .accessibilityLabel("Pinned")
+                    }
+                }
             HStack(spacing: 4) {
                 Image(systemName: notebook.status.systemImage)
                 Text(notebook.status.label)
