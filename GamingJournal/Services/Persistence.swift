@@ -11,7 +11,7 @@ enum Persistence {
     /// (tests); otherwise the default store location is used. `cloudSync` mirrors the store to the
     /// user's private CloudKit database.
     static func makeContainer(inMemory: Bool = false, url: URL? = nil, cloudSync: Bool = false) throws -> ModelContainer {
-        let schema = Schema(versionedSchema: JournalSchemaV1.self)
+        let schema = Schema(versionedSchema: CurrentSchema.self)
         let database: ModelConfiguration.CloudKitDatabase = cloudSync ? .private(cloudKitContainerID) : .none
         let configuration: ModelConfiguration
         if let url {
