@@ -38,7 +38,7 @@ final class SyncSettingsTests: XCTestCase {
 /// schema so iCloud sync keeps working after model changes.
 final class CloudKitSchemaRulesTests: XCTestCase {
     func testCurrentSchemaIsCloudKitCompatible() {
-        let schema = Schema(versionedSchema: JournalSchemaV1.self)
+        let schema = Schema(versionedSchema: CurrentSchema.self)
         XCTAssertFalse(schema.entities.isEmpty)
         for entity in schema.entities {
             for attribute in entity.attributes {
