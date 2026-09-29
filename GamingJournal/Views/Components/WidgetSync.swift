@@ -2,8 +2,9 @@ import SwiftUI
 import SwiftData
 
 extension View {
-    /// Keeps the widget snapshot current and handles the widgets' deep links.
-    func widgetSync(onStartTimer: @escaping () -> Void, onWrite: @escaping (UUID?) -> Void) -> some View {
+    /// Keeps the widget snapshot and Siri's roster current and handles the widgets' deep links.
+    /// `onWrite` gets the notebook and party member the link names, if any.
+    func widgetSync(onStartTimer: @escaping () -> Void, onWrite: @escaping (UUID?, UUID?) -> Void) -> some View {
         modifier(WidgetSync(onStartTimer: onStartTimer, onWrite: onWrite))
     }
 }
@@ -13,8 +14,9 @@ private struct WidgetSync: ViewModifier {
     @Environment(LiveTimer.self) private var timer
     @Query private var sessions: [PlaySession]
     @Query(sort: \Entry.writtenAt, order: .reverse) private var entries: [Entry]
+    @Query private var notebooks: [Notebook]
     let onStartTimer: () -> Void
-    let onWrite: (UUID?) -> Void
+    let onWrite: (UUID?, UUID?) -> Void
 
     /// Changes whenever anything a widget shows might have changed.
     private var fingerprint: [String] {
@@ -25,6 +27,8 @@ private struct WidgetSync: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onAppear(perform: publish)
+            .onAppear(perform: saveRoster)
+            .onChange(of: QuickWriteRoster(notebooks: notebooks)) { saveRoster() }
             .onChange(of: fingerprint) { publish() }
             .onChange(of: timer.state) { publish() }
             .onChange(of: scenePhase) { _, phase in
@@ -32,7 +36,7 @@ private struct WidgetSync: ViewModifier {
             }
             .onOpenURL { url in
                 if url.scheme == WidgetSnapshot.writeURL.scheme, url.host == WidgetSnapshot.writeURL.host {
-                    onWrite(WidgetSnapshot.notebookID(inWriteURL: url))
+                    onWrite(WidgetSnapshot.notebookID(inWriteURL: url), WidgetSnapshot.memberID(inWriteURL: url))
                     return
                 }
                 guard url.scheme == WidgetSnapshot.startTimerURL.scheme,
@@ -43,11 +47,20 @@ private struct WidgetSync: ViewModifier {
             }
     }
 
+    private func saveRoster() {
+        if QuickWriteRoster(notebooks: notebooks).save() {
+            QuickWriteShortcuts.updateAppShortcutParameters()
+        }
+    }
+
     private func publish() {
         WidgetSnapshot.make(
             sessions: sessions.map(StatsRecord.init(session:)),
             timer: timer.state,
-            latestEntry: entries.first { $0.notebook != nil }.map(WidgetSnapshot.LatestEntry.init(entry:))
+            // A locked journal keeps its pages off the Home Screen.
+            latestEntry: AppLock.isEnabled()
+                ? nil
+                : entries.first { $0.notebook != nil }.map(WidgetSnapshot.LatestEntry.init(entry:))
         ).publish()
     }
 }

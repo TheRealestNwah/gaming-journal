@@ -232,7 +232,8 @@ struct AffinityMeter: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Affinity \(affinity)")
+        .accessibilityLabel("Affinity")
+        .accessibilityValue(Bond(targetName: "", affinity: affinity).affinityLabel)
     }
 
     private func color(for level: Int) -> Color {
