@@ -9,6 +9,7 @@ struct LibraryView: View {
     @State private var isCreating = false
     @State private var editing: Notebook?
     @State private var pendingDelete: Notebook?
+    @State private var searchText = ""
 
     private let columns = [GridItem(.adaptive(minimum: 140, maximum: 200), spacing: 20)]
     @AppStorage(LibraryShelf.filterKey) private var filter = LibraryShelf.Filter.all
@@ -28,15 +29,29 @@ struct LibraryView: View {
             Group {
                 if notebooks.isEmpty {
                     emptyShelf
+                } else if !ChronicleFilter.normalize(searchText).isEmpty {
+                    LibrarySearchResults(query: searchText, notebooks: notebooks)
                 } else {
                     shelf
                 }
             }
-            .background(ParchmentBackground())
+            .background {
+                ZStack(alignment: .bottom) {
+                    ParchmentBackground()
+                    EmberField(count: notebooks.isEmpty ? 24 : 10)
+                        .frame(height: 320)
+                        .ignoresSafeArea()
+                }
+            }
             .navigationTitle("Library")
             .navigationDestination(for: Notebook.self) { notebook in
                 NotebookView(notebook: notebook)
             }
+            // Declared once at the root so both a notebook's chronicle and search can open entries.
+            .navigationDestination(for: Entry.self) { entry in
+                EntryDetailView(entry: entry)
+            }
+            .searchable(text: $searchText, prompt: "Search every tale")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button("New Notebook", systemImage: "plus") { isCreating = true }
@@ -67,6 +82,7 @@ struct LibraryView: View {
             }
         }
         .sessionOverlays()
+        .sensoryFeedback(.success, trigger: notebooks.count) { old, new in new > old }
     }
 
     private var emptyShelf: some View {
@@ -76,9 +92,9 @@ struct LibraryView: View {
                 .font(.system(size: 56))
                 .foregroundStyle(Theme.ember)
                 .accessibilityHidden(true)
-            Text("Your shelf is empty")
+            Text("The shelf is bare")
                 .font(Theme.title(.title2))
-            Text("Start a notebook for a playthrough, gather your party and write their story as you play.")
+            Text("Every tale starts with a blank page. Start a notebook for your playthrough, gather your party and write their story as you play.")
                 .font(Theme.prose)
                 .foregroundStyle(Theme.fadedInk)
                 .multilineTextAlignment(.center)

@@ -32,7 +32,7 @@ final class SmokeTests: XCTestCase {
 
     func testOnboardingLeadsToTheLibrary() {
         let app = launch(skipOnboarding: false)
-        let start = app.buttons["Get Started"]
+        let start = app.buttons["Begin your tale"]
         XCTAssertTrue(start.waitForExistence(timeout: 20))
         start.tap()
         XCTAssertTrue(app.navigationBars["Library"].waitForExistence(timeout: 5))
@@ -82,5 +82,58 @@ final class SmokeTests: XCTestCase {
 
         app.tabBars.buttons["Settings"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+    }
+
+    func testCreatingANotebookRecruitingAndWriting() {
+        let app = launch()
+        let begin = app.buttons["Begin a new tale"]
+        XCTAssertTrue(begin.waitForExistence(timeout: 5))
+        begin.tap()
+
+        let title = app.textFields["Title, e.g. The Dragonborn's Road"]
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        title.tap()
+        title.typeText("Frostbound")
+        app.textFields["Game"].tap()
+        app.textFields["Game"].typeText("Dark Souls")
+        app.navigationBars["New Notebook"].buttons["Create"].tap()
+
+        let cover = element(containing: "Frostbound", in: app)
+        XCTAssertTrue(cover.waitForExistence(timeout: 5))
+        cover.tap()
+
+        let recruit = app.buttons["Add a party member"]
+        XCTAssertTrue(recruit.waitForExistence(timeout: 5))
+        recruit.tap()
+        let name = app.textFields["Name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap()
+        name.typeText("Solaire")
+        app.navigationBars["New Party Member"].buttons["Save"].tap()
+        XCTAssertTrue(element(containing: "Solaire", in: app).waitForExistence(timeout: 5))
+
+        app.buttons["Write in the journal"].tap()
+        let entryTitle = app.textFields["Title"]
+        XCTAssertTrue(entryTitle.waitForExistence(timeout: 5))
+        entryTitle.tap()
+        entryTitle.typeText("Praise the sun")
+        app.buttons["Hopeful"].firstMatch.tap()
+        app.navigationBars["New Entry"].buttons["Save"].tap()
+
+        XCTAssertTrue(element(containing: "Praise the sun", in: app).waitForExistence(timeout: 5))
+    }
+
+    func testCharacterSheetShowsBondsFromDemoNotebook() {
+        let app = launch(demoData: true)
+        let notebook = element(containing: "The Dragonborn's Road", in: app)
+        XCTAssertTrue(notebook.waitForExistence(timeout: 5))
+        notebook.tap()
+
+        let lydia = app.buttons["Lydia, Housecarl"]
+        XCTAssertTrue(lydia.waitForExistence(timeout: 5))
+        lydia.tap()
+
+        XCTAssertTrue(app.navigationBars["Lydia"].waitForExistence(timeout: 5))
+        XCTAssertTrue(element(containing: "Serana", in: app).waitForExistence(timeout: 5))
     }
 }

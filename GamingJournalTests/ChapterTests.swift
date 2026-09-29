@@ -69,6 +69,31 @@ final class ChapterTests: XCTestCase {
         XCTAssertTrue(try context.fetch(FetchDescriptor<Chapter>()).isEmpty)
     }
 
+    @MainActor
+    func testUndoingANotebookDeleteBringsBackChaptersAndPin() throws {
+        let context = try makeContext()
+        let notebook = Notebook(title: "Tav's Road")
+        let actTwo = Chapter(title: "Act II", summary: "Below.", sortIndex: 1)
+        let entry = Entry(title: "Descent")
+        context.insert(notebook)
+        notebook.isPinned = true
+        notebook.chapters = [Chapter(title: "Act I"), actTwo]
+        notebook.entries = [entry]
+        entry.chapter = actTwo
+        try context.save()
+
+        let center = UndoCenter()
+        context.deleteNotebook(notebook, undo: center)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<Chapter>()).isEmpty)
+        center.undo()
+
+        let restored = try XCTUnwrap(context.fetch(FetchDescriptor<Notebook>()).first)
+        XCTAssertTrue(restored.isPinned)
+        XCTAssertEqual(restored.orderedChapters.map(\.title), ["Act I", "Act II"])
+        XCTAssertEqual(restored.orderedChapters.last?.summary, "Below.")
+        XCTAssertEqual(restored.chronicle.first?.chapter?.title, "Act II")
+    }
+
     // MARK: Migration
 
     @MainActor

@@ -70,9 +70,6 @@ struct NotebookView: View {
         .background(ParchmentBackground())
         .navigationTitle(notebook.title)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(for: Entry.self) { entry in
-            EntryDetailView(entry: entry)
-        }
         .navigationDestination(for: PlaySession.self) { session in
             SessionDetailView(session: session)
         }
@@ -105,6 +102,7 @@ struct NotebookView: View {
         .sheet(isPresented: $isWriting) {
             EntryEditorView(notebook: notebook)
         }
+        .sensoryFeedback(.success, trigger: notebook.entries?.count ?? 0) { old, new in new > old }
     }
 
     private var header: some View {
