@@ -81,6 +81,7 @@ struct ChronicleSection: View {
                 Label("Write in the journal", systemImage: "pencil.and.scribble")
             }
             .buttonStyle(.ember)
+            .keyboardShortcut("n", modifiers: .command)
 
             if all.isEmpty {
                 Text("No entries yet. Write the first page of the tale.")
