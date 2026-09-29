@@ -12,6 +12,9 @@ struct EntryEditorView: View {
     @FocusState private var focusedField: Field?
     @AppStorage(WritingPrompts.enabledKey) private var promptsEnabled = true
     @State private var promptDismissed = false
+    /// An unfinished new entry left in this notebook, offered back until the writer decides.
+    @State private var unfinished: DraftShelf.Saved?
+    private let drafts = DraftShelf()
 
     private enum Field { case title, body, place, quest }
 
@@ -23,6 +26,7 @@ struct EntryEditorView: View {
             ?? EntryDraft.new(in: notebook, author: author)
         _draft = State(initialValue: initial)
         _showsDetails = State(initialValue: !(initial.place.isEmpty && initial.quest.isEmpty && initial.inGameDate.isEmpty))
+        _unfinished = State(initialValue: entry == nil ? DraftShelf().saved(for: notebook.id) : nil)
     }
 
     private var entries: [Entry] { notebook.entries ?? [] }
@@ -36,6 +40,10 @@ struct EntryEditorView: View {
         NavigationStack {
             Form {
                 Group {
+                    if let unfinished {
+                        unfinishedOffer(unfinished)
+                    }
+
                     if !notebook.party.isEmpty {
                         Section("Written by") {
                             AuthorPicker(members: notebook.party, selection: $draft.authorID)
@@ -131,7 +139,10 @@ struct EntryEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel") {
+                        if entry == nil && unfinished == nil { drafts.discard(for: notebook.id) }
+                        dismiss()
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save)
@@ -140,6 +151,10 @@ struct EntryEditorView: View {
             }
             .onAppear {
                 if entry == nil { focusedField = .body }
+            }
+            // Keep new writing safe from an accidental swipe away or the app being closed.
+            .onChange(of: draft) { _, draft in
+                if entry == nil { drafts.keep(draft, for: notebook.id) }
             }
         }
     }
@@ -154,7 +169,44 @@ struct EntryEditorView: View {
         }
     }
 
+    private func unfinishedOffer(_ saved: DraftShelf.Saved) -> some View {
+        Section {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Continue your unfinished entry?")
+                    .font(Theme.heading)
+                if !saved.preview.isEmpty {
+                    Text(saved.preview)
+                        .font(Theme.prose)
+                        .foregroundStyle(Theme.fadedInk)
+                        .lineLimit(2)
+                }
+                Text("Left \(saved.savedAt.formatted(.relative(presentation: .named)))")
+                    .font(.caption)
+                    .foregroundStyle(Theme.fadedInk)
+            }
+            .accessibilityElement(children: .combine)
+            HStack {
+                Button("Continue") {
+                    withAnimation {
+                        draft = saved.draft
+                        showsDetails = !(draft.place.isEmpty && draft.quest.isEmpty && draft.inGameDate.isEmpty)
+                        unfinished = nil
+                        promptDismissed = true
+                    }
+                }
+                .buttonStyle(.ember)
+                Button("Discard", role: .destructive) {
+                    withAnimation { unfinished = nil }
+                    drafts.keep(draft, for: notebook.id)
+                }
+                .buttonStyle(.borderless)
+            }
+        }
+    }
+
     private func save() {
+        // Saved, so nothing is left unfinished.
+        if entry == nil { drafts.discard(for: notebook.id) }
         if let entry {
             draft.apply(to: entry, in: notebook)
         } else {
