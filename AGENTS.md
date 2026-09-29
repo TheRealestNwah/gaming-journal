@@ -15,6 +15,7 @@ The app is called **Hearthbound**. Its Xcode targets, schemes, bundle IDs, app g
 - **CI is the only build check.** Development happens on Windows, so nothing is compiled locally. Read the `xcodebuild-logs` artifact when a run fails.
 - SwiftData models must stay CloudKit-safe: every property has a default or is optional, no `@Attribute(.unique)`, relationships optional. Add schema changes as a new `VersionedSchema` plus a migration stage.
 - Put logic in `Services/` with tests; views stay thin.
+- The `FreeTeam` build configuration (scheme **Hearthbound (Free Team)**) is for testing on a device with a free Apple ID: `.free` bundle IDs and app group, no iCloud or push, and the `FREE_TEAM` Swift condition. CI never builds it, so keep `#if FREE_TEAM` branches tiny, and add any new build setting or entitlement to it too.
 - One issue per work item. When several items are green-lit together, build them on one branch and open one PR that closes all of them. A single item still gets its own PR. `main` is protected and requires the `Build & test (iOS Simulator)` check.
 
 ## CI

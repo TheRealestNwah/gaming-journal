@@ -2,7 +2,11 @@ import Foundation
 
 /// Mirror of the app's `WidgetSnapshot`, which the app writes into the shared App Group.
 struct Snapshot: Codable {
+    #if FREE_TEAM
+    static let appGroup = "group.com.gamingjournal.GamingJournal.free"
+    #else
     static let appGroup = "group.com.gamingjournal.GamingJournal"
+    #endif
     static let key = "widgetSnapshot"
     static let startTimerURL = URL(string: "gamingjournal://start-timer")!
     static let writeURL = URL(string: "gamingjournal://write")!

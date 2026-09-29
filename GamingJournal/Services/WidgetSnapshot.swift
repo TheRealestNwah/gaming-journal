@@ -4,7 +4,11 @@ import WidgetKit
 /// What the widgets show, written by the app to the shared App Group. The widget extension has a
 /// mirror of this type (`GamingJournalWidgets/Snapshot.swift`); keep the two in step.
 struct WidgetSnapshot: Codable, Equatable {
+    #if FREE_TEAM
+    static let appGroup = "group.com.gamingjournal.GamingJournal.free"
+    #else
     static let appGroup = "group.com.gamingjournal.GamingJournal"
+    #endif
     static let key = "widgetSnapshot"
     /// Opened by the start-session widget.
     static let startTimerURL = URL(string: "gamingjournal://start-timer")!
