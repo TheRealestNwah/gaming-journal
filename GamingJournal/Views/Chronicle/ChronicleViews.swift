@@ -303,6 +303,7 @@ struct EntryDetailView: View {
     let entry: Entry
     @State private var isEditing = false
     @State private var isConfirmingDelete = false
+    @State private var isSharing = false
 
     var body: some View {
         if entry.isDeleted || entry.modelContext == nil {
@@ -391,6 +392,9 @@ struct EntryDetailView: View {
                 Button("Edit") { isEditing = true }
             }
             ToolbarItem(placement: .secondaryAction) {
+                Button("Share as Image", systemImage: "square.and.arrow.up") { isSharing = true }
+            }
+            ToolbarItem(placement: .secondaryAction) {
                 Button("Delete Entry", systemImage: "trash", role: .destructive) { isConfirmingDelete = true }
             }
         }
@@ -398,6 +402,9 @@ struct EntryDetailView: View {
             if let notebook = entry.notebook {
                 EntryEditorView(notebook: notebook, entry: entry)
             }
+        }
+        .sheet(isPresented: $isSharing) {
+            ShareEntrySheet(entry: entry)
         }
         .confirmationDialog("Delete this entry?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
