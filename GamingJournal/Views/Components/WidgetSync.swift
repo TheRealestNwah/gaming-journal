@@ -47,7 +47,10 @@ private struct WidgetSync: ViewModifier {
         WidgetSnapshot.make(
             sessions: sessions.map(StatsRecord.init(session:)),
             timer: timer.state,
-            latestEntry: entries.first { $0.notebook != nil }.map(WidgetSnapshot.LatestEntry.init(entry:))
+            // A locked journal keeps its pages off the Home Screen.
+            latestEntry: AppLock.isEnabled()
+                ? nil
+                : entries.first { $0.notebook != nil }.map(WidgetSnapshot.LatestEntry.init(entry:))
         ).publish()
     }
 }
