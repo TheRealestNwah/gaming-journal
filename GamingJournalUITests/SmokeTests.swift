@@ -81,7 +81,9 @@ final class SmokeTests: XCTestCase {
         journal.tap()
 
         // The latest page ends with the latest entry (which may have started on the page before).
-        XCTAssertTrue(element(containing: "never learned", in: app).waitForExistence(timeout: Self.step))
+        let ending = element(containing: "never learned", in: app)
+        XCTAssertTrue(ending.waitForExistence(timeout: Self.step), "Latest page not shown:
+\(app.debugDescription)")
         XCTAssertFalse(app.buttons["Next page"].isEnabled)
         app.buttons["Back to journals"].tap()
         XCTAssertTrue(app.buttons["Begin a new journal"].waitForExistence(timeout: Self.step))
