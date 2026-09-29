@@ -142,7 +142,7 @@ struct SettingsView: View {
 
 /// Bytes handed to the system file exporter.
 struct ExportDocument: FileDocument {
-    static var readableContentTypes: [UTType] { [.json, .commaSeparatedText, .markdownText, .plainText] }
+    static var readableContentTypes: [UTType] { [.json, .commaSeparatedText, .markdownText, .plainText, .pdf] }
 
     var data: Data
     var contentType: UTType

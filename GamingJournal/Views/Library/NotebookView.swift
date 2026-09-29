@@ -94,7 +94,16 @@ struct NotebookView: View {
                 Button("Chapters", systemImage: "bookmark") { isEditingChapters = true }
             }
             ToolbarItem(placement: .secondaryAction) {
-                Button("Export as Book", systemImage: "book.pages") {
+                Button("Export as PDF Book", systemImage: "book.closed") {
+                    bookExport = ExportDocument(
+                        data: PDFBook.render(notebook),
+                        contentType: .pdf,
+                        filename: PDFBook.filename(for: notebook)
+                    )
+                }
+            }
+            ToolbarItem(placement: .secondaryAction) {
+                Button("Export as Markdown", systemImage: "doc.text") {
                     bookExport = ExportDocument(
                         data: Data(NotebookMarkdown.render(notebook).utf8),
                         contentType: .markdownText,
@@ -106,7 +115,8 @@ struct NotebookView: View {
         .fileExporter(
             isPresented: Binding(get: { bookExport != nil }, set: { if !$0 { bookExport = nil } }),
             document: bookExport,
-            contentType: .markdownText,
+            // One exporter for both books: SwiftUI honours only one per view.
+            contentType: bookExport?.contentType ?? .markdownText,
             defaultFilename: bookExport?.filename
         ) { _ in }
         .sheet(isPresented: $isEditing) {
