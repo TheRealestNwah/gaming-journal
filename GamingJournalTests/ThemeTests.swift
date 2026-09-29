@@ -46,6 +46,21 @@ final class ThemeContrastTests: XCTestCase {
         }
     }
 
+    func testEmotionLabelsMeetAAInEveryFamily() {
+        let surfaces: [(String, Color)] = [("parchment", Theme.parchment), ("vellum", Theme.vellum)]
+        for dark in [false, true] {
+            for group in EmotionGroup.allCases {
+                for (surfaceName, surface) in surfaces {
+                    let ratio = contrast(group.inkColor, surface, dark: dark)
+                    XCTAssertGreaterThanOrEqual(
+                        ratio, 4.5,
+                        "\(group.label) on \(surfaceName) (\(dark ? "dark" : "light")) is \(String(format: "%.2f", ratio)):1"
+                    )
+                }
+            }
+        }
+    }
+
     func testButtonLabelReadsOnEmberAndCrimson() {
         for dark in [false, true] {
             XCTAssertGreaterThanOrEqual(contrast(Theme.onEmber, Theme.ember, dark: dark), 4.5)
