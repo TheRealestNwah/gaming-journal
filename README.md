@@ -57,6 +57,19 @@ xcodebuild test -project GamingJournal.xcodeproj -scheme GamingJournal \
 
 The project uses Xcode's synchronized folders, so new files under `GamingJournal/` and `GamingJournalTests/` are picked up automatically.
 
+## Running on your own device
+
+With a paid Apple Developer team, pick it under Signing & Capabilities for the **GamingJournal** and **GamingJournalWidgets** targets and run the `GamingJournal` scheme.
+
+With a free Apple ID, use the **Hearthbound (Free Team)** scheme instead:
+
+1. Add your Apple ID in Xcode → Settings → Accounts.
+2. Choose the **Hearthbound (Free Team)** scheme and your iPhone as the destination.
+3. Under Signing & Capabilities, set Team to "(Your Name) Personal Team" for **GamingJournal** and **GamingJournalWidgets**.
+4. Turn on Developer Mode on the iPhone (Settings → Privacy & Security), then Run. The first time, trust your profile under Settings → General → VPN & Device Management.
+
+The Free Team build uses its own `.free` bundle IDs and app group, so a free team never claims the real identifiers. It leaves out iCloud and push, so the iCloud Sync setting is hidden, and apps signed by a free team stop opening after 7 days until you run them from Xcode again.
+
 ## iCloud sync
 
 Sync is optional and off by default (Settings → iCloud Sync, applied on next launch). It mirrors the SwiftData store to the user's private CloudKit database (`iCloud.com.gamingjournal.GamingJournal`).

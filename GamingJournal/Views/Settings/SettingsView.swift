@@ -47,6 +47,8 @@ struct SettingsView: View {
                 }
                 .listRowBackground(Theme.vellum)
 
+                // Free-team builds can't sign the iCloud entitlement, so there is nothing to sync with.
+                #if !FREE_TEAM
                 Section {
                     Toggle("iCloud Sync", systemImage: "icloud", isOn: $syncEnabled)
                 } header: {
@@ -55,6 +57,7 @@ struct SettingsView: View {
                     Text(syncFooter)
                 }
                 .listRowBackground(Theme.vellum)
+                #endif
 
                 RemindersSection()
 
