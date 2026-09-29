@@ -112,7 +112,7 @@ struct LibraryView: View {
                 if let current {
                     ContinueCard(notebook: current)
                 }
-                SectionFlourish(title: filter == .all ? "Your notebooks" : filter.label)
+                SectionFlourish(title: LocalizedStringKey(filter == .all ? "Your notebooks" : filter.label))
                 if shelved.isEmpty {
                     VStack(spacing: 8) {
                         Text("No \(filter.label.lowercased()) tales on the shelf.")
