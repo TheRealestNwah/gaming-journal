@@ -27,7 +27,7 @@ final class Dictation {
         guard !isListening else { return }
         transcript = ""
         guard await Self.speechAllowed(), await AVAudioApplication.requestRecordPermission() else {
-            state = .unavailable("Allow the microphone and speech recognition for Gaming Journal in the Settings app to dictate.")
+            state = .unavailable("Allow the microphone and speech recognition for Hearthbound in the Settings app to dictate.")
             return
         }
         guard let recognizer, recognizer.isAvailable else {

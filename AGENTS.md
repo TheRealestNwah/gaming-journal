@@ -1,6 +1,8 @@
-# Gaming Journal — notes for Codex
+# Hearthbound — notes for Codex
 
 iOS 17+ SwiftUI + SwiftData app: role-playing notebooks for game playthroughs. Each notebook holds a party of characters and their in-character entries (emotions, places, quests, bonds). Play-session tracking is a secondary feature. No accounts, no online game database.
+
+The app is called **Hearthbound**. Its Xcode targets, schemes, bundle IDs, app group and iCloud container keep the old `GamingJournal` names on purpose: renaming them would cut off existing data, widgets and sync. Only user-facing text uses the new name.
 
 ## Layout
 - `GamingJournal/Models/` — SwiftData models (versioned schema, CloudKit-compatible)

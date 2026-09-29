@@ -92,7 +92,7 @@ struct SettingsView: View {
 
     private var syncFooter: String {
         if syncEnabled != syncAtLaunch {
-            return "Quit and reopen Gaming Journal to \(syncEnabled ? "start" : "stop") syncing."
+            return "Quit and reopen Hearthbound to \(syncEnabled ? "start" : "stop") syncing."
         }
         if syncEnabled && syncFellBack {
             return "iCloud isn't available right now (check you're signed in to iCloud), so your journal is only on this device."
@@ -110,7 +110,7 @@ struct SettingsView: View {
     }
 
     private static func filename(_ suffix: String) -> String {
-        "GamingJournal-\(Date.now.formatted(.iso8601.year().month().day()))\(suffix)"
+        "Hearthbound-\(Date.now.formatted(.iso8601.year().month().day()))\(suffix)"
     }
 
     private func exportJSON() {
@@ -157,7 +157,7 @@ struct ExportDocument: FileDocument {
     init(configuration: ReadConfiguration) throws {
         data = configuration.file.regularFileContents ?? Data()
         contentType = configuration.contentType
-        filename = configuration.file.filename ?? "GamingJournal"
+        filename = configuration.file.filename ?? "Hearthbound"
     }
 
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {

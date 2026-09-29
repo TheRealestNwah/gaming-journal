@@ -509,7 +509,7 @@
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Gaming Journal";
+				INFOPLIST_KEY_CFBundleDisplayName = Hearthbound;
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Face ID keeps your journal sealed so only you can read it.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The microphone lets you dictate journal entries.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech recognition turns what you say into journal entries, on your device when it can.";
@@ -544,7 +544,7 @@
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Gaming Journal";
+				INFOPLIST_KEY_CFBundleDisplayName = Hearthbound;
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Face ID keeps your journal sealed so only you can read it.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The microphone lets you dictate journal entries.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech recognition turns what you say into journal entries, on your device when it can.";
@@ -612,7 +612,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = GamingJournalWidgets/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Gaming Journal";
+				INFOPLIST_KEY_CFBundleDisplayName = Hearthbound;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -637,7 +637,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = GamingJournalWidgets/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Gaming Journal";
+				INFOPLIST_KEY_CFBundleDisplayName = Hearthbound;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
