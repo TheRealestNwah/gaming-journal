@@ -1,17 +1,48 @@
 name: CI
 
+# Runs on pull requests only: main is protected, so every change is tested on
+# its PR before it lands. Use "Run workflow" to test main by hand.
 on:
-  push:
-    branches: [main]
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Detect code changes
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Docs-only changes skip the macOS job. A skipped job still satisfies
+      # the required "Build & test (iOS Simulator)" check.
+      - name: Filter
+        id: filter
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          CHANGED=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}")
+          echo "$CHANGED"
+          if echo "$CHANGED" | grep -qvE '^docs/|\.md$|^LICENSE$|^\.gitignore$'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Docs-only change: skipping the iOS build."
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
   build-and-test:
     name: Build & test (iOS Simulator)
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: macos-15
     timeout-minutes: 30
     steps:
@@ -22,13 +53,16 @@ jobs:
           xcodebuild -version
           swift --version
 
-      - name: Pick an iPhone simulator
+      # Boot the simulator in the background so it is ready by the time the
+      # build finishes, instead of xcodebuild booting it before the tests.
+      - name: Pick and boot an iPhone simulator
         id: sim
         run: |
-          DEVICE=$(xcrun simctl list devices available -j \
-            | jq -r '[.devices[] | .[] | select(.name | startswith("iPhone"))][0].name')
-          echo "Using simulator: $DEVICE"
-          echo "device=$DEVICE" >> "$GITHUB_OUTPUT"
+          UDID=$(xcrun simctl list devices available -j \
+            | jq -r '[.devices[] | .[] | select(.name | startswith("iPhone"))][0].udid')
+          echo "Using simulator: $UDID"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          nohup xcrun simctl bootstatus "$UDID" -b > boot.log 2>&1 &
 
       - name: Build
         run: |
@@ -36,37 +70,30 @@ jobs:
           xcodebuild build-for-testing \
             -project GamingJournal.xcodeproj \
             -scheme GamingJournal \
-            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }}" \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" \
             | tee build.log | grep -E "error:|warning: unre|BUILD|Compiling|\*\*" || true
           grep -q "BUILD SUCCEEDED" build.log
 
+      - name: Wait for simulator
+        run: xcrun simctl bootstatus "${{ steps.sim.outputs.udid }}" -b
+
+      # Unit and UI smoke tests in one run on the already-booted simulator.
+      # Parallel testing is off: it clones the simulator, which costs minutes
+      # while the whole suite takes seconds.
       - name: Test
         run: |
           set -o pipefail
           xcodebuild test-without-building \
             -project GamingJournal.xcodeproj \
             -scheme GamingJournal \
-            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }}" \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath build \
-            -skip-testing:GamingJournalUITests \
+            -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO \
             | tee test.log | grep -E "Test Case|error:|failed|passed|\*\*" || true
           grep -qE "TEST (EXECUTE )?SUCCEEDED" test.log
-
-      - name: UI smoke tests
-        run: |
-          set -o pipefail
-          xcodebuild test-without-building \
-            -project GamingJournal.xcodeproj \
-            -scheme GamingJournal \
-            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }}" \
-            -derivedDataPath build \
-            -only-testing:GamingJournalUITests/SmokeTests \
-            CODE_SIGNING_ALLOWED=NO \
-            | tee uitest.log | grep -E "Test Case|error:|failed|passed|\*\*" || true
-          grep -qE "TEST (EXECUTE )?SUCCEEDED" uitest.log
 
       - name: Upload logs on failure
         if: failure()
@@ -74,6 +101,6 @@ jobs:
         with:
           name: xcodebuild-logs
           path: |
+            boot.log
             build.log
             test.log
-            uitest.log

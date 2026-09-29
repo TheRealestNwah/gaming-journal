@@ -8,6 +8,10 @@ struct GamingJournalWidgetBundle: WidgetBundle {
         NowPlayingWidget()
         WeekWidget()
         StartSessionWidget()
+        WriteAsWidget()
+        if #available(iOS 18.0, *) {
+            WriteControl()
+        }
     }
 }
 

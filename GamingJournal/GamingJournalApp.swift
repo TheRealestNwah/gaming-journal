@@ -25,9 +25,13 @@ struct GamingJournalApp: App {
         } catch {
             fatalError("Could not open the journal store: \(error)")
         }
+        if !LaunchOptions.isUITesting {
+            NotificationRouter.shared.install()
+            // Keeps the evening reminder in step with Settings, e.g. after a restore.
+            Task { await CampfireReminders.shared.applyEveningSetting() }
+        }
         if LaunchOptions.seedsDemoData {
-            DemoData.sessions().forEach(container.mainContext.insert)
-            try? container.mainContext.save()
+            DemoData.seed(into: container.mainContext)
         }
     }
 
