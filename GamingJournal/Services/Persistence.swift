@@ -3,9 +3,9 @@ import SwiftData
 
 enum Persistence {
     static let cloudKitContainerID = "iCloud.com.gamingjournal.GamingJournal"
-    /// Store file name. The notebook redesign started a fresh store rather than migrating the old
-    /// session-only one (nothing had shipped).
-    static let storeName = "Notebooks"
+    /// Store file name. The one-journal-per-character redesign started a fresh store rather than
+    /// migrating the notebook one (nothing had shipped).
+    static let storeName = "Journals"
 
     /// Opens the journal store, migrating older schema versions. Pass `url` to use a specific file
     /// (tests); otherwise the default store location is used. `cloudSync` mirrors the store to the
@@ -26,7 +26,7 @@ enum Persistence {
         }
         return try ModelContainer(
             for: schema,
-            migrationPlan: GamingJournalMigrationPlan.self,
+            migrationPlan: HearthboundMigrationPlan.self,
             configurations: configuration
         )
     }

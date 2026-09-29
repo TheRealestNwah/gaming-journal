@@ -1,0 +1,199 @@
+import Foundation
+
+/// Lays a journal's entries out on book pages. Space is measured in lines of roughly
+/// `charactersPerLine` characters, so pages fill like a printed book: an entry that doesn't fit
+/// carries on over the page, and a date heading is never left alone at the foot of a page.
+struct JournalPager {
+    /// What goes onto the pages, in reading order.
+    struct Item: Equatable {
+        var id: UUID
+        var heading: String
+        var body: String
+        var hasPhotos: Bool
+    }
+
+    /// One entry's share of a page.
+    struct Block: Equatable, Identifiable {
+        var entryID: UUID
+        /// 0 for where the entry starts, then 1, 2… as it carries on over pages.
+        var part: Int
+        /// The date heading shows where the entry starts, not where it carries on.
+        var showsHeading: Bool
+        var heading: String
+        var text: String
+        /// The entry's pictures follow its last words.
+        var showsPhotos: Bool
+
+        var id: String { "\(entryID)-\(part)" }
+    }
+
+    struct Page: Equatable, Identifiable {
+        /// 0-based position in the book.
+        var index: Int
+        var blocks: [Block]
+
+        var id: Int { index }
+    }
+
+    /// Lines a date heading takes, with its space.
+    static let headingLines = 2
+    /// Blank line between entries.
+    static let entryGap = 1
+    /// Lines a row of photo thumbnails takes.
+    static let photoLines = 5
+
+    var charactersPerLine: Int
+    var linesPerPage: Int
+
+    init(charactersPerLine: Int, linesPerPage: Int) {
+        self.charactersPerLine = max(8, charactersPerLine)
+        // Room for at least a heading, a little text and the photos.
+        self.linesPerPage = max(Self.headingLines + Self.photoLines + 2, linesPerPage)
+    }
+
+    /// Estimates line capacity from the page's text area and the body font size.
+    init(width: Double, height: Double, fontSize: Double) {
+        // Generous per-character and per-line sizes, so an estimate never overfills a page.
+        self.init(
+            charactersPerLine: Int(width / (fontSize * 0.5)),
+            linesPerPage: Int(height / (fontSize * 1.55))
+        )
+    }
+
+    /// The pages for `items`; always at least one, so an empty journal still opens on a page.
+    func pages(for items: [Item]) -> [Page] {
+        var pages: [Page] = []
+        var blocks: [Block] = []
+        var used = 0
+
+        func turnPage() {
+            pages.append(Page(index: pages.count, blocks: blocks))
+            blocks = []
+            used = 0
+        }
+
+        for item in items {
+            let paragraphs = Self.paragraphs(in: item.body)
+            let firstLines = paragraphs.first.map { lineCount(of: $0) } ?? (item.hasPhotos ? Self.photoLines : 0)
+            let gap = blocks.isEmpty ? 0 : Self.entryGap
+            // Keep the heading with at least a couple of lines of what follows.
+            if !blocks.isEmpty && used + gap + Self.headingLines + min(2, firstLines) > linesPerPage {
+                turnPage()
+            }
+            used += (blocks.isEmpty ? 0 : Self.entryGap) + Self.headingLines
+
+            var showsHeading = true
+            var part = 0
+            var pieces: [String] = []
+
+            func placeBlock(showsPhotos: Bool) {
+                blocks.append(Block(
+                    entryID: item.id,
+                    part: part,
+                    showsHeading: showsHeading,
+                    heading: item.heading,
+                    text: pieces.joined(separator: "\n"),
+                    showsPhotos: showsPhotos
+                ))
+                showsHeading = false
+                part += 1
+                pieces = []
+            }
+
+            for paragraph in paragraphs {
+                var lines = wrap(paragraph)
+                while !lines.isEmpty {
+                    let available = linesPerPage - used
+                    if lines.count <= available {
+                        pieces.append(lines.joined(separator: " "))
+                        used += lines.count
+                        lines = []
+                    } else {
+                        if available > 0 {
+                            pieces.append(lines.prefix(available).joined(separator: " "))
+                            lines.removeFirst(available)
+                        }
+                        if !pieces.isEmpty || showsHeading {
+                            placeBlock(showsPhotos: false)
+                        }
+                        turnPage()
+                    }
+                }
+            }
+
+            if item.hasPhotos && used + Self.photoLines > linesPerPage {
+                if !pieces.isEmpty || showsHeading {
+                    placeBlock(showsPhotos: false)
+                }
+                turnPage()
+            }
+            if item.hasPhotos {
+                used += Self.photoLines
+            }
+            if !pieces.isEmpty || showsHeading || item.hasPhotos {
+                placeBlock(showsPhotos: item.hasPhotos)
+            }
+        }
+
+        if !blocks.isEmpty || pages.isEmpty {
+            turnPage()
+        }
+        return pages
+    }
+
+    /// The page an entry starts on.
+    static func pageIndex(of entryID: UUID, in pages: [Page]) -> Int? {
+        pages.first { page in page.blocks.contains { $0.entryID == entryID } }?.index
+    }
+
+    // MARK: Measuring
+
+    static func paragraphs(in text: String) -> [String] {
+        text.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
+
+    func lineCount(of paragraph: String) -> Int {
+        wrap(paragraph).count
+    }
+
+    /// Greedy word wrap into lines of at most `charactersPerLine` characters. A word longer than a
+    /// line is broken across lines.
+    func wrap(_ paragraph: String) -> [String] {
+        var lines: [String] = []
+        var line = ""
+        for word in paragraph.split(whereSeparator: \.isWhitespace).map(String.init) {
+            var word = word
+            while word.count > charactersPerLine {
+                if !line.isEmpty {
+                    lines.append(line)
+                    line = ""
+                }
+                lines.append(String(word.prefix(charactersPerLine)))
+                word = String(word.dropFirst(charactersPerLine))
+            }
+            if line.isEmpty {
+                line = word
+            } else if line.count + 1 + word.count <= charactersPerLine {
+                line += " " + word
+            } else {
+                lines.append(line)
+                line = word
+            }
+        }
+        if !line.isEmpty {
+            lines.append(line)
+        }
+        return lines
+    }
+}
+
+extension JournalPager.Item {
+    init(entry: Entry, locale: Locale = .current) {
+        id = entry.id
+        heading = entry.heading(locale: locale)
+        body = entry.body
+        hasPhotos = !(entry.photos ?? []).isEmpty
+    }
+}

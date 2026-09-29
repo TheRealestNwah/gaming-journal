@@ -1,43 +1,23 @@
 # Hearthbound — iOS
 
-A role-playing notebook for your game playthroughs. Start a notebook for each playthrough, gather your party and write in character: what they did, how they felt, where they are and who they trust. Play-time tracking is a quiet extra.
+The journal your character keeps, like the one in an Elder Scrolls game. Start a journal for each character you play, and write their days in their own words: dated in the game's own calendar, on aged pages you turn like a book.
 
-Everything lives on-device (SwiftData), with optional iCloud sync. No account and no online game database; you enter everything yourself.
+Everything lives on-device (SwiftData), with optional iCloud sync. No account and no online game database; you write everything yourself.
 
 ## Features
 
-**Notebooks and party**
-- **Library**: every playthrough as a leather-bound cover (Ember, Forest, Frost, Arcane, Blood Moon). Sort, filter by status, pin favourites, and search every entry across all notebooks.
-- **Party**: characters with a portrait, role or class, backstory and sigil colour.
-- **Character sheet**: each character's bonds and emotional arc over the playthrough.
-
-**Writing**
-- **Entries**: written as a character (or the Narrator), with an optional in-game date, emotions and their intensity, place, quest, photos, bonds and a wax-seal turning-point flag.
-- **Chronicle**: the notebook's timeline, split into chapters and acts, with an Atlas of places.
-- **Writing prompts** in character, **dictation**, and **draft recovery** if the app closes mid-entry.
-- **Tale's end recap** when you mark a notebook completed.
-
-**Around iOS**
-- **Siri, Shortcuts and the Lock Screen**: start an entry as a chosen character without opening the app first.
-- **Widgets**: the latest entry, "Write as…" a character, a quick new entry, now playing, this week's play time and a start-session button.
-- **Spotlight**: find notebooks and entries from iOS search.
-- **Campfire reminders** (optional) to come back and write.
+- **A shelf of journals**, one per character, each a leather-bound book with the character's name, race or class, and game.
+- **Pages you turn**: entries read like a book, under their in-game date ("16th of Last Seed, 4E 201"). Prev / Next or a swipe turns the page, and a journal opens on its latest page.
+- **A blank page to write on**: the in-game date (with a **Next day** button that knows the Elder Scrolls calendar), the words, **dictation**, and pictures pasted in. Unfinished pages are kept if the app closes.
+- **Around iOS**: a latest-entry widget, a "Write in…" widget for a chosen journal, a Control Center button, **Siri and Shortcuts** ("Write as Eira in Hearthbound"), **Spotlight**, and an optional evening **reminder**.
 - **Face ID lock** (optional). While locked, widgets and Spotlight hide your writing.
+- **Export**: a character's journal as a **PDF book** or **Markdown**, and a JSON **backup** of everything that imports without duplicating.
 
-**Sharing and export**
-- **PDF book**: a styled book of a whole notebook.
-- **Markdown** export of a notebook, and **share an entry as an image card**.
-- **Backup**: JSON export and import of everything, merged so nothing is duplicated, plus CSV of play sessions.
-
-**Play sessions and stats**
-- **Play sessions**, optionally inside a notebook, with a live timer that survives the app closing.
-- **Journey**: stats per notebook and overall.
-
-**Look and feel**: parchment, ember, crimson and gold, New York serif for titles and entries, and drifting embers and page turns that switch off with Reduce Motion. Works on iPhone and iPad, where the Library sits beside the open notebook.
+**Look and feel**: aged paper and ink, red rubric dates, Baskerville throughout; the shelf is dark wood with gilt. Pages stay paper in dark mode, dimmed like a book read by candlelight.
 
 ## Status
 
-The R1–R27 roadmap items are in (see [docs/ROADMAP.md](docs/ROADMAP.md)). Some things still need checking on a real device (#30): widgets, photo picking, iCloud sync, Face ID, dictation and Spotlight.
+Rebuilt around one journal per character (#116–#119). Some things still need checking on a real device (#30).
 
 ## Requirements
 

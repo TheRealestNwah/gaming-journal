@@ -3,8 +3,8 @@ import SwiftUI
 import UIKit
 @testable import GamingJournal
 
-/// Keeps the warm palette readable: text colours must meet WCAG AA (4.5:1) on the surfaces they
-/// sit on, in both light and dark mode.
+/// Keeps the pages and the shelf readable: text colours must meet WCAG AA (4.5:1) on the surfaces
+/// they sit on, in both light and dark mode.
 final class ThemeContrastTests: XCTestCase {
     private func components(_ color: Color, dark: Bool) -> (Double, Double, Double) {
         let traits = UITraitCollection(userInterfaceStyle: dark ? .dark : .light)
@@ -28,43 +28,26 @@ final class ThemeContrastTests: XCTestCase {
         return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
     }
 
-    func testTextColoursMeetAAOnPageAndCards() {
-        let text: [(String, Color)] = [
-            ("ink", Theme.ink), ("fadedInk", Theme.fadedInk), ("ember", Theme.ember), ("crimson", Theme.crimson),
-        ]
-        let surfaces: [(String, Color)] = [("parchment", Theme.parchment), ("vellum", Theme.vellum)]
+    func testPageTextMeetsAAOnPaper() {
+        let text: [(String, Color)] = [("ink", Theme.ink), ("fadedInk", Theme.fadedInk), ("rubric", Theme.rubric)]
         for dark in [false, true] {
-            for (textName, textColor) in text {
-                for (surfaceName, surface) in surfaces {
-                    let ratio = contrast(textColor, surface, dark: dark)
-                    XCTAssertGreaterThanOrEqual(
-                        ratio, 4.5,
-                        "\(textName) on \(surfaceName) (\(dark ? "dark" : "light")) is \(String(format: "%.2f", ratio)):1"
-                    )
-                }
+            for (name, color) in text {
+                let ratio = contrast(color, Theme.paper, dark: dark)
+                XCTAssertGreaterThanOrEqual(
+                    ratio, 4.5,
+                    "\(name) on paper (\(dark ? "dark" : "light")) is \(String(format: "%.2f", ratio)):1"
+                )
             }
         }
     }
 
-    func testEmotionLabelsMeetAAInEveryFamily() {
-        let surfaces: [(String, Color)] = [("parchment", Theme.parchment), ("vellum", Theme.vellum)]
-        for dark in [false, true] {
-            for group in EmotionGroup.allCases {
-                for (surfaceName, surface) in surfaces {
-                    let ratio = contrast(group.inkColor, surface, dark: dark)
-                    XCTAssertGreaterThanOrEqual(
-                        ratio, 4.5,
-                        "\(group.label) on \(surfaceName) (\(dark ? "dark" : "light")) is \(String(format: "%.2f", ratio)):1"
-                    )
-                }
+    func testShelfTextMeetsAAOnWood() {
+        let text: [(String, Color)] = [("woodInk", Theme.woodInk), ("woodFaded", Theme.woodFaded), ("gold", Theme.gold)]
+        for (name, color) in text {
+            for surface in [Theme.wood, Theme.woodLight] {
+                let ratio = contrast(color, surface, dark: false)
+                XCTAssertGreaterThanOrEqual(ratio, 4.5, "\(name) on wood is \(String(format: "%.2f", ratio)):1")
             }
-        }
-    }
-
-    func testButtonLabelReadsOnEmberAndCrimson() {
-        for dark in [false, true] {
-            XCTAssertGreaterThanOrEqual(contrast(Theme.onEmber, Theme.ember, dark: dark), 4.5)
-            XCTAssertGreaterThanOrEqual(contrast(Theme.onEmber, Theme.crimson, dark: dark), 4.5)
         }
     }
 

@@ -2,16 +2,16 @@ import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 
-/// Backup, export and app info.
+/// Backup, privacy, sync, reminders and app info, opened from the shelf.
 struct SettingsView: View {
     @Environment(\.modelContext) private var context
-    @Query private var sessions: [PlaySession]
-    @Query private var notebooks: [Notebook]
+    @Environment(\.dismiss) private var dismiss
+    @Query private var journals: [Journal]
+    @Query private var entries: [Entry]
     @State private var exportDocument: ExportDocument?
     @State private var isImporting = false
     @State private var message: Message?
     @AppStorage(SyncSettings.enabledKey) private var syncEnabled = false
-    @AppStorage(WritingPrompts.enabledKey) private var promptsEnabled = true
     /// Sync state the store was opened with at launch.
     @State private var syncAtLaunch = SyncSettings().isEnabled
     @State private var syncFellBack = SyncSettings().lastLaunchFellBack
@@ -26,26 +26,16 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section {
-                    Button("Export Backup (JSON)", systemImage: "square.and.arrow.up") { exportJSON() }
-                    Button("Export Spreadsheet (CSV)", systemImage: "tablecells") { exportCSV() }
+                    Button("Export Backup", systemImage: "square.and.arrow.up") { exportJSON() }
                     Button("Import Backup", systemImage: "square.and.arrow.down") { isImporting = true }
                 } header: {
-                    Text("Your data")
+                    Text("Your journals")
                 } footer: {
-                    Text("A JSON backup holds every notebook, entry, session and photo. Importing only adds what's missing, so nothing is duplicated. CSV lists play sessions for spreadsheets.")
+                    Text("A backup holds every journal, entry and picture. Importing only adds what's missing, so nothing is duplicated.")
                 }
-                .listRowBackground(Theme.vellum)
+                .listRowBackground(Theme.paper.opacity(0.6))
 
                 LockSection()
-
-                Section {
-                    Toggle("Writing prompts", systemImage: "flame", isOn: $promptsEnabled)
-                } header: {
-                    Text("Writing")
-                } footer: {
-                    Text("Suggest an in-character question when you start a new entry.")
-                }
-                .listRowBackground(Theme.vellum)
 
                 // Free-team builds can't sign the iCloud entitlement, so there is nothing to sync with.
                 #if !FREE_TEAM
@@ -56,20 +46,27 @@ struct SettingsView: View {
                 } footer: {
                     Text(syncFooter)
                 }
-                .listRowBackground(Theme.vellum)
+                .listRowBackground(Theme.paper.opacity(0.6))
                 #endif
 
                 RemindersSection()
 
                 Section("About") {
-                    LabeledContent("Notebooks", value: "\(notebooks.count)")
-                    LabeledContent("Sessions", value: "\(sessions.count)")
+                    LabeledContent("Journals", value: "\(journals.count)")
+                    LabeledContent("Entries", value: "\(entries.count)")
                     LabeledContent("Version", value: Self.appVersion)
                 }
-                .listRowBackground(Theme.vellum)
+                .listRowBackground(Theme.paper.opacity(0.6))
             }
-            .parchmentBackground()
+            .scrollContentBackground(.hidden)
+            .background(PaperBackground())
             .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
             .fileExporter(
                 isPresented: Binding(get: { exportDocument != nil }, set: { if !$0 { exportDocument = nil } }),
                 document: exportDocument,
@@ -90,7 +87,7 @@ struct SettingsView: View {
                 Alert(title: Text(message.title), message: Text(message.body))
             }
         }
-        .sessionOverlays()
+        .tint(Theme.rubric)
     }
 
     private var syncFooter: String {
@@ -98,11 +95,11 @@ struct SettingsView: View {
             return "Quit and reopen Hearthbound to \(syncEnabled ? "start" : "stop") syncing."
         }
         if syncEnabled && syncFellBack {
-            return "iCloud isn't available right now (check you're signed in to iCloud), so your journal is only on this device."
+            return "iCloud isn't available right now (check you're signed in to iCloud), so your journals are only on this device."
         }
         return syncEnabled
-            ? "Your journal syncs across devices signed in to the same iCloud account."
-            : "Keep your journal in step across your devices using your iCloud account."
+            ? "Your journals sync across devices signed in to the same iCloud account."
+            : "Keep your journals in step across your devices using your iCloud account."
     }
 
     private static var appVersion: String {
@@ -112,22 +109,14 @@ struct SettingsView: View {
         return "\(version) (\(build))"
     }
 
-    private static func filename(_ suffix: String) -> String {
-        "Hearthbound-\(Date.now.formatted(.iso8601.year().month().day()))\(suffix)"
-    }
-
     private func exportJSON() {
         do {
-            let data = try JournalBackup(exporting: sessions, notebooks: notebooks).encoded()
-            exportDocument = ExportDocument(data: data, contentType: .json, filename: Self.filename(""))
+            let data = try JournalBackup(exporting: journals).encoded()
+            let filename = "Hearthbound-\(Date.now.formatted(.iso8601.year().month().day()))"
+            exportDocument = ExportDocument(data: data, contentType: .json, filename: filename)
         } catch {
             message = Message(title: "Export failed", body: error.localizedDescription)
         }
-    }
-
-    private func exportCSV() {
-        let csv = SessionCSV.export(sessions.map(JournalBackup.Session.init(session:)))
-        exportDocument = ExportDocument(data: Data(csv.utf8), contentType: .commaSeparatedText, filename: Self.filename(""))
     }
 
     private func importBackup(from url: URL) {
@@ -145,7 +134,7 @@ struct SettingsView: View {
 
 /// Bytes handed to the system file exporter.
 struct ExportDocument: FileDocument {
-    static var readableContentTypes: [UTType] { [.json, .commaSeparatedText, .markdownText, .plainText, .pdf] }
+    static var readableContentTypes: [UTType] { [.json, .markdownText, .plainText, .pdf] }
 
     var data: Data
     var contentType: UTType
@@ -169,6 +158,6 @@ struct ExportDocument: FileDocument {
 }
 
 extension UTType {
-    /// Markdown, for exported notebook "books".
+    /// Markdown, for exported journal books.
     static let markdownText = UTType(filenameExtension: "md", conformingTo: .plainText) ?? .plainText
 }

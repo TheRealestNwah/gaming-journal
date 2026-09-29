@@ -2,65 +2,53 @@ import SwiftUI
 import SwiftData
 
 extension View {
-    /// Keeps the widget snapshot and Siri's roster current and handles the widgets' deep links.
-    /// `onWrite` gets the notebook and party member the link names, if any.
-    func widgetSync(onStartTimer: @escaping () -> Void, onWrite: @escaping (UUID?, UUID?) -> Void) -> some View {
-        modifier(WidgetSync(onStartTimer: onStartTimer, onWrite: onWrite))
+    /// Keeps the widget snapshot and Siri's list of journals current and answers write links
+    /// from widgets, Siri and reminders. `onWrite` gets the journal the link names, if any.
+    func widgetSync(onWrite: @escaping (UUID?) -> Void) -> some View {
+        modifier(WidgetSync(onWrite: onWrite))
     }
 }
 
 private struct WidgetSync: ViewModifier {
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(LiveTimer.self) private var timer
-    @Query private var sessions: [PlaySession]
     @Query(sort: \Entry.writtenAt, order: .reverse) private var entries: [Entry]
-    @Query private var notebooks: [Notebook]
-    let onStartTimer: () -> Void
-    let onWrite: (UUID?, UUID?) -> Void
+    @Query private var journals: [Journal]
+    let onWrite: (UUID?) -> Void
 
     /// Changes whenever anything a widget shows might have changed.
     private var fingerprint: [String] {
-        sessions.map { "\($0.id)|\($0.gameTitle)|\($0.platform)|\($0.startDate.timeIntervalSince1970)|\($0.durationMinutes)" }
-            + entries.prefix(1).map { "\($0.id)|\($0.title)|\($0.body.prefix(200))|\($0.updatedAt.timeIntervalSince1970)" }
+        entries.prefix(1).map { "\($0.id)|\($0.inGameDate)|\($0.body.prefix(200))|\($0.updatedAt.timeIntervalSince1970)" }
     }
 
     func body(content: Content) -> some View {
         content
             .onAppear(perform: publish)
             .onAppear(perform: saveRoster)
-            .onChange(of: QuickWriteRoster(notebooks: notebooks)) { saveRoster() }
+            .onChange(of: QuickWriteRoster(journals: journals)) { saveRoster() }
             .onChange(of: fingerprint) { publish() }
-            .onChange(of: timer.state) { publish() }
             .onChange(of: scenePhase) { _, phase in
                 if phase != .active { publish() }
             }
             .onOpenURL { url in
-                if url.scheme == WidgetSnapshot.writeURL.scheme, url.host == WidgetSnapshot.writeURL.host {
-                    onWrite(WidgetSnapshot.notebookID(inWriteURL: url), WidgetSnapshot.memberID(inWriteURL: url))
-                    return
+                if WidgetSnapshot.isWriteURL(url) {
+                    onWrite(WidgetSnapshot.journalID(inWriteURL: url))
                 }
-                guard url.scheme == WidgetSnapshot.startTimerURL.scheme,
-                      url.host == WidgetSnapshot.startTimerURL.host,
-                      !timer.isActive
-                else { return }
-                onStartTimer()
             }
     }
 
     private func saveRoster() {
-        if QuickWriteRoster(notebooks: notebooks).save() {
+        if QuickWriteRoster(journals: journals).save() {
             QuickWriteShortcuts.updateAppShortcutParameters()
         }
     }
 
     private func publish() {
-        WidgetSnapshot.make(
-            sessions: sessions.map(StatsRecord.init(session:)),
-            timer: timer.state,
+        WidgetSnapshot(
+            generatedAt: .now,
             // A locked journal keeps its pages off the Home Screen.
             latestEntry: AppLock.isEnabled()
                 ? nil
-                : entries.first { $0.notebook != nil }.map(WidgetSnapshot.LatestEntry.init(entry:))
+                : entries.first { $0.journal != nil }.map(WidgetSnapshot.LatestEntry.init(entry:))
         ).publish()
     }
 }

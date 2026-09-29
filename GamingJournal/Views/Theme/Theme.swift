@@ -1,43 +1,56 @@
 import SwiftUI
 import UIKit
 
-/// Colour and type tokens for the warm, campfire-lit look. Views use these instead of raw colours
-/// or fonts so light and dark mode stay consistent and readable.
+/// Colour and type tokens for the in-game journal look: aged paper and ink for the pages, dark
+/// wood for the shelf. Pages stay paper in dark mode, just dimmer, like a book read by candlelight.
 enum Theme {
-    // MARK: Colours
+    // MARK: Pages
 
-    /// Page background: warm parchment by day, charred wood by night.
-    static let parchment = dynamic(light: 0xF4E9D8, dark: 0x1C1410)
-    /// Raised surfaces such as cards and form rows.
-    static let vellum = dynamic(light: 0xFBF4E6, dark: 0x2A1F18)
-    /// Main text: dark ink, or bone white in dark mode.
-    static let ink = dynamic(light: 0x2B1D14, dark: 0xF3E6D3)
-    /// Secondary text.
-    static let fadedInk = dynamic(light: 0x6B5443, dark: 0xBFA88F)
-    /// Primary accent for buttons, selection and highlights.
-    static let ember = dynamic(light: 0xA8441A, dark: 0xF07A3A)
-    /// Text and icons placed on an ember or crimson fill.
-    static let onEmber = dynamic(light: 0xFFFFFF, dark: 0x1C1410)
-    /// Softer glow used in gradients and effects.
-    static let emberGlow = dynamic(light: 0xE8913A, dark: 0xF2A541)
-    /// Danger and deep accents.
-    static let crimson = dynamic(light: 0x9E2A2B, dark: 0xE56B66)
-    /// Ornaments, wax seals and ratings. Decorative only in light mode (below text contrast).
-    static let gold = dynamic(light: 0xA88414, dark: 0xE0B84A)
-    /// Hairlines and borders.
-    static let rule = dynamic(light: 0xD9C6A5, dark: 0x4A3728)
+    /// Aged paper.
+    static let paper = dynamic(light: 0xEFE2C6, dark: 0xC2AE88)
+    /// The darker, scorched edge of a page.
+    static let paperEdge = dynamic(light: 0xC9AC7C, dark: 0x8E7652)
+    /// Written text.
+    static let ink = dynamic(light: 0x2E2117, dark: 0x1E150E)
+    /// Captions, page numbers and hints.
+    static let fadedInk = dynamic(light: 0x5E4631, dark: 0x3E2C1C)
+    /// Red ink for dates and actions, like a scribe's rubric.
+    static let rubric = dynamic(light: 0x7A2E1C, dark: 0x5E1F12)
+
+    // MARK: Shelf
+
+    /// Dark wood behind the shelf of journals, in both modes.
+    static let wood = Color(hex: 0x21160F)
+    static let woodLight = Color(hex: 0x33241A)
+    /// Text on wood.
+    static let woodInk = Color(hex: 0xEADBC0)
+    static let woodFaded = Color(hex: 0xB8A283)
+    /// Gilt: clasps, tooling and actions on the shelf.
+    static let gold = Color(hex: 0xD6B46A)
+    /// Sealing wax.
+    static let wax = Color(hex: 0x8E2A1C)
 
     // MARK: Type
 
-    /// Screen and notebook titles.
-    static func title(_ style: Font.TextStyle = .largeTitle) -> Font {
-        .system(style, design: .serif).weight(.semibold)
+    /// Baskerville, a book face that ships with iOS, scaled with Dynamic Type.
+    static func book(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
+        .custom("Baskerville", size: size, relativeTo: style)
     }
 
-    /// Headings on cards and sections.
-    static let heading = Font.system(.headline, design: .serif)
-    /// Journal prose: entries, backstories, notes.
-    static let prose = Font.system(.body, design: .serif)
+    static func bookItalic(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
+        .custom("Baskerville-Italic", size: size, relativeTo: style)
+    }
+
+    static func bookBold(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
+        .custom("Baskerville-SemiBold", size: size, relativeTo: style)
+    }
+
+    /// Entry text on a page.
+    static let prose = book(19)
+    /// The date above an entry.
+    static let dateLine = bookBold(17, relativeTo: .headline)
+    /// Small-caps style controls on a page ("‹ Journals", "Next ›").
+    static let pageControl = book(17, relativeTo: .callout)
 
     // MARK: Helpers
 
@@ -47,41 +60,25 @@ enum Theme {
         })
     }
 
-    /// Serif navigation-bar titles and themed bars across the app. Call once at launch.
+    /// Book-face navigation titles and a quiet navigation bar. Call once at launch.
     static func applyAppearance() {
-        let ink = UIColor(Self.ink)
-        let titles: [NSAttributedString.Key: Any] = [.font: serifUIFont(.headline), .foregroundColor: ink]
-        let largeTitles: [NSAttributedString.Key: Any] = [
-            .font: serifUIFont(.largeTitle, weight: .semibold), .foregroundColor: ink,
+        let titles: [NSAttributedString.Key: Any] = [
+            .font: UIFont(name: "Baskerville-SemiBold", size: 18) ?? .preferredFont(forTextStyle: .headline),
         ]
-
-        // Transparent over the parchment at rest; a blurred bar once content scrolls under it.
+        let largeTitles: [NSAttributedString.Key: Any] = [
+            .font: UIFont(name: "Baskerville", size: 34) ?? .preferredFont(forTextStyle: .largeTitle),
+        ]
         let atRest = UINavigationBarAppearance()
         atRest.configureWithTransparentBackground()
         atRest.titleTextAttributes = titles
         atRest.largeTitleTextAttributes = largeTitles
-
         let scrolled = UINavigationBarAppearance()
         scrolled.configureWithDefaultBackground()
         scrolled.titleTextAttributes = titles
         scrolled.largeTitleTextAttributes = largeTitles
-
         UINavigationBar.appearance().scrollEdgeAppearance = atRest
         UINavigationBar.appearance().standardAppearance = scrolled
         UINavigationBar.appearance().compactAppearance = scrolled
-
-        let tabBar = UITabBarAppearance()
-        tabBar.configureWithDefaultBackground()
-        tabBar.backgroundColor = UIColor(Self.vellum).withAlphaComponent(0.92)
-        UITabBar.appearance().standardAppearance = tabBar
-        UITabBar.appearance().scrollEdgeAppearance = tabBar
-    }
-
-    private static func serifUIFont(_ style: UIFont.TextStyle, weight: UIFont.Weight = .regular) -> UIFont {
-        let base = UIFont.preferredFont(forTextStyle: style)
-        let weighted = base.fontDescriptor.addingAttributes([.traits: [UIFontDescriptor.TraitKey.weight: weight]])
-        let descriptor = weighted.withDesign(.serif) ?? weighted
-        return UIFont(descriptor: descriptor, size: 0)
     }
 }
 
@@ -93,5 +90,11 @@ extension UIColor {
             blue: CGFloat(hex & 0xFF) / 255,
             alpha: 1
         )
+    }
+}
+
+extension Color {
+    init(hex: UInt32) {
+        self.init(uiColor: UIColor(hex: hex))
     }
 }

@@ -87,30 +87,33 @@ private struct LockScreen: View {
             SealedCover()
             VStack(spacing: 20) {
                 Spacer()
-                WaxSeal(systemImage: "lock.fill", size: 88, label: "Sealed")
-                Text("Your journal is sealed")
-                    .font(Theme.title(.title2))
-                    .foregroundStyle(Theme.ink)
+                WaxSeal(systemImage: "lock.fill", size: 88)
+                    .accessibilityLabel("Sealed")
+                Text("Your journals are sealed")
+                    .font(Theme.book(28, relativeTo: .title2))
+                    .foregroundStyle(Theme.woodInk)
                 Text("Only you can break the seal.")
-                    .font(Theme.prose)
-                    .foregroundStyle(Theme.fadedInk)
+                    .font(Theme.bookItalic(18))
+                    .foregroundStyle(Theme.woodFaded)
                 Button("Unlock with \(lock.method)") {
                     Task { await lock.unlock() }
                 }
-                .buttonStyle(.ember)
-                .frame(maxWidth: 320)
+                .font(Theme.book(20, relativeTo: .headline))
+                .foregroundStyle(Theme.gold)
+                .padding(.top, 8)
                 Spacer()
             }
+            .multilineTextAlignment(.center)
             .padding(32)
         }
         .task { await lock.unlock() }
     }
 }
 
-/// Plain parchment over everything.
+/// The closed shelf over everything.
 private struct SealedCover: View {
     var body: some View {
-        ParchmentBackground()
+        WoodBackground()
             .ignoresSafeArea()
             .accessibilityHidden(true)
     }

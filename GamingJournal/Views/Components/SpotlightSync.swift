@@ -3,7 +3,7 @@ import SwiftData
 import SwiftUI
 
 extension View {
-    /// Keeps iOS search in step with the journal and opens what a search result points at.
+    /// Keeps iOS search in step with the journals and opens what a search result points at.
     func spotlightSync() -> some View {
         modifier(SpotlightSync())
     }
@@ -11,15 +11,15 @@ extension View {
 
 private struct SpotlightSync: ViewModifier {
     @Environment(\.scenePhase) private var scenePhase
-    @Query private var notebooks: [Notebook]
+    @Query private var journals: [Journal]
     @AppStorage(SpotlightIndex.enabledKey) private var enabled = true
     @State private var opened: Opened?
 
-    /// A search result being shown: a notebook, or one entry.
+    /// A search result being shown: a journal, at one entry's page if the result was an entry.
     private struct Opened: Identifiable {
         let id = UUID()
-        let notebook: Notebook?
-        let entry: Entry?
+        let journal: Journal
+        let entryID: UUID?
     }
 
     func body(content: Content) -> some View {
@@ -36,51 +36,26 @@ private struct SpotlightSync: ViewModifier {
                 else { return }
                 open(target)
             }
-            .sheet(item: $opened) { opened in
-                SearchResultSheet(notebook: opened.notebook, entry: opened.entry)
+            .fullScreenCover(item: $opened) { opened in
+                NavigationStack {
+                    JournalView(journal: opened.journal, focusEntryID: opened.entryID)
+                }
             }
     }
 
     private func rebuild() {
-        SpotlightIndex.rebuild(notebooks: notebooks)
+        SpotlightIndex.rebuild(journals: journals)
     }
 
     private func open(_ target: SpotlightIndex.Target) {
         switch target {
-        case .notebook(let id):
-            if let notebook = notebooks.first(where: { $0.id == id }) {
-                opened = Opened(notebook: notebook, entry: nil)
+        case .journal(let id):
+            if let journal = journals.first(where: { $0.id == id }) {
+                opened = Opened(journal: journal, entryID: nil)
             }
         case .entry(let id):
-            if let entry = notebooks.lazy.flatMap({ $0.entries ?? [] }).first(where: { $0.id == id }) {
-                opened = Opened(notebook: entry.notebook, entry: entry)
-            }
-        }
-    }
-}
-
-/// A notebook or entry opened from iOS search, over whatever the app was showing.
-private struct SearchResultSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    let notebook: Notebook?
-    let entry: Entry?
-
-    var body: some View {
-        NavigationStack {
-            Group {
-                if let entry {
-                    EntryDetailView(entry: entry)
-                } else if let notebook {
-                    NotebookView(notebook: notebook)
-                }
-            }
-            .navigationDestination(for: Entry.self) { entry in
-                EntryDetailView(entry: entry)
-            }
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
-                }
+            if let entry = journals.lazy.flatMap({ $0.entries ?? [] }).first(where: { $0.id == id }), let journal = entry.journal {
+                opened = Opened(journal: journal, entryID: entry.id)
             }
         }
     }

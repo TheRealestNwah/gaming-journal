@@ -1,59 +1,37 @@
 import Foundation
 import WidgetKit
 
-/// The notebooks and characters Siri and Shortcuts can offer for "Write as…", kept in the App
-/// Group so intents can list them without opening the journal's store.
+/// The journals Siri, Shortcuts and the "Write in…" widget can offer, kept in the App Group so
+/// they can list them without opening the journal's store.
 struct QuickWriteRoster: Codable, Equatable {
     static let key = "quickWriteRoster"
 
-    struct Tale: Codable, Equatable, Identifiable {
+    /// A journal as Siri lists it.
+    struct Book: Codable, Equatable, Identifiable {
         var id: UUID
-        var title: String
+        var characterName: String
+        var epithet: String
         var gameTitle: String
     }
 
-    struct Character: Codable, Equatable, Identifiable {
-        var id: UUID
-        var name: String
-        var role: String
-        var notebookID: UUID
-        var notebookTitle: String
+    /// Most recently written in first.
+    var journals: [Book]
+
+    init(books: [Book] = []) {
+        journals = books
     }
 
-    /// Ongoing tales first, then most recently touched.
-    var tales: [Tale]
-    /// Active party members of those tales, in tale then party order.
-    var characters: [Character]
-
-    init(tales: [Tale] = [], characters: [Character] = []) {
-        self.tales = tales
-        self.characters = characters
+    init(journals: [Journal]) {
+        self.journals = journals
+            .sorted { $0.updatedAt > $1.updatedAt }
+            .map { Book(id: $0.id, characterName: $0.characterName, epithet: $0.epithet, gameTitle: $0.gameTitle) }
     }
 
-    init(notebooks: [Notebook]) {
-        let ordered = notebooks.sorted {
-            if ($0.status == .ongoing) != ($1.status == .ongoing) { return $0.status == .ongoing }
-            return $0.updatedAt > $1.updatedAt
-        }
-        tales = ordered.map { Tale(id: $0.id, title: $0.title, gameTitle: $0.gameTitle) }
-        characters = ordered.flatMap { notebook in
-            notebook.party.filter { !$0.isRetired }.map {
-                Character(id: $0.id, name: $0.name, role: $0.role, notebookID: notebook.id, notebookTitle: notebook.title)
-            }
-        }
-    }
-
-    /// Characters whose name, role or tale contains the text (all of them for a blank query).
-    func characters(matching text: String) -> [Character] {
-        let needle = ChronicleFilter.normalize(text)
-        guard !needle.isEmpty else { return characters }
-        return characters.filter { ChronicleFilter.normalize("\($0.name) \($0.role) \($0.notebookTitle)").contains(needle) }
-    }
-
-    func tales(matching text: String) -> [Tale] {
-        let needle = ChronicleFilter.normalize(text)
-        guard !needle.isEmpty else { return tales }
-        return tales.filter { ChronicleFilter.normalize("\($0.title) \($0.gameTitle)").contains(needle) }
+    /// Journals whose character, epithet or game contains the text (all of them for a blank query).
+    func journals(matching text: String) -> [Book] {
+        let needle = SearchText.normalize(text)
+        guard !needle.isEmpty else { return journals }
+        return journals.filter { SearchText.normalize("\($0.characterName) \($0.epithet) \($0.gameTitle)").contains(needle) }
     }
 
     // MARK: Storage
@@ -70,7 +48,7 @@ struct QuickWriteRoster: Codable, Equatable {
     func save(to defaults: UserDefaults? = UserDefaults(suiteName: WidgetSnapshot.appGroup)) -> Bool {
         guard let defaults, Self.load(from: defaults) != self, let data = try? JSONEncoder().encode(self) else { return false }
         defaults.set(data, forKey: Self.key)
-        // The "Write as…" widget shows party members.
+        // The "Write in…" widget lists journals.
         WidgetCenter.shared.reloadTimelines(ofKind: "WriteAs")
         return true
     }

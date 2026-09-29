@@ -1,12 +1,11 @@
 import Foundation
 import SwiftData
 
-/// Full JSON backup of the journal. `version` lets later app versions read older files and refuse
-/// newer ones they don't understand. Version 1 held sessions only; version 2 adds notebooks with
-/// their party and entries, and links sessions to notebooks. Chapters and pinning were added to
-/// version 2 as optional fields, so files written before them still read.
+/// Full JSON backup of every journal. `version` lets later app versions read older files and
+/// refuse newer ones they don't understand. Version 3 is the one-journal-per-character format;
+/// versions 1 and 2 held play sessions and notebooks, which the app no longer has.
 struct JournalBackup: Codable, Equatable {
-    static let currentVersion = 2
+    static let currentVersion = 3
 
     struct Photo: Codable, Equatable {
         var id: UUID
@@ -16,89 +15,38 @@ struct JournalBackup: Codable, Equatable {
         var createdAt: Date
     }
 
-    struct Session: Codable, Equatable {
+    struct EntryRecord: Codable, Equatable {
         var id: UUID
-        var gameTitle: String
-        var platform: String
-        var startDate: Date
-        var durationMinutes: Int
-        var enjoyment: Int?
-        var mood: String?
-        var notes: String
-        var tags: [String]
-        var isMilestone: Bool
-        var milestoneNote: String
-        var createdAt: Date
-        var photos: [Photo]
-        /// Added in version 2.
-        var notebookID: UUID?
-    }
-
-    struct Member: Codable, Equatable {
-        var id: UUID
-        var name: String
-        var role: String
-        var backstory: String
-        var sigil: String
-        var portraitData: Data?
-        var sortIndex: Int
-        var isRetired: Bool
-        var createdAt: Date
-    }
-
-    struct JournalEntry: Codable, Equatable {
-        var id: UUID
-        var title: String
         var body: String
-        var writtenAt: Date
         var inGameDate: String
-        var place: String
-        var quest: String
-        var isTurningPoint: Bool
-        var emotions: [FeltEmotion]
-        var bonds: [Bond]
-        var authorID: UUID?
+        var writtenAt: Date
         var createdAt: Date
         var updatedAt: Date
         var photos: [Photo]
-        /// Added with chapters; nil when the entry isn't in a chapter.
-        var chapterID: UUID?
     }
 
-    struct ChapterRecord: Codable, Equatable {
+    struct JournalRecord: Codable, Equatable {
         var id: UUID
-        var title: String
-        var summary: String
-        var sortIndex: Int
-        var createdAt: Date
-    }
-
-    struct NotebookRecord: Codable, Equatable {
-        var id: UUID
-        var title: String
+        var characterName: String
+        var epithet: String
         var gameTitle: String
-        var platform: String
         var coverStyle: String
-        var status: String
-        var startedAt: Date
-        var summary: String
         var createdAt: Date
         var updatedAt: Date
-        var members: [Member]
-        var entries: [JournalEntry]
-        /// Added with chapters; missing from earlier version 2 files.
-        var chapters: [ChapterRecord]?
-        var isPinned: Bool?
+        var entries: [EntryRecord]
     }
 
     enum BackupError: Error, Equatable, LocalizedError {
         case unsupportedVersion(Int)
+        case olderFormat
         case unreadable
 
         var errorDescription: String? {
             switch self {
             case .unsupportedVersion(let version):
                 "This backup was made by a newer version of Hearthbound (format \(version)). Update the app to import it."
+            case .olderFormat:
+                "This backup is from before Hearthbound kept one journal per character, so it can't be imported."
             case .unreadable:
                 "This file isn't a Hearthbound backup."
             }
@@ -107,31 +55,18 @@ struct JournalBackup: Codable, Equatable {
 
     var version: Int
     var exportedAt: Date
-    var sessions: [Session]
-    /// Missing from version 1 files.
-    var notebooks: [NotebookRecord]?
+    var journals: [JournalRecord]
 
-    init(
-        version: Int = JournalBackup.currentVersion,
-        exportedAt: Date = .now,
-        sessions: [Session],
-        notebooks: [NotebookRecord]? = nil
-    ) {
+    init(version: Int = JournalBackup.currentVersion, exportedAt: Date = .now, journals: [JournalRecord]) {
         self.version = version
         self.exportedAt = exportedAt
-        self.sessions = sessions
-        self.notebooks = notebooks
+        self.journals = journals
     }
 
-    init(exporting sessions: [PlaySession], notebooks: [Notebook] = [], exportedAt: Date = .now) {
+    init(exporting journals: [Journal], exportedAt: Date = .now) {
         self.init(
             exportedAt: exportedAt,
-            sessions: sessions
-                .sorted { $0.startDate < $1.startDate }
-                .map(Session.init(session:)),
-            notebooks: notebooks
-                .sorted { $0.createdAt < $1.createdAt }
-                .map(NotebookRecord.init(notebook:))
+            journals: journals.sorted { $0.createdAt < $1.createdAt }.map(JournalRecord.init(journal:))
         )
     }
 
@@ -165,6 +100,9 @@ struct JournalBackup: Codable, Equatable {
         guard probe.version <= currentVersion else {
             throw BackupError.unsupportedVersion(probe.version)
         }
+        guard probe.version == currentVersion else {
+            throw BackupError.olderFormat
+        }
         do {
             return try decoder.decode(JournalBackup.self, from: data)
         } catch {
@@ -177,178 +115,41 @@ struct JournalBackup: Codable, Equatable {
         formatter.formatOptions = fractional ? [.withInternetDateTime, .withFractionalSeconds] : [.withInternetDateTime]
         return formatter
     }
-
-    // MARK: Merging
-
-    struct MergePlan: Equatable {
-        /// Sessions to add, in backup order.
-        var newSessions: [Session]
-        /// Sessions skipped because their ID is already in the journal (or repeated in the file).
-        var skippedCount: Int
-    }
-
-    /// Picks the sessions whose IDs aren't already present, so importing the same file twice
-    /// never duplicates anything.
-    func mergePlan(existingIDs: Set<UUID>) -> MergePlan {
-        var seen = existingIDs
-        var fresh: [Session] = []
-        for session in sessions where seen.insert(session.id).inserted {
-            fresh.append(session)
-        }
-        return MergePlan(newSessions: fresh, skippedCount: sessions.count - fresh.count)
-    }
 }
 
-extension JournalBackup.Session {
-    init(session: PlaySession) {
-        id = session.id
-        gameTitle = session.gameTitle
-        platform = session.platform
-        startDate = session.startDate
-        durationMinutes = session.durationMinutes
-        enjoyment = session.enjoyment
-        mood = session.moodRaw
-        notes = session.notes
-        tags = session.tags
-        isMilestone = session.isMilestone
-        milestoneNote = session.milestoneNote
-        createdAt = session.createdAt
-        photos = session.sortedPhotos.compactMap { photo -> JournalBackup.Photo? in
-            guard let image = photo.imageData else { return nil }
-            return JournalBackup.Photo(
-                id: photo.id,
-                imageData: image,
-                thumbnailData: photo.thumbnailData,
-                sortIndex: photo.sortIndex,
-                createdAt: photo.createdAt
-            )
-        }
-        notebookID = session.notebook?.id
+extension JournalBackup.JournalRecord {
+    init(journal: Journal) {
+        id = journal.id
+        characterName = journal.characterName
+        epithet = journal.epithet
+        gameTitle = journal.gameTitle
+        coverStyle = journal.coverStyleRaw
+        createdAt = journal.createdAt
+        updatedAt = journal.updatedAt
+        entries = journal.story.map(JournalBackup.EntryRecord.init(entry:))
     }
 
-    /// A new, unsaved model with the same values and ID.
-    func makeSession() -> PlaySession {
-        let session = PlaySession(
+    /// A new, unsaved journal with the same values and ID, without its entries.
+    func makeJournal() -> Journal {
+        let journal = Journal(
             id: id,
+            characterName: characterName,
+            epithet: epithet,
             gameTitle: gameTitle,
-            platform: platform,
-            startDate: startDate,
-            durationMinutes: durationMinutes,
-            enjoyment: enjoyment,
-            notes: notes,
-            tags: tags,
-            isMilestone: isMilestone,
-            milestoneNote: milestoneNote,
+            coverStyle: CoverStyle(rawValue: coverStyle) ?? .ember,
             createdAt: createdAt
         )
-        session.moodRaw = mood
-        session.photos = photos.map { photo in
-            SessionPhoto(
-                id: photo.id,
-                imageData: photo.imageData,
-                thumbnailData: photo.thumbnailData,
-                sortIndex: photo.sortIndex,
-                createdAt: photo.createdAt
-            )
-        }
-        return session
+        journal.updatedAt = updatedAt
+        return journal
     }
 }
 
-extension JournalBackup.NotebookRecord {
-    init(notebook: Notebook) {
-        id = notebook.id
-        title = notebook.title
-        gameTitle = notebook.gameTitle
-        platform = notebook.platform
-        coverStyle = notebook.coverStyleRaw
-        status = notebook.statusRaw
-        startedAt = notebook.startedAt
-        summary = notebook.summary
-        createdAt = notebook.createdAt
-        updatedAt = notebook.updatedAt
-        members = notebook.party.map(JournalBackup.Member.init(member:))
-        chapters = notebook.orderedChapters.map(JournalBackup.ChapterRecord.init(chapter:))
-        isPinned = notebook.isPinned
-        entries = (notebook.entries ?? [])
-            .sorted { ($0.writtenAt, $0.createdAt) < ($1.writtenAt, $1.createdAt) }
-            .map(JournalBackup.JournalEntry.init(entry:))
-    }
-
-    /// A new, unsaved notebook with its party and entries, keeping every ID.
-    func makeNotebook() -> Notebook {
-        let notebook = Notebook(
-            id: id,
-            title: title,
-            gameTitle: gameTitle,
-            platform: platform,
-            startedAt: startedAt,
-            summary: summary,
-            createdAt: createdAt
-        )
-        notebook.coverStyleRaw = coverStyle
-        notebook.statusRaw = status
-        notebook.updatedAt = updatedAt
-        notebook.isPinned = isPinned ?? false
-        let madeMembers = members.map { $0.makeMember() }
-        let madeChapters = (chapters ?? []).map { $0.makeChapter() }
-        notebook.members = madeMembers
-        notebook.chapters = madeChapters
-        notebook.entries = entries.map { $0.makeEntry(members: madeMembers, chapters: madeChapters) }
-        return notebook
-    }
-}
-
-extension JournalBackup.ChapterRecord {
-    init(chapter: Chapter) {
-        id = chapter.id
-        title = chapter.title
-        summary = chapter.summary
-        sortIndex = chapter.sortIndex
-        createdAt = chapter.createdAt
-    }
-
-    func makeChapter() -> Chapter {
-        Chapter(id: id, title: title, summary: summary, sortIndex: sortIndex, createdAt: createdAt)
-    }
-}
-
-extension JournalBackup.Member {
-    init(member: PartyMember) {
-        id = member.id
-        name = member.name
-        role = member.role
-        backstory = member.backstory
-        sigil = member.sigilRaw
-        portraitData = member.portraitData
-        sortIndex = member.sortIndex
-        isRetired = member.isRetired
-        createdAt = member.createdAt
-    }
-
-    func makeMember() -> PartyMember {
-        let member = PartyMember(id: id, name: name, role: role, backstory: backstory, sortIndex: sortIndex, createdAt: createdAt)
-        member.sigilRaw = sigil
-        member.portraitData = portraitData
-        member.isRetired = isRetired
-        return member
-    }
-}
-
-extension JournalBackup.JournalEntry {
+extension JournalBackup.EntryRecord {
     init(entry: Entry) {
         id = entry.id
-        title = entry.title
         body = entry.body
-        writtenAt = entry.writtenAt
         inGameDate = entry.inGameDate
-        place = entry.place
-        quest = entry.quest
-        isTurningPoint = entry.isTurningPoint
-        emotions = entry.emotions
-        bonds = entry.bonds
-        authorID = entry.author?.id
-        chapterID = entry.chapter?.id
+        writtenAt = entry.writtenAt
         createdAt = entry.createdAt
         updatedAt = entry.updatedAt
         photos = entry.sortedPhotos.compactMap { photo -> JournalBackup.Photo? in
@@ -363,24 +164,10 @@ extension JournalBackup.JournalEntry {
         }
     }
 
-    /// A new, unsaved entry. The author and chapter are looked up among `members` and `chapters` by ID.
-    func makeEntry(members: [PartyMember], chapters: [Chapter] = []) -> Entry {
-        let entry = Entry(
-            id: id,
-            title: title,
-            body: body,
-            writtenAt: writtenAt,
-            inGameDate: inGameDate,
-            place: place,
-            quest: quest,
-            isTurningPoint: isTurningPoint,
-            emotions: emotions,
-            bonds: bonds,
-            createdAt: createdAt
-        )
+    /// A new, unsaved entry with the same values, ID and photos.
+    func makeEntry() -> Entry {
+        let entry = Entry(id: id, body: body, inGameDate: inGameDate, writtenAt: writtenAt, createdAt: createdAt)
         entry.updatedAt = updatedAt
-        entry.author = authorID.flatMap { id in members.first { $0.id == id } }
-        entry.chapter = chapterID.flatMap { id in chapters.first { $0.id == id } }
         entry.photos = photos.map { photo in
             EntryPhoto(
                 id: photo.id,
@@ -397,80 +184,49 @@ extension JournalBackup.JournalEntry {
 /// Merges a backup into the store without duplicating anything already there.
 enum JournalImporter {
     struct Report: Equatable {
-        var notebooksAdded = 0
+        var journalsAdded = 0
         var entriesAdded = 0
-        var sessionsAdded = 0
-        /// Items whose IDs were already present (or repeated in the file).
+        /// Entries whose IDs were already present (or repeated in the file).
         var skipped = 0
 
         var summary: String {
             var parts: [String] = []
-            if notebooksAdded > 0 { parts.append("\(notebooksAdded) notebook\(notebooksAdded == 1 ? "" : "s")") }
+            if journalsAdded > 0 { parts.append("\(journalsAdded) journal\(journalsAdded == 1 ? "" : "s")") }
             if entriesAdded > 0 { parts.append("\(entriesAdded) entr\(entriesAdded == 1 ? "y" : "ies")") }
-            if sessionsAdded > 0 { parts.append("\(sessionsAdded) session\(sessionsAdded == 1 ? "" : "s")") }
             let added = parts.isEmpty ? "Nothing new to add." : "Added " + parts.joined(separator: ", ") + "."
-            return skipped > 0 ? added + " Skipped \(skipped) already in your journal." : added
+            return skipped > 0 ? added + " Skipped \(skipped) already in your journals." : added
         }
     }
 
-    /// Adds new notebooks whole; for notebooks already present, adds just the members, chapters and
-    /// entries that are new. Sessions are added by ID and re-linked to their notebook.
+    /// Adds new journals whole; for journals already present, adds just the entries that are new.
     @MainActor
     static func importBackup(_ backup: JournalBackup, into context: ModelContext) throws -> Report {
         var report = Report()
-        let existingNotebooks = try context.fetch(FetchDescriptor<Notebook>())
-        var notebooksByID = Dictionary(existingNotebooks.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let existing = try context.fetch(FetchDescriptor<Journal>())
+        var journalsByID = Dictionary(existing.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         var knownEntryIDs = Set(try context.fetch(FetchDescriptor<Entry>()).map(\.id))
-        var knownMemberIDs = Set(try context.fetch(FetchDescriptor<PartyMember>()).map(\.id))
-        var knownChapterIDs = Set(try context.fetch(FetchDescriptor<Chapter>()).map(\.id))
 
-        for record in backup.notebooks ?? [] {
-            if let notebook = notebooksByID[record.id] {
-                var members = notebook.members ?? []
-                for memberRecord in record.members where knownMemberIDs.insert(memberRecord.id).inserted {
-                    let member = memberRecord.makeMember()
-                    context.insert(member)
-                    member.notebook = notebook
-                    members.append(member)
-                }
-                var chapters = notebook.chapters ?? []
-                for chapterRecord in record.chapters ?? [] where knownChapterIDs.insert(chapterRecord.id).inserted {
-                    let chapter = chapterRecord.makeChapter()
-                    context.insert(chapter)
-                    chapter.notebook = notebook
-                    chapters.append(chapter)
-                }
-                for entryRecord in record.entries {
-                    guard knownEntryIDs.insert(entryRecord.id).inserted else {
-                        report.skipped += 1
-                        continue
-                    }
-                    let entry = entryRecord.makeEntry(members: members, chapters: chapters)
-                    context.insert(entry)
-                    entry.notebook = notebook
-                    report.entriesAdded += 1
-                }
-                report.skipped += 1
+        for record in backup.journals {
+            let journal: Journal
+            if let present = journalsByID[record.id] {
+                journal = present
             } else {
-                let notebook = record.makeNotebook()
-                context.insert(notebook)
-                notebooksByID[record.id] = notebook
-                record.members.forEach { knownMemberIDs.insert($0.id) }
-                record.chapters?.forEach { knownChapterIDs.insert($0.id) }
-                record.entries.forEach { knownEntryIDs.insert($0.id) }
-                report.notebooksAdded += 1
-                report.entriesAdded += record.entries.count
+                journal = record.makeJournal()
+                context.insert(journal)
+                journalsByID[record.id] = journal
+                report.journalsAdded += 1
+            }
+            for entryRecord in record.entries {
+                guard knownEntryIDs.insert(entryRecord.id).inserted else {
+                    report.skipped += 1
+                    continue
+                }
+                let entry = entryRecord.makeEntry()
+                context.insert(entry)
+                entry.journal = journal
+                report.entriesAdded += 1
             }
         }
-
-        let plan = backup.mergePlan(existingIDs: Set(try context.fetch(FetchDescriptor<PlaySession>()).map(\.id)))
-        for record in plan.newSessions {
-            let session = record.makeSession()
-            context.insert(session)
-            session.notebook = record.notebookID.flatMap { notebooksByID[$0] }
-        }
-        report.sessionsAdded = plan.newSessions.count
-        report.skipped += plan.skippedCount
         try context.save()
         return report
     }

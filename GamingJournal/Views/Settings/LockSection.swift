@@ -24,8 +24,8 @@ struct LockSection: View {
         } header: {
             Text("Privacy")
         } footer: {
-            Text("The lock seals the journal whenever you leave the app: it hides from the app switcher, and the widget and iOS search stop showing your writing. Spotlight lets you find notebooks and entries from iOS search.")
+            Text("The lock seals your journals whenever you leave the app: they hide from the app switcher, and the widget and iOS search stop showing your writing. Spotlight lets you find journals and entries from iOS search.")
         }
-        .listRowBackground(Theme.vellum)
+        .listRowBackground(Theme.paper.opacity(0.6))
     }
 }

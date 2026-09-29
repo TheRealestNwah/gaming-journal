@@ -4,8 +4,6 @@ import SwiftData
 @main
 struct GamingJournalApp: App {
     let container: ModelContainer
-    @State private var undoCenter = UndoCenter()
-    @State private var liveTimer: LiveTimer
     @State private var appLock: AppLock
 
     init() {
@@ -15,11 +13,9 @@ struct GamingJournalApp: App {
                 // Start each UI test from first launch unless it pre-sets values as launch arguments.
                 UserDefaults.standard.removeObject(forKey: OnboardingView.completedKey)
                 container = try Persistence.makeContainer(inMemory: true)
-                _liveTimer = State(initialValue: LiveTimer(defaults: LaunchOptions.uiTestingDefaults()))
                 _appLock = State(initialValue: AppLock(defaults: LaunchOptions.uiTestingDefaults()))
             } else {
                 container = try Persistence.makeAppContainer()
-                _liveTimer = State(initialValue: LiveTimer())
                 _appLock = State(initialValue: AppLock())
             }
         } catch {
@@ -38,8 +34,6 @@ struct GamingJournalApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
-                .environment(undoCenter)
-                .environment(liveTimer)
                 .environment(appLock)
                 .appLock(appLock)
         }

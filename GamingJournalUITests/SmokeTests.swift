@@ -17,16 +17,8 @@ final class SmokeTests: XCTestCase {
             + (skipOnboarding ? ["-onboarding.completed", "YES"] : [])
         app.launch()
         if !skipOnboarding { return app }
-        XCTAssertTrue(app.tabBars.buttons["Library"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.buttons["Begin a new journal"].waitForExistence(timeout: 20))
         return app
-    }
-
-    /// Opens the play log of every session, reached from the Journey tab.
-    private func openPlayLog(_ app: XCUIApplication) {
-        app.tabBars.buttons["Journey"].tap()
-        XCTAssertTrue(app.navigationBars["Journey"].waitForExistence(timeout: Self.step))
-        app.navigationBars["Journey"].buttons["Play Log"].tap()
-        XCTAssertTrue(app.navigationBars["Play Log"].waitForExistence(timeout: Self.step))
     }
 
     /// Rows combine their text into one accessibility label, so match on part of it.
@@ -54,99 +46,51 @@ final class SmokeTests: XCTestCase {
         return false
     }
 
-    func testOnboardingLeadsToTheLibrary() {
+    func testOnboardingLeadsToTheShelf() {
         let app = launch(skipOnboarding: false)
-        let start = app.buttons["Begin your tale"]
+        let start = app.buttons["Open the first page"]
         XCTAssertTrue(start.waitForExistence(timeout: 20))
         start.tap()
-        XCTAssertTrue(app.navigationBars["Library"].waitForExistence(timeout: Self.step))
+        XCTAssertTrue(app.buttons["Begin a new journal"].waitForExistence(timeout: Self.step))
     }
 
-    func testAddingASessionShowsItInThePlayLog() {
+    func testBeginningAJournalAndWritingAnEntry() {
         let app = launch()
-        openPlayLog(app)
-        app.navigationBars["Play Log"].buttons["Add Session"].tap()
+        app.buttons["Begin a new journal"].tap()
 
-        let title = app.textFields["Game title"]
-        type("Balatro", into: title)
-        app.navigationBars["New Session"].buttons["Save"].tap()
+        type("Eira Stormborn", into: app.textFields["Character's name"])
+        app.navigationBars["New Journal"].buttons["Begin"].tap()
 
-        XCTAssertTrue(element(containing: "Balatro", in: app).waitForExistence(timeout: Self.step))
-    }
+        let quill = app.buttons["Write a new entry"]
+        XCTAssertTrue(quill.waitForExistence(timeout: Self.step))
+        XCTAssertTrue(element(containing: "The Journal of Eira Stormborn", in: app).exists)
+        quill.tap()
 
-    func testStoppingTheTimerOpensThePrefilledEditor() {
-        let app = launch()
-        openPlayLog(app)
-        app.navigationBars["Play Log"].buttons["Start Timer"].tap()
-
-        let title = app.textFields["Game title (optional)"]
-        type("Tunic", into: title)
-        app.navigationBars["Start Playing"].buttons["Start"].tap()
-
-        let stop = app.buttons["Stop and log session"]
-        XCTAssertTrue(stop.waitForExistence(timeout: Self.step))
-        stop.tap()
-
-        XCTAssertTrue(app.navigationBars["New Session"].waitForExistence(timeout: Self.step))
-        XCTAssertEqual(app.textFields["Game title"].value as? String, "Tunic")
-        app.navigationBars["New Session"].buttons["Save"].tap()
-        XCTAssertTrue(stop.waitForNonExistence(timeout: Self.step))
-    }
-
-    func testEveryTabOpensWithDemoData() {
-        let app = launch(demoData: true)
-        XCTAssertTrue(app.navigationBars["Library"].waitForExistence(timeout: Self.step))
-
-        openPlayLog(app)
-        XCTAssertTrue(element(containing: "Stardew Valley", in: app).waitForExistence(timeout: Self.step))
-
-        app.tabBars.buttons["Settings"].tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: Self.step))
-    }
-
-    func testCreatingANotebookRecruitingAndWriting() {
-        let app = launch()
-        let begin = app.buttons["Begin a new tale"]
-        XCTAssertTrue(begin.waitForExistence(timeout: Self.step))
-        begin.tap()
-
-        let title = app.textFields["Title, e.g. The Dragonborn's Road"]
-        type("Frostbound", into: title)
-        type("Dark Souls", into: app.textFields["Game"])
-        app.navigationBars["New Notebook"].buttons["Create"].tap()
-
-        let cover = element(containing: "Frostbound", in: app)
-        XCTAssertTrue(cover.waitForExistence(timeout: Self.step))
-        cover.tap()
-
-        let recruit = app.buttons["Add a party member"]
-        XCTAssertTrue(recruit.waitForExistence(timeout: Self.step))
-        recruit.tap()
-        let name = app.textFields["Name"]
-        type("Solaire", into: name)
-        app.navigationBars["New Party Member"].buttons["Save"].tap()
-        XCTAssertTrue(element(containing: "Solaire", in: app).waitForExistence(timeout: Self.step))
-
-        app.buttons["Write in the journal"].tap()
-        let entryTitle = app.textFields["Title"]
-        type("Praise the sun", into: entryTitle)
-        app.buttons["Hopeful"].firstMatch.tap()
-        app.navigationBars["New Entry"].buttons["Save"].tap()
+        type("16th of Last Seed", into: app.textFields["In-game date"])
+        type("Praise the sun", into: app.textViews["Entry"])
+        app.buttons["Done"].tap()
 
         XCTAssertTrue(element(containing: "Praise the sun", in: app).waitForExistence(timeout: Self.step))
+        XCTAssertTrue(element(containing: "16th of Last Seed", in: app).exists)
     }
 
-    func testCharacterSheetShowsBondsFromDemoNotebook() {
+    func testDemoJournalOpensOnItsLatestPage() {
         let app = launch(demoData: true)
-        let notebook = element(containing: "The Dragonborn's Road", in: app)
-        XCTAssertTrue(notebook.waitForExistence(timeout: Self.step))
-        notebook.tap()
+        let journal = element(containing: "Eira Stormborn", in: app)
+        XCTAssertTrue(journal.waitForExistence(timeout: Self.step))
+        journal.tap()
 
-        let lydia = app.buttons["Lydia, Housecarl"]
-        XCTAssertTrue(lydia.waitForExistence(timeout: Self.step))
-        lydia.tap()
+        XCTAssertTrue(element(containing: "Bleak Falls Barrow", in: app).waitForExistence(timeout: Self.step))
+        XCTAssertTrue(element(containing: "20th of Last Seed", in: app).exists)
+        app.buttons["Back to journals"].tap()
+        XCTAssertTrue(app.buttons["Begin a new journal"].waitForExistence(timeout: Self.step))
+    }
 
-        XCTAssertTrue(app.navigationBars["Lydia"].waitForExistence(timeout: Self.step))
-        XCTAssertTrue(element(containing: "Serana", in: app).waitForExistence(timeout: Self.step))
+    func testSettingsOpenFromTheShelf() {
+        let app = launch()
+        app.buttons["Settings"].tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: Self.step))
+        app.navigationBars["Settings"].buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["Begin a new journal"].waitForExistence(timeout: Self.step))
     }
 }

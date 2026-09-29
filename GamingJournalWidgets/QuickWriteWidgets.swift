@@ -2,136 +2,113 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
-/// Mirror of the app's `QuickWriteRoster`: the characters the app keeps in the App Group.
+/// Mirror of the app's `QuickWriteRoster`: the journals the app keeps in the App Group.
 struct Roster: Codable {
     static let key = "quickWriteRoster"
 
-    struct Character: Codable {
+    struct Book: Codable {
         var id: UUID
-        var name: String
-        var role: String
-        var notebookID: UUID
-        var notebookTitle: String
+        var characterName: String
+        var epithet: String
+        var gameTitle: String
     }
 
-    var characters: [Character]
+    var journals: [Book]
 
     static func load() -> Roster {
         guard let data = UserDefaults(suiteName: Snapshot.appGroup)?.data(forKey: key),
               let roster = try? JSONDecoder().decode(Roster.self, from: data)
-        else { return Roster(characters: []) }
+        else { return Roster(journals: []) }
         return roster
-    }
-}
-
-extension Snapshot {
-    /// Mirror of the app's `WidgetSnapshot.writeURL(for:member:)`.
-    static func writeURL(for notebookID: UUID, member memberID: UUID) -> URL {
-        var components = URLComponents(url: writeURL, resolvingAgainstBaseURL: false)!
-        components.queryItems = [
-            URLQueryItem(name: "notebook", value: notebookID.uuidString),
-            URLQueryItem(name: "member", value: memberID.uuidString),
-        ]
-        return components.url!
     }
 }
 
 // MARK: Configuration
 
-struct WidgetCharacter: AppEntity {
-    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Character")
-    static let defaultQuery = WidgetCharacterQuery()
+struct WidgetJournal: AppEntity {
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Journal")
+    static let defaultQuery = WidgetJournalQuery()
 
     let id: UUID
-    let name: String
-    let role: String
-    let notebookID: UUID
-    let notebookTitle: String
+    let characterName: String
+    let gameTitle: String
 
-    init(_ character: Roster.Character) {
-        id = character.id
-        name = character.name
-        role = character.role
-        notebookID = character.notebookID
-        notebookTitle = character.notebookTitle
+    init(_ journal: Roster.Book) {
+        id = journal.id
+        characterName = journal.characterName
+        gameTitle = journal.gameTitle
     }
 
     var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(title: "\(name)", subtitle: "\(notebookTitle)")
+        DisplayRepresentation(title: "\(characterName)", subtitle: "\(gameTitle)")
     }
 }
 
-struct WidgetCharacterQuery: EntityQuery {
-    func entities(for identifiers: [UUID]) async throws -> [WidgetCharacter] {
-        Roster.load().characters.filter { identifiers.contains($0.id) }.map(WidgetCharacter.init)
+struct WidgetJournalQuery: EntityQuery {
+    func entities(for identifiers: [UUID]) async throws -> [WidgetJournal] {
+        Roster.load().journals.filter { identifiers.contains($0.id) }.map(WidgetJournal.init)
     }
 
-    func suggestedEntities() async throws -> [WidgetCharacter] {
-        Roster.load().characters.map(WidgetCharacter.init)
+    func suggestedEntities() async throws -> [WidgetJournal] {
+        Roster.load().journals.map(WidgetJournal.init)
     }
 
-    func defaultResult() async -> WidgetCharacter? {
-        Roster.load().characters.first.map(WidgetCharacter.init)
+    func defaultResult() async -> WidgetJournal? {
+        Roster.load().journals.first.map(WidgetJournal.init)
     }
 }
 
 struct WriteAsConfiguration: WidgetConfigurationIntent {
-    static let title: LocalizedStringResource = "Write as"
-    static let description = IntentDescription("Start an entry in a character's voice.")
+    static let title: LocalizedStringResource = "Write in"
+    static let description = IntentDescription("Open a new page in a character's journal.")
 
-    @Parameter(title: "Character")
-    var character: WidgetCharacter?
+    @Parameter(title: "Journal")
+    var journal: WidgetJournal?
 }
 
 // MARK: Widget
 
 struct WriteAsEntry: TimelineEntry {
     let date: Date
-    let character: WidgetCharacter?
+    let journal: WidgetJournal?
 }
 
 struct WriteAsProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> WriteAsEntry {
-        WriteAsEntry(date: .now, character: nil)
+        WriteAsEntry(date: .now, journal: nil)
     }
 
     func snapshot(for configuration: WriteAsConfiguration, in context: Context) async -> WriteAsEntry {
-        WriteAsEntry(date: .now, character: await resolve(configuration))
+        WriteAsEntry(date: .now, journal: await resolve(configuration))
     }
 
     func timeline(for configuration: WriteAsConfiguration, in context: Context) async -> Timeline<WriteAsEntry> {
-        // The app reloads this widget whenever the party changes.
-        Timeline(entries: [WriteAsEntry(date: .now, character: await resolve(configuration))], policy: .never)
+        // The app reloads this widget whenever the journals change.
+        Timeline(entries: [WriteAsEntry(date: .now, journal: await resolve(configuration))], policy: .never)
     }
 
-    /// The chosen character if they're still in an active party, else the first one.
-    private func resolve(_ configuration: WriteAsConfiguration) async -> WidgetCharacter? {
-        let characters = Roster.load().characters
-        if let chosen = configuration.character, let current = characters.first(where: { $0.id == chosen.id }) {
-            return WidgetCharacter(current)
+    /// The chosen journal if it's still on the shelf, else the most recent one.
+    private func resolve(_ configuration: WriteAsConfiguration) async -> WidgetJournal? {
+        let journals = Roster.load().journals
+        if let chosen = configuration.journal, let current = journals.first(where: { $0.id == chosen.id }) {
+            return WidgetJournal(current)
         }
-        return characters.first.map(WidgetCharacter.init)
+        return journals.first.map(WidgetJournal.init)
     }
 }
 
-/// A character's quill on the Home or Lock Screen: tap to write as them.
+/// A character's journal on the Home or Lock Screen: tap to write in it.
 struct WriteAsWidget: Widget {
     static let kind = "WriteAs"
 
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: Self.kind, intent: WriteAsConfiguration.self, provider: WriteAsProvider()) { entry in
             WriteAsView(entry: entry)
-                .containerBackground(for: .widget) {
-                    LinearGradient(
-                        colors: [Color(red: 0.96, green: 0.91, blue: 0.85), Color(red: 0.93, green: 0.85, blue: 0.74)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                }
-                .widgetURL(entry.character.map { Snapshot.writeURL(for: $0.notebookID, member: $0.id) } ?? Snapshot.writeURL)
+                .containerBackground(for: .widget) { Page.background }
+                .widgetURL(entry.journal.map { Snapshot.writeURL(for: $0.id) } ?? Snapshot.writeURL)
         }
-        .configurationDisplayName("Write as…")
-        .description("Start an entry in a character's voice.")
+        .configurationDisplayName("Write in…")
+        .description("Open a new page in a character's journal.")
         .supportedFamilies([.systemSmall, .accessoryCircular, .accessoryRectangular])
     }
 }
@@ -140,11 +117,7 @@ struct WriteAsView: View {
     @Environment(\.widgetFamily) private var family
     let entry: WriteAsEntry
 
-    private let ink = Color(red: 0.17, green: 0.11, blue: 0.08)
-    private let faded = Color(red: 0.42, green: 0.33, blue: 0.26)
-    private let ember = Color(red: 0.66, green: 0.27, blue: 0.10)
-
-    private var name: String { entry.character?.name ?? "Your party" }
+    private var name: String { entry.journal?.characterName ?? "Your journal" }
 
     var body: some View {
         switch family {
@@ -157,16 +130,16 @@ struct WriteAsView: View {
                         .font(.caption2.weight(.semibold))
                 }
             }
-            .accessibilityLabel("Write as \(name)")
+            .accessibilityLabel("Write in \(name)'s journal")
         case .accessoryRectangular:
             VStack(alignment: .leading, spacing: 2) {
-                Label("Write as", systemImage: "pencil.and.scribble")
+                Label("Write in", systemImage: "pencil.and.scribble")
                     .font(.caption2)
                 Text(name)
                     .font(.headline)
                     .lineLimit(1)
-                if let notebook = entry.character?.notebookTitle {
-                    Text(notebook)
+                if let game = entry.journal?.gameTitle, !game.isEmpty {
+                    Text(game)
                         .font(.caption2)
                         .lineLimit(1)
                 }
@@ -175,24 +148,19 @@ struct WriteAsView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Image(systemName: "pencil.and.scribble")
                     .font(.title2)
-                    .foregroundStyle(ember)
+                    .foregroundStyle(Page.rubric)
                 Spacer(minLength: 0)
-                Text("Write as")
-                    .font(.caption)
-                    .foregroundStyle(faded)
+                Text("The journal of")
+                    .font(Page.bookItalic(13, relativeTo: .caption))
+                    .foregroundStyle(Page.faded)
                 Text(name)
-                    .font(.system(.headline, design: .serif))
-                    .foregroundStyle(ink)
+                    .font(Page.book(18, relativeTo: .headline))
+                    .foregroundStyle(Page.ink)
                     .lineLimit(2)
-                if let character = entry.character {
-                    Text(character.notebookTitle)
-                        .font(.caption2)
-                        .foregroundStyle(faded)
-                        .lineLimit(1)
-                } else {
-                    Text("Add a party member in the app.")
-                        .font(.caption2)
-                        .foregroundStyle(faded)
+                if entry.journal == nil {
+                    Text("Begin one in the app.")
+                        .font(Page.bookItalic(12, relativeTo: .caption))
+                        .foregroundStyle(Page.faded)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -208,7 +176,7 @@ struct WriteAsView: View {
 
 // MARK: Control
 
-/// Control Center and Lock Screen button that opens a new entry (iOS 18).
+/// Control Center and Lock Screen button that opens a new page (iOS 18).
 @available(iOS 18.0, *)
 struct WriteControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
@@ -218,6 +186,6 @@ struct WriteControl: ControlWidget {
             }
         }
         .displayName("Write in Journal")
-        .description("Open a new journal entry.")
+        .description("Open a new page in your latest journal.")
     }
 }
