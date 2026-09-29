@@ -1,22 +1,43 @@
 # Hearthbound — iOS
 
-A role-playing notebook for your game playthroughs: start a notebook per playthrough, add your party and write in character. Play-session tracking is a quiet extra. Everything lives on-device (SwiftData), no account required. (Formerly "Gaming Journal"; the Xcode targets, bundle IDs, app group and iCloud container keep the old `GamingJournal` names.)
+A role-playing notebook for your game playthroughs. Start a notebook for each playthrough, gather your party and write in character: what they did, how they felt, where they are and who they trust. Play-time tracking is a quiet extra.
+
+Everything lives on-device (SwiftData), with optional iCloud sync. No account and no online game database; you enter everything yourself.
 
 ## Features
 
-- **Session journal**: log the game, platform, start time, duration, enjoyment (1–5 stars), mood, notes, tags and milestones. Titles autocomplete from your history, and each game remembers its last platform.
-- **Timeline**: sessions grouped by day with daily and monthly totals. Search across titles, notes and tags, filter by game, platform, tag or milestones, and swipe to delete with undo.
-- **Live timer**: start a timer when you pick up a game and stop it to log the session. It survives the app being closed.
-- **Screenshots**: attach photos to a session and view them full screen.
-- **Games**: per-game totals, averages and history, derived from your sessions. Rename or merge titles to fix typos.
-- **Stats**: hours per day, week or month, top games, platform split, enjoyment trend, streaks and a play heatmap.
-- **Backup**: JSON export/import (merged by session, so nothing is duplicated) and CSV export for spreadsheets.
-- **Widgets**: now playing / last session, this week's hours, and a start-session button.
-- **iCloud sync** (optional): see below.
+**Notebooks and party**
+- **Library**: every playthrough as a leather-bound cover (Ember, Forest, Frost, Arcane, Blood Moon). Sort, filter by status, pin favourites, and search every entry across all notebooks.
+- **Party**: characters with a portrait, role or class, backstory and sigil colour.
+- **Character sheet**: each character's bonds and emotional arc over the playthrough.
+
+**Writing**
+- **Entries**: written as a character (or the Narrator), with an optional in-game date, emotions and their intensity, place, quest, photos, bonds and a wax-seal turning-point flag.
+- **Chronicle**: the notebook's timeline, split into chapters and acts, with an Atlas of places.
+- **Writing prompts** in character, **dictation**, and **draft recovery** if the app closes mid-entry.
+- **Tale's end recap** when you mark a notebook completed.
+
+**Around iOS**
+- **Siri, Shortcuts and the Lock Screen**: start an entry as a chosen character without opening the app first.
+- **Widgets**: the latest entry, "Write as…" a character, a quick new entry, now playing, this week's play time and a start-session button.
+- **Spotlight**: find notebooks and entries from iOS search.
+- **Campfire reminders** (optional) to come back and write.
+- **Face ID lock** (optional). While locked, widgets and Spotlight hide your writing.
+
+**Sharing and export**
+- **PDF book**: a styled book of a whole notebook.
+- **Markdown** export of a notebook, and **share an entry as an image card**.
+- **Backup**: JSON export and import of everything, merged so nothing is duplicated, plus CSV of play sessions.
+
+**Play sessions and stats**
+- **Play sessions**, optionally inside a notebook, with a live timer that survives the app closing.
+- **Journey**: stats per notebook and overall.
+
+**Look and feel**: parchment, ember, crimson and gold, New York serif for titles and entries, and drifting embers and page turns that switch off with Reduce Motion. Works on iPhone and iPad, where the Library sits beside the open notebook.
 
 ## Status
 
-Feature-complete for a first version. Some things still need checking on a real device: widgets on the home screen, photo picking and iCloud sync. The app icon is a placeholder.
+The R1–R27 roadmap items are in (see [docs/ROADMAP.md](docs/ROADMAP.md)). Some things still need checking on a real device (#30): widgets, photo picking, iCloud sync, Face ID, dictation and Spotlight.
 
 ## Requirements
 
@@ -24,6 +45,8 @@ Feature-complete for a first version. Some things still need checking on a real 
 - iOS 17+
 
 ## Building
+
+The app used to be called Gaming Journal. The Xcode project, targets, schemes, bundle IDs, app group and iCloud container keep the `GamingJournal` names, so existing data, widgets and sync keep working.
 
 Open `GamingJournal.xcodeproj` and run the `GamingJournal` scheme, or from the command line:
 
@@ -47,7 +70,7 @@ CI builds without signing, so it only checks that sync compiles. Syncing between
 
 ## CI
 
-GitHub Actions builds the app and runs the unit tests on every pull request and push to `main`.
+GitHub Actions builds the app and runs the unit and UI smoke tests on every pull request. PRs that only touch docs skip the build. To test `main` by hand, use "Run workflow".
 
 ## License
 
