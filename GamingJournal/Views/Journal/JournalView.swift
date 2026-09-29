@@ -65,23 +65,30 @@ struct JournalView: View {
                     .padding(.horizontal, Self.pagePadding)
                     .padding(.top, 10)
 
-                TabView(selection: $pageIndex) {
-                    ForEach(laidOut) { page in
-                        PageView(page: page, entries: entries, fontSize: fontSize) { entry in
-                            writing = WriterRequest(entry: entry)
-                        } onDelete: { entry in
-                            pendingDelete = entry
+                ZStack {
+                    // Shown once the page size is known, already turned to the right page:
+                    // a paged TabView ignores a jump made while it's first appearing.
+                    if hasOpened {
+                        TabView(selection: $pageIndex) {
+                            ForEach(laidOut) { page in
+                                PageView(page: page, entries: entries, fontSize: fontSize) { entry in
+                                    writing = WriterRequest(entry: entry)
+                                } onDelete: { entry in
+                                    pendingDelete = entry
+                                }
+                                .padding(.horizontal, Self.pagePadding)
+                                .tag(page.index)
+                            }
                         }
-                        .padding(.horizontal, Self.pagePadding)
-                        .tag(page.index)
+                        .tabViewStyle(.page(indexDisplayMode: .never))
                     }
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background {
                     GeometryReader { geometry in
                         Color.clear
-                            .onAppear { textArea = geometry.size }
-                            .onChange(of: geometry.size) { _, size in textArea = size }
+                            .onAppear { measured(geometry.size) }
+                            .onChange(of: geometry.size) { _, size in measured(size) }
                     }
                 }
 
@@ -102,18 +109,10 @@ struct JournalView: View {
             .padding(.bottom, 70)
         }
         .toolbar(.hidden, for: .navigationBar)
-        .onChange(of: laidOut.count) { oldCount, newCount in
-            if !hasOpened, textArea != .zero {
-                open(in: pages)
-            } else if newCount > oldCount {
-                // A new entry went onto a new page: turn to it.
-                turn(to: newCount - 1)
-            } else if pageIndex >= newCount {
+        .onChange(of: laidOut.count) { _, newCount in
+            if pageIndex >= newCount {
                 pageIndex = max(0, newCount - 1)
             }
-        }
-        .onChange(of: textArea) {
-            if !hasOpened, textArea != .zero { open(in: pages) }
         }
         .onChange(of: journal.entries?.count) { oldCount, newCount in
             // Written a new entry: show where it landed, the last page.
@@ -146,6 +145,15 @@ struct JournalView: View {
             contentType: bookExport?.contentType ?? .pdf,
             defaultFilename: bookExport?.filename
         ) { _ in }
+    }
+
+    /// The page area was measured: lay out the pages, and on first showing open the book.
+    private func measured(_ size: CGSize) {
+        guard size.width > 0, size.height > 0 else { return }
+        textArea = size
+        if !hasOpened {
+            open(in: pages)
+        }
     }
 
     /// First showing: the page with the entry asked for, or else the latest page.
