@@ -20,7 +20,7 @@ struct RemindersSection: View {
             Text("Campfire reminders")
         } footer: {
             Text(permissionRefused
-                 ? "Notifications are off for Gaming Journal. Turn them on in the Settings app to get reminders."
+                 ? "Notifications are off for Hearthbound. Turn them on in the Settings app to get reminders."
                  : "After a session, choose \"Remind me later\" and you'll get a nudge an hour on, unless you've written by then. The evening reminder comes every day at the time you pick.")
         }
         .listRowBackground(Theme.vellum)

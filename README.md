@@ -1,6 +1,6 @@
-# Gaming Journal — iOS
+# Hearthbound — iOS
 
-A SwiftUI app for keeping a journal of the games you play: log sessions, playtime, platform and notes. Everything lives on-device (SwiftData), no account required.
+A role-playing notebook for your game playthroughs: start a notebook per playthrough, add your party and write in character. Play-session tracking is a quiet extra. Everything lives on-device (SwiftData), no account required. (Formerly "Gaming Journal"; the Xcode targets, bundle IDs, app group and iCloud container keep the old `GamingJournal` names.)
 
 ## Features
 

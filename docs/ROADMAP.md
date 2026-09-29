@@ -69,7 +69,7 @@ Approved features, in build order. Chapters come first because they carry schema
 
 Not planned for now: NPC codex, bond web, quest log, keepsakes, New Game+ and screenshot suggestions.
 
-Open: a new app name (#45).
+App name: Hearthbound (#45). Internal identifiers keep the `GamingJournal` names.
 
 Needs a human: on-device checks of widgets, photo picking and iCloud sync (#30).
 

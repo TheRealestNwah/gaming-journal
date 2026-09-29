@@ -98,9 +98,9 @@ struct JournalBackup: Codable, Equatable {
         var errorDescription: String? {
             switch self {
             case .unsupportedVersion(let version):
-                "This backup was made by a newer version of Gaming Journal (format \(version)). Update the app to import it."
+                "This backup was made by a newer version of Hearthbound (format \(version)). Update the app to import it."
             case .unreadable:
-                "This file isn't a Gaming Journal backup."
+                "This file isn't a Hearthbound backup."
             }
         }
     }
