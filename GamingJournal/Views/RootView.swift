@@ -35,6 +35,7 @@ struct RootView: View {
         }
         .foregroundStyle(Theme.ink)
         .background(ParchmentBackground())
+        .spotlightSync()
         .widgetSync(
             onStartTimer: {
                 isStartingTimer = true

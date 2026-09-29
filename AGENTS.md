@@ -1,4 +1,4 @@
-# Gaming Journal — notes for Claude
+# Gaming Journal — notes for Codex
 
 iOS 17+ SwiftUI + SwiftData app: role-playing notebooks for game playthroughs. Each notebook holds a party of characters and their in-character entries (emotions, places, quests, bonds). Play-session tracking is a secondary feature. No accounts, no online game database.
 
@@ -31,5 +31,14 @@ iOS 17+ SwiftUI + SwiftData app: role-playing notebooks for game playthroughs. E
 ## Roadmap
 See [docs/ROADMAP.md](docs/ROADMAP.md).
 
-## Codex
-`AGENTS.md` holds the same notes for Codex, plus the workflow rules from the owner's global setup. When this file changes, update it to match.
+## Workflow
+The owner's Claude setup follows these too; keep them when working here.
+- File an issue before starting any work item (feature, bug, chore, refactor). Typo and comment-only fixes can go straight to a PR.
+- Label every issue and PR from the repo's label set (`bug`, `enhancement`, `documentation`, `chore`, `ci`, …).
+- Commit and PR titles are short imperative summaries with the issue number in parentheses, e.g. "Fix X (#12)".
+- Work on a branch and open a PR; never push to `main` directly, force-push or tag a release without asking the owner.
+- Right after opening a PR against `main`, enable auto-merge: `gh pr merge <n> --auto --squash --delete-branch`. Don't auto-merge a PR whose base isn't `main`.
+- Claude and Codex may work on this repo at the same time. Each session uses its own git worktree so they don't edit each other's files.
+
+## Keeping this file current
+`CLAUDE.md` holds the same notes for Claude. When one changes, update the other to match.
