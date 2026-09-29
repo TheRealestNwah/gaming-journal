@@ -11,6 +11,7 @@ struct NotebookView: View {
     @State private var section = NotebookSection.chronicle
     @State private var filter = ChronicleFilter()
     @State private var bookExport: ExportDocument?
+    @State private var isEditingChapters = false
 
     enum NotebookSection: String, CaseIterable, Identifiable {
         case chronicle, atlas, sessions
@@ -70,15 +71,15 @@ struct NotebookView: View {
         .background(ParchmentBackground())
         .navigationTitle(notebook.title)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(for: Entry.self) { entry in
-            EntryDetailView(entry: entry)
-        }
         .navigationDestination(for: PlaySession.self) { session in
             SessionDetailView(session: session)
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Edit") { isEditing = true }
+            }
+            ToolbarItem(placement: .secondaryAction) {
+                Button("Chapters", systemImage: "bookmark") { isEditingChapters = true }
             }
             ToolbarItem(placement: .secondaryAction) {
                 Button("Export as Book", systemImage: "book.pages") {
@@ -98,6 +99,9 @@ struct NotebookView: View {
         ) { _ in }
         .sheet(isPresented: $isEditing) {
             NotebookEditorView(notebook: notebook)
+        }
+        .sheet(isPresented: $isEditingChapters) {
+            ChaptersEditorView(notebook: notebook)
         }
         .navigationDestination(item: $selectedMember) { member in
             CharacterSheetView(member: member)

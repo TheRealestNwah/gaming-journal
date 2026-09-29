@@ -23,8 +23,7 @@ struct GamingJournalApp: App {
             fatalError("Could not open the journal store: \(error)")
         }
         if LaunchOptions.seedsDemoData {
-            DemoData.sessions().forEach(container.mainContext.insert)
-            try? container.mainContext.save()
+            DemoData.seed(into: container.mainContext)
         }
     }
 

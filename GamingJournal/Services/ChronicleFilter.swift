@@ -7,10 +7,11 @@ struct ChronicleFilter: Equatable {
     var memberID: UUID?
     var emotion: Emotion?
     var place: String?
+    var chapterID: UUID?
     var turningPointsOnly = false
 
     var hasFacets: Bool {
-        memberID != nil || emotion != nil || place != nil || turningPointsOnly
+        memberID != nil || emotion != nil || place != nil || chapterID != nil || turningPointsOnly
     }
 
     var isActive: Bool {
@@ -21,6 +22,7 @@ struct ChronicleFilter: Equatable {
         memberID = nil
         emotion = nil
         place = nil
+        chapterID = nil
         turningPointsOnly = false
     }
 
@@ -29,6 +31,7 @@ struct ChronicleFilter: Equatable {
         if let memberID, entry.author?.id != memberID { return false }
         if let emotion, !entry.emotions.contains(where: { $0.emotion == emotion }) { return false }
         if let place, Self.normalize(entry.place) != Self.normalize(place) { return false }
+        if let chapterID, entry.chapter?.id != chapterID { return false }
 
         let words = Self.normalize(searchText).split(separator: " ")
         guard !words.isEmpty else { return true }

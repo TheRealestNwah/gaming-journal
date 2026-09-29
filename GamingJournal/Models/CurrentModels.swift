@@ -1,20 +1,29 @@
 import Foundation
 import SwiftData
 
-typealias Notebook = JournalSchemaV1.Notebook
-typealias PartyMember = JournalSchemaV1.PartyMember
-typealias Entry = JournalSchemaV1.Entry
-typealias EntryPhoto = JournalSchemaV1.EntryPhoto
-typealias PlaySession = JournalSchemaV1.PlaySession
-typealias SessionPhoto = JournalSchemaV1.SessionPhoto
+/// The schema the app reads and writes. Older versions are only kept for migration.
+typealias CurrentSchema = JournalSchemaV2
+
+typealias Notebook = CurrentSchema.Notebook
+typealias PartyMember = CurrentSchema.PartyMember
+typealias Chapter = CurrentSchema.Chapter
+typealias Entry = CurrentSchema.Entry
+typealias EntryPhoto = CurrentSchema.EntryPhoto
+typealias PlaySession = CurrentSchema.PlaySession
+typealias SessionPhoto = CurrentSchema.SessionPhoto
 
 enum GamingJournalMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [JournalSchemaV1.self]
+        [JournalSchemaV1.self, JournalSchemaV2.self]
     }
 
     static var stages: [MigrationStage] {
-        []
+        [v1ToV2]
+    }
+
+    /// Chapters and pinning are purely additive, so SwiftData can infer the mapping.
+    static var v1ToV2: MigrationStage {
+        .lightweight(fromVersion: JournalSchemaV1.self, toVersion: JournalSchemaV2.self)
     }
 }
 
@@ -44,8 +53,22 @@ extension Notebook {
         (entries ?? []).sorted { ($0.writtenAt, $0.createdAt) > ($1.writtenAt, $1.createdAt) }
     }
 
+    /// Chapters in story order.
+    var orderedChapters: [Chapter] {
+        (chapters ?? []).sorted { ($0.sortIndex, $0.createdAt) < ($1.sortIndex, $1.createdAt) }
+    }
+
     func touch(_ date: Date = .now) {
         updatedAt = date
+    }
+}
+
+// MARK: - Chapter
+
+extension Chapter {
+    /// Its entries, oldest first, the way they read in the book.
+    var story: [Entry] {
+        (entries ?? []).sorted { ($0.writtenAt, $0.createdAt) < ($1.writtenAt, $1.createdAt) }
     }
 }
 

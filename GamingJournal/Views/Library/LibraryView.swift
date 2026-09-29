@@ -9,6 +9,7 @@ struct LibraryView: View {
     @State private var isCreating = false
     @State private var editing: Notebook?
     @State private var pendingDelete: Notebook?
+    @State private var searchText = ""
 
     private let columns = [GridItem(.adaptive(minimum: 140, maximum: 200), spacing: 20)]
 
@@ -22,6 +23,8 @@ struct LibraryView: View {
             Group {
                 if notebooks.isEmpty {
                     emptyShelf
+                } else if !ChronicleFilter.normalize(searchText).isEmpty {
+                    LibrarySearchResults(query: searchText, notebooks: notebooks)
                 } else {
                     shelf
                 }
@@ -38,6 +41,11 @@ struct LibraryView: View {
             .navigationDestination(for: Notebook.self) { notebook in
                 NotebookView(notebook: notebook)
             }
+            // Declared once at the root so both a notebook's chronicle and search can open entries.
+            .navigationDestination(for: Entry.self) { entry in
+                EntryDetailView(entry: entry)
+            }
+            .searchable(text: $searchText, prompt: "Search every tale")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button("New Notebook", systemImage: "plus") { isCreating = true }
