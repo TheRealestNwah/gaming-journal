@@ -260,10 +260,14 @@ private struct EnjoymentChart: View {
                 y: .value("Enjoyment", point.average)
             )
             .interpolationMethod(.catmullRom)
+            .accessibilityLabel(point.start.formatted(date: .abbreviated, time: .omitted))
+            .accessibilityValue("\(point.average.formatted(.number.precision(.fractionLength(1)))) out of 5")
             PointMark(
                 x: .value("Period", point.start, unit: range.bucket),
                 y: .value("Enjoyment", point.average)
             )
+            // The line already speaks for each point.
+            .accessibilityHidden(true)
         }
         .chartYScale(domain: 1...5)
         .chartYAxis {

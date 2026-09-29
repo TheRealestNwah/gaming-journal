@@ -75,6 +75,7 @@ private struct BondEditorRow: View {
                         .foregroundStyle(bond.affinity < 0 ? Theme.crimson : bond.affinity > 0 ? Theme.ember : Theme.fadedInk)
                 }
             }
+            .accessibilityLabel("Bond with \(bond.targetName)")
             .accessibilityValue(bond.affinityLabel)
             TextField("Why? (optional)", text: $bond.note)
                 .font(.system(.subheadline, design: .serif))
