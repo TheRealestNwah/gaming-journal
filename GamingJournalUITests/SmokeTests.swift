@@ -34,6 +34,22 @@ final class SmokeTests: XCTestCase {
         app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
     }
 
+    /// Taps a field and types into it. A tap that lands while a sheet is still sliding in can miss
+    /// the field, so keep tapping until it has keyboard focus (#111).
+    private func type(_ text: String, into field: XCUIElement) {
+        XCTAssertTrue(field.waitForExistence(timeout: Self.step))
+        let focused = NSPredicate(format: "hasKeyboardFocus == true")
+        let deadline = Date.now.addingTimeInterval(Self.step)
+        var hasFocus = false
+        while !hasFocus && Date.now < deadline {
+            field.tap()
+            let wait = XCTNSPredicateExpectation(predicate: focused, object: field)
+            hasFocus = XCTWaiter.wait(for: [wait], timeout: 1) == .completed
+        }
+        XCTAssertTrue(hasFocus, "\(field) never got keyboard focus")
+        field.typeText(text)
+    }
+
     func testOnboardingLeadsToTheLibrary() {
         let app = launch(skipOnboarding: false)
         let start = app.buttons["Begin your tale"]
@@ -48,9 +64,7 @@ final class SmokeTests: XCTestCase {
         app.navigationBars["Play Log"].buttons["Add Session"].tap()
 
         let title = app.textFields["Game title"]
-        XCTAssertTrue(title.waitForExistence(timeout: Self.step))
-        title.tap()
-        title.typeText("Balatro")
+        type("Balatro", into: title)
         app.navigationBars["New Session"].buttons["Save"].tap()
 
         XCTAssertTrue(element(containing: "Balatro", in: app).waitForExistence(timeout: Self.step))
@@ -62,9 +76,7 @@ final class SmokeTests: XCTestCase {
         app.navigationBars["Play Log"].buttons["Start Timer"].tap()
 
         let title = app.textFields["Game title (optional)"]
-        XCTAssertTrue(title.waitForExistence(timeout: Self.step))
-        title.tap()
-        title.typeText("Tunic")
+        type("Tunic", into: title)
         app.navigationBars["Start Playing"].buttons["Start"].tap()
 
         let stop = app.buttons["Stop and log session"]
@@ -95,11 +107,8 @@ final class SmokeTests: XCTestCase {
         begin.tap()
 
         let title = app.textFields["Title, e.g. The Dragonborn's Road"]
-        XCTAssertTrue(title.waitForExistence(timeout: Self.step))
-        title.tap()
-        title.typeText("Frostbound")
-        app.textFields["Game"].tap()
-        app.textFields["Game"].typeText("Dark Souls")
+        type("Frostbound", into: title)
+        type("Dark Souls", into: app.textFields["Game"])
         app.navigationBars["New Notebook"].buttons["Create"].tap()
 
         let cover = element(containing: "Frostbound", in: app)
@@ -110,17 +119,13 @@ final class SmokeTests: XCTestCase {
         XCTAssertTrue(recruit.waitForExistence(timeout: Self.step))
         recruit.tap()
         let name = app.textFields["Name"]
-        XCTAssertTrue(name.waitForExistence(timeout: Self.step))
-        name.tap()
-        name.typeText("Solaire")
+        type("Solaire", into: name)
         app.navigationBars["New Party Member"].buttons["Save"].tap()
         XCTAssertTrue(element(containing: "Solaire", in: app).waitForExistence(timeout: Self.step))
 
         app.buttons["Write in the journal"].tap()
         let entryTitle = app.textFields["Title"]
-        XCTAssertTrue(entryTitle.waitForExistence(timeout: Self.step))
-        entryTitle.tap()
-        entryTitle.typeText("Praise the sun")
+        type("Praise the sun", into: entryTitle)
         app.buttons["Hopeful"].firstMatch.tap()
         app.navigationBars["New Entry"].buttons["Save"].tap()
 
