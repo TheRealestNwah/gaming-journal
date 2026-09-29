@@ -3,12 +3,13 @@ import XCTest
 
 final class WidgetSnapshotTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_790_000_000)
+    private let journalID = UUID()
 
     private var snapshot: WidgetSnapshot {
         WidgetSnapshot(
             generatedAt: now,
             latestEntry: WidgetSnapshot.LatestEntry(
-                journalID: UUID(), characterName: "Eira", heading: "17th of Last Seed", excerpt: "Riverwood.", writtenAt: now
+                journalID: journalID, characterName: "Eira", heading: "17th of Last Seed", excerpt: "Riverwood.", writtenAt: now
             )
         )
     }

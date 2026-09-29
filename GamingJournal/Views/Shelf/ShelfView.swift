@@ -142,6 +142,7 @@ struct JournalEditorView: View {
                         .font(Theme.book(20, relativeTo: .title3))
                         .textInputAutocapitalization(.words)
                         .focused($nameFocused)
+                        .accessibilityIdentifier("characterName")
                     TextField("Race, class or title", text: $epithet)
                         .textInputAutocapitalization(.words)
                     TextField("Game", text: $gameTitle)

@@ -58,7 +58,7 @@ final class SmokeTests: XCTestCase {
         let app = launch()
         app.buttons["Begin a new journal"].tap()
 
-        type("Eira Stormborn", into: app.textFields["Character's name"])
+        type("Eira Stormborn", into: app.textFields["characterName"])
         app.navigationBars["New Journal"].buttons["Begin"].tap()
 
         let quill = app.buttons["Write a new entry"]
@@ -66,8 +66,8 @@ final class SmokeTests: XCTestCase {
         XCTAssertTrue(element(containing: "The Journal of Eira Stormborn", in: app).exists)
         quill.tap()
 
-        type("16th of Last Seed", into: app.textFields["In-game date"])
-        type("Praise the sun", into: app.textViews["Entry"])
+        type("16th of Last Seed", into: app.textFields["inGameDate"])
+        type("Praise the sun", into: app.textViews["entryBody"])
         app.buttons["Done"].tap()
 
         XCTAssertTrue(element(containing: "Praise the sun", in: app).waitForExistence(timeout: Self.step))
@@ -80,8 +80,9 @@ final class SmokeTests: XCTestCase {
         XCTAssertTrue(journal.waitForExistence(timeout: Self.step))
         journal.tap()
 
-        XCTAssertTrue(element(containing: "Bleak Falls Barrow", in: app).waitForExistence(timeout: Self.step))
-        XCTAssertTrue(element(containing: "20th of Last Seed", in: app).exists)
+        // The latest page ends with the latest entry (which may have started on the page before).
+        XCTAssertTrue(element(containing: "never learned", in: app).waitForExistence(timeout: Self.step))
+        XCTAssertFalse(app.buttons["Next page"].isEnabled)
         app.buttons["Back to journals"].tap()
         XCTAssertTrue(app.buttons["Begin a new journal"].waitForExistence(timeout: Self.step))
     }

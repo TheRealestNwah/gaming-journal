@@ -40,6 +40,7 @@ struct WriterView: View {
                     .font(Theme.dateLine)
                     .foregroundStyle(Theme.rubric)
                     .textInputAutocapitalization(.words)
+                    .accessibilityIdentifier("inGameDate")
                     .submitLabel(.next)
                     .onSubmit { bodyFocused = true }
                 dateHints
@@ -61,6 +62,7 @@ struct WriterView: View {
                         .scrollContentBackground(.hidden)
                         .focused($bodyFocused)
                         .accessibilityLabel("Entry")
+                        .accessibilityIdentifier("entryBody")
                 }
                 .padding(.top, 8)
 
