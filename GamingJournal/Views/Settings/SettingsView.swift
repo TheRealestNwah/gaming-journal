@@ -36,14 +36,7 @@ struct SettingsView: View {
                 }
                 .listRowBackground(Theme.vellum)
 
-                Section {
-                    Toggle("Writing prompts", systemImage: "flame", isOn: $promptsEnabled)
-                } header: {
-                    Text("Writing")
-                } footer: {
-                    Text("Suggest an in-character question when you start a new entry.")
-                }
-                .listRowBackground(Theme.vellum)
+                LockSection()
 
                 Section {
                     Toggle("Writing prompts", systemImage: "flame", isOn: $promptsEnabled)
@@ -62,6 +55,8 @@ struct SettingsView: View {
                     Text(syncFooter)
                 }
                 .listRowBackground(Theme.vellum)
+
+                RemindersSection()
 
                 Section("About") {
                     LabeledContent("Notebooks", value: "\(notebooks.count)")
