@@ -102,7 +102,7 @@ struct EntryEditorView: View {
                     PhotoPickerSection(photos: $draft.photos)
 
                     Section {
-                        Toggle(isOn: $draft.isTurningPoint.animation()) {
+                        Toggle(isOn: $draft.isTurningPoint.animation(.spring(duration: 0.35))) {
                             HStack(spacing: 10) {
                                 WaxSeal(size: 22)
                                 Text("Turning point")
@@ -111,6 +111,7 @@ struct EntryEditorView: View {
                     } footer: {
                         Text("Seal the moments that changed the story: a betrayal, a victory, a farewell.")
                     }
+                    .sensoryFeedback(.impact(weight: .heavy), trigger: draft.isTurningPoint) { _, sealed in sealed }
                 }
                 .listRowBackground(Theme.vellum)
             }

@@ -46,9 +46,32 @@ A clean-slate schema (nothing has shipped), CloudKit-safe and versioned from her
 | R12 | Onboarding, empty states and ember effects in the new tone | #43 |
 | R13 | Update UI smoke tests for the notebook flows | #44 |
 
+## Next
+
+Approved features, in build order. Chapters come first because they carry schema V2 (which also adds notebook pinning for R16).
+
+| # | Item | Issue |
+|---|------|-------|
+| R14 | Chapters and acts for the Chronicle, on schema V2 | #63 |
+| R15 | Search entries across all notebooks | #64 |
+| R16 | Sort, filter and pin notebooks in the Library | #65 |
+| R17 | Recover unsaved entries | #66 |
+| R18 | Campfire reminders to write | #67 |
+| R19 | Dictate entries | #68 |
+| R20 | Lock the journal with Face ID | #69 |
+| R21 | Find entries and notebooks in Spotlight | #70 |
+| R22 | Tale's end recap when a notebook is completed | #71 |
+| R23 | Quick write as a character from Siri, Shortcuts and the Lock Screen | #72 |
+| R24 | Export a notebook as a styled PDF book | #73 |
+| R25 | Share an entry as an image card | #74 |
+| R26 | Accessibility pass across the notebook screens | #75 |
+| R27 | iPad layout with Library, Chronicle and entry side by side | #76 |
+
+Not planned for now: NPC codex, bond web, quest log, keepsakes, New Game+ and screenshot suggestions.
+
 Open: a new app name (#45).
 
-Needs a human: a real app icon (#27), and on-device checks of widgets, photo picking and iCloud sync (#30).
+Needs a human: on-device checks of widgets, photo picking and iCloud sync (#30).
 
 ## Done (first version, session journal)
 
