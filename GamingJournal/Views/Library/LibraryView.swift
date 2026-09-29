@@ -104,11 +104,6 @@ struct LibraryView: View {
                         .tag(notebook.id)
                         .contextMenu { notebookMenu(notebook) }
                 }
-                if !notebooks.isEmpty {
-                    ToolbarItem(placement: .topBarLeading) {
-                        shelfMenu
-                    }
-                }
             }
             .overlay {
                 if notebooks.isEmpty {
