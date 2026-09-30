@@ -102,6 +102,26 @@ final class EntryDraftTests: XCTestCase {
         XCTAssertEqual(entry.sortedPhotos.map(\.imageData), [Data([2])])
     }
 
+    func testEditingKeepsAPhotoMissingItsFullImage() throws {
+        let context = try makeContext()
+        let journal = Journal(characterName: "Eira")
+        context.insert(journal)
+        let entry = Entry(body: "Pictures")
+        context.insert(entry)
+        entry.journal = journal
+        entry.photos = [
+            EntryPhoto(imageData: nil, thumbnailData: Data([7])),
+            EntryPhoto(imageData: nil, thumbnailData: nil, sortIndex: 1),
+        ]
+
+        let edit = EntryDraft(entry: entry)
+        XCTAssertEqual(edit.photos.count, 2)
+        edit.apply(to: entry, in: journal)
+        XCTAssertEqual(entry.sortedPhotos.count, 2)
+        XCTAssertNil(entry.sortedPhotos[0].imageData)
+        XCTAssertEqual(entry.sortedPhotos[0].thumbnailData, Data([7]))
+    }
+
     func testBlankDraftIsNotWorthSaving() {
         XCTAssertFalse(EntryDraft(body: " \n ").isValid)
         XCTAssertFalse(EntryDraft(inGameDate: "Day 3").isValid)

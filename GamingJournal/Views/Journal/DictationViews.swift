@@ -59,7 +59,8 @@ final class Dictation {
                 let finished = error != nil || (result?.isFinal ?? false)
                 Task { @MainActor in
                     guard let self else { return }
-                    if let text { self.transcript = text }
+                    // Words arriving after the take was handed over belong to no one.
+                    if let text, self.isListening { self.transcript = text }
                     if finished { self.stop() }
                 }
             }
@@ -69,9 +70,14 @@ final class Dictation {
         }
     }
 
-    /// Ends the take and returns what was heard.
-    @discardableResult
-    func stop() -> String {
+    /// What was heard in the last take, handed over once: later calls get "" until the next take.
+    func takeTranscript() -> String {
+        defer { transcript = "" }
+        return transcript
+    }
+
+    /// Ends the take. Recognition also ends it by itself after a pause, a time limit or an error.
+    func stop() {
         if engine.isRunning {
             engine.stop()
             engine.inputNode.removeTap(onBus: 0)
@@ -82,7 +88,6 @@ final class Dictation {
         task = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         if state == .listening { state = .idle }
-        return transcript
     }
 
     private static func speechAllowed() async -> Bool {
@@ -105,7 +110,7 @@ struct DictationRow: View {
             HStack(spacing: 10) {
                 Button {
                     if dictation.isListening {
-                        text = DictationText.append(dictation.stop(), to: text)
+                        dictation.stop()
                     } else {
                         Task { await dictation.start() }
                     }
@@ -138,11 +143,20 @@ struct DictationRow: View {
                     .foregroundStyle(Theme.fadedInk)
             }
         }
-        // Leaving the editor mid-take keeps what was said.
+        // However the take ended (Stop, or recognition finishing by itself), keep what was said.
+        .onChange(of: dictation.isListening) { wasListening, isListening in
+            if wasListening && !isListening { keepTranscript() }
+        }
+        // Leaving the editor mid-take keeps what was said too.
         .onDisappear {
             if dictation.isListening {
-                text = DictationText.append(dictation.stop(), to: text)
+                dictation.stop()
+                keepTranscript()
             }
         }
+    }
+
+    private func keepTranscript() {
+        text = DictationText.append(dictation.takeTranscript(), to: text)
     }
 }

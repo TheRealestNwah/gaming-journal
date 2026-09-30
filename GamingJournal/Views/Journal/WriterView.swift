@@ -79,9 +79,10 @@ struct WriterView: View {
         .onAppear {
             if entry == nil && unfinished == nil { bodyFocused = true }
         }
-        // Keep new writing safe from an accidental dismissal or the app being closed.
+        // Keep new writing safe from an accidental dismissal or the app being closed, but not over
+        // an unfinished page still waiting to be carried on or discarded.
         .onChange(of: draft) { _, draft in
-            if entry == nil { drafts.keep(draft, for: journal.id) }
+            if entry == nil && unfinished == nil { drafts.keep(draft, for: journal.id) }
         }
         .onChange(of: pickerItems) { _, items in
             guard !items.isEmpty else { return }
@@ -186,7 +187,8 @@ struct WriterView: View {
                 .fontWeight(.semibold)
                 Button("Discard it", role: .destructive) {
                     unfinished = nil
-                    drafts.discard(for: journal.id)
+                    // Whatever was written meanwhile becomes the page kept safe.
+                    drafts.keep(draft, for: journal.id)
                     bodyFocused = true
                 }
             }
