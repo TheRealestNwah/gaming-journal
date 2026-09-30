@@ -87,8 +87,8 @@ final class JournalPagerTests: XCTestCase {
     }
 
     func testSizeEstimateGivesSensibleCapacity() {
-        let pager = JournalPager(width: 330, height: 560, fontSize: 19)
-        XCTAssertEqual(pager.charactersPerLine, 34)
-        XCTAssertEqual(pager.linesPerPage, 19)
+        let pager = JournalPager(width: 342, height: 657, fontSize: 19)
+        XCTAssertEqual(pager.charactersPerLine, 37)
+        XCTAssertEqual(pager.linesPerPage, 24)
     }
 }

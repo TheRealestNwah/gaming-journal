@@ -6,14 +6,20 @@ import UniformTypeIdentifiers
 /// Next or a swipe. It opens on the latest page, where the next entry will go.
 struct JournalView: View {
     let journal: Journal
-    /// An entry to open at instead of the latest page (from iOS search).
-    var focusEntryID: UUID?
+
+    init(journal: Journal, focusEntryID: UUID? = nil) {
+        self.journal = journal
+        _anchor = State(initialValue: focusEntryID.map(Anchor.entry) ?? .latest)
+    }
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ScaledMetric(relativeTo: .body) private var fontSize: CGFloat = 19
     @State private var pageIndex = 0
+    /// The page last turned to by the app rather than by a swipe.
+    @State private var settledIndex = 0
+    @State private var anchor: Anchor
     @State private var textArea = CGSize.zero
     @State private var hasOpened = false
     @State private var writing: WriterRequest?
@@ -26,6 +32,14 @@ struct JournalView: View {
         let entry: Entry?
         var id: UUID { entry?.id ?? Self.newPage }
         static let newPage = UUID()
+    }
+
+    /// What the open page follows while the layout settles or changes (size, text size, new
+    /// entries): the latest page, the page an entry is on, or wherever the reader turned to.
+    private enum Anchor: Equatable {
+        case latest
+        case entry(UUID)
+        case free
     }
 
     private static let pagePadding: CGFloat = 30
@@ -109,14 +123,22 @@ struct JournalView: View {
             .padding(.bottom, 70)
         }
         .toolbar(.hidden, for: .navigationBar)
-        .onChange(of: laidOut.count) { _, newCount in
-            if pageIndex >= newCount {
-                pageIndex = max(0, newCount - 1)
+        .onChange(of: laidOut.count) {
+            if hasOpened { settle() }
+        }
+        .onChange(of: pageIndex) { _, index in
+            // A swipe: follow the reader from here on.
+            if index != settledIndex {
+                settledIndex = index
+                anchor = index == laidOut.count - 1 ? .latest : .free
             }
         }
         .onChange(of: journal.entries?.count) { oldCount, newCount in
             // Written a new entry: show where it landed, the last page.
-            if (newCount ?? 0) > (oldCount ?? 0) { turn(to: pages.count - 1) }
+            if (newCount ?? 0) > (oldCount ?? 0) {
+                anchor = .latest
+                settle(animated: true)
+            }
         }
         .fullScreenCover(item: $writing) { request in
             WriterView(journal: journal, entry: request.entry)
@@ -147,31 +169,45 @@ struct JournalView: View {
         ) { _ in }
     }
 
-    /// The page area was measured: lay out the pages, and on first showing open the book.
+    /// The page area was measured: lay out the pages again and keep the book open where it was.
     private func measured(_ size: CGSize) {
         guard size.width > 0, size.height > 0 else { return }
         textArea = size
-        if !hasOpened {
-            open(in: pages)
-        }
-    }
-
-    /// First showing: the page with the entry asked for, or else the latest page.
-    private func open(in pages: [JournalPager.Page]) {
+        settle()
         hasOpened = true
-        if let focusEntryID, let index = JournalPager.pageIndex(of: focusEntryID, in: pages) {
-            pageIndex = index
-        } else {
-            pageIndex = max(0, pages.count - 1)
-        }
     }
 
+    /// Turns to the page the anchor asks for. The size can change a few times while the screen
+    /// settles, so this runs on every layout change, not just the first.
+    private func settle(animated: Bool = false) {
+        let pages = pages
+        let last = max(0, pages.count - 1)
+        let target: Int
+        switch anchor {
+        case .latest: target = last
+        case .entry(let id): target = JournalPager.pageIndex(of: id, in: pages) ?? last
+        case .free: target = min(pageIndex, last)
+        }
+        show(target, animated: animated)
+    }
+
+    /// Prev and Next.
     private func turn(to index: Int) {
-        let target = max(0, index)
-        if reduceMotion {
-            pageIndex = target
+        let last = max(0, laidOutCount - 1)
+        let target = min(max(0, index), last)
+        anchor = target == last ? .latest : .free
+        show(target, animated: true)
+    }
+
+    private var laidOutCount: Int { pages.count }
+
+    private func show(_ index: Int, animated: Bool) {
+        settledIndex = index
+        guard index != pageIndex else { return }
+        if animated && !reduceMotion {
+            withAnimation(.easeInOut(duration: 0.35)) { pageIndex = index }
         } else {
-            withAnimation(.easeInOut(duration: 0.35)) { pageIndex = target }
+            pageIndex = index
         }
     }
 

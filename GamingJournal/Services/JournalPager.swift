@@ -35,10 +35,10 @@ struct JournalPager {
         var id: Int { index }
     }
 
-    /// Lines a date heading takes, with its space.
+    /// Lines a date heading takes, with the space above it.
     static let headingLines = 2
-    /// Blank line between entries.
-    static let entryGap = 1
+    /// Extra lines between entries; the heading's own space already separates them.
+    static let entryGap = 0
     /// Lines a row of photo thumbnails takes.
     static let photoLines = 5
 
@@ -53,10 +53,11 @@ struct JournalPager {
 
     /// Estimates line capacity from the page's text area and the body font size.
     init(width: Double, height: Double, fontSize: Double) {
-        // Generous per-character and per-line sizes, so an estimate never overfills a page.
+        // Slightly generous per-character and per-line sizes for Baskerville with the page's line
+        // spacing, so an estimate fills a page without overfilling it.
         self.init(
-            charactersPerLine: Int(width / (fontSize * 0.5)),
-            linesPerPage: Int(height / (fontSize * 1.55))
+            charactersPerLine: Int(width / (fontSize * 0.48)),
+            linesPerPage: Int(height / (fontSize * 1.42))
         )
     }
 
