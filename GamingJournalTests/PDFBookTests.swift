@@ -38,6 +38,49 @@ final class PDFBookTests: XCTestCase {
         XCTAssertEqual(try document(Journal(characterName: "Nobody")).pageCount, 1)
     }
 
+    private func jpeg(width: CGFloat, height: CGFloat) -> Data {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        return UIGraphicsImageRenderer(size: CGSize(width: width, height: height), format: format).image { context in
+            // Stripes, so the picture doesn't compress to nothing.
+            for x in stride(from: 0, to: width, by: 8) {
+                UIColor(hue: x / width, saturation: 0.6, brightness: 0.7, alpha: 1).setFill()
+                context.fill(CGRect(x: x, y: 0, width: 8, height: height))
+            }
+        }.jpegData(compressionQuality: 0.8)!
+    }
+
+    func testPicturesArePrintedAfterTheWords() throws {
+        let plain = makeJournal()
+        let illustrated = makeJournal()
+        let entry = try XCTUnwrap(illustrated.story.first)
+        entry.photos = [EntryPhoto(imageData: jpeg(width: 2048, height: 1024), thumbnailData: nil)]
+        // An entry that's only a picture still gets its date.
+        let pictureOnly = Entry(body: "", inGameDate: "Day 9", writtenAt: Date(timeIntervalSince1970: 3_000_000))
+        pictureOnly.photos = [EntryPhoto(imageData: nil, thumbnailData: jpeg(width: 200, height: 300))]
+        illustrated.entries?.append(pictureOnly)
+
+        let data = PDFBook.render(illustrated, locale: Locale(identifier: "en_US"))
+        XCTAssertGreaterThan(data.count, PDFBook.render(plain, locale: Locale(identifier: "en_US")).count)
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        let text = (1..<pdf.pageCount).compactMap { pdf.page(at: $0)?.string }.joined(separator: "\n")
+        XCTAssertTrue(text.contains("The dragon came."))
+        XCTAssertTrue(text.contains("Riverwood."))
+        XCTAssertTrue(text.contains("Day 9"))
+    }
+
+    func testPictureSizeFitsThePageWithoutEnlarging() {
+        let box = PDFBook.textBox
+        let wide = PDFBook.pictureSize(for: CGSize(width: 2048, height: 1024))
+        XCTAssertEqual(wide.width, box.width)
+        XCTAssertLessThanOrEqual(wide.height, PDFBook.maxPictureHeight)
+        let tall = PDFBook.pictureSize(for: CGSize(width: 1000, height: 3000))
+        XCTAssertEqual(tall.height, PDFBook.maxPictureHeight)
+        XCTAssertLessThan(tall.width, box.width)
+        XCTAssertEqual(PDFBook.pictureSize(for: CGSize(width: 80, height: 60)), CGSize(width: 80, height: 60))
+        XCTAssertEqual(PDFBook.pictureSize(for: .zero), .zero)
+    }
+
     func testTitleAndFilename() throws {
         let journal = makeJournal()
         let pdf = try document(journal)
