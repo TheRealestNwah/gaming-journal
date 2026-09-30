@@ -37,32 +37,9 @@ final class CampfireRemindersTests: XCTestCase {
     }
 
     func testEverythingIsOffByDefault() async {
-        XCTAssertFalse(reminders.remindsAfterSessions)
         XCTAssertFalse(reminders.remindsEvenings)
         XCTAssertEqual(reminders.eveningTime, 21 * 60)
-        await reminders.sessionLogged(notebookID: UUID(), notebookTitle: "Tav's Road")
         await reminders.applyEveningSetting()
-        XCTAssertTrue(scheduler.pending.isEmpty)
-    }
-
-    func testSessionNudgeOpensTheNotebookAndGoesOnceAnEntryIsWritten() async throws {
-        defaults.set(true, forKey: CampfireReminders.afterSessionKey)
-        let notebookID = UUID()
-        await reminders.sessionLogged(notebookID: notebookID, notebookTitle: "Tav's Road")
-
-        let request = try XCTUnwrap(scheduler.pending[CampfireReminders.afterSessionID(for: notebookID)])
-        XCTAssertTrue(request.content.body.contains("Tav's Road"))
-        let trigger = try XCTUnwrap(request.trigger as? UNTimeIntervalNotificationTrigger)
-        XCTAssertEqual(trigger.timeInterval, CampfireReminders.afterSessionDelay)
-        XCTAssertFalse(trigger.repeats)
-        let url = try XCTUnwrap(CampfireReminders.url(from: request.content.userInfo))
-        XCTAssertEqual(WidgetSnapshot.notebookID(inWriteURL: url), notebookID)
-
-        // Another session in the same notebook replaces the nudge rather than stacking.
-        await reminders.sessionLogged(notebookID: notebookID, notebookTitle: "Tav's Road")
-        XCTAssertEqual(scheduler.pending.count, 1)
-
-        reminders.entryWritten(in: notebookID)
         XCTAssertTrue(scheduler.pending.isEmpty)
     }
 

@@ -2,93 +2,59 @@ import CoreText
 import SwiftUI
 import UIKit
 
-/// A notebook typeset as a small printed book: a leather-coloured cover page, the party with
-/// portraits, then the chronicle on parchment pages, one chapter after another.
+/// A journal typeset as a small printed book: a leather cover page, then every entry on aged
+/// pages under its date, set in the same book face as the app.
 enum PDFBook {
     /// A 6 × 9 inch trade paperback page.
     static let pageSize = CGSize(width: 432, height: 648)
     static let margin: CGFloat = 50
 
-    private static let parchment = UIColor(red: 0.96, green: 0.91, blue: 0.85, alpha: 1)
-    private static let ink = UIColor(red: 0.17, green: 0.11, blue: 0.08, alpha: 1)
-    private static let fadedInk = UIColor(red: 0.42, green: 0.33, blue: 0.26, alpha: 1)
-    private static let ember = UIColor(red: 0.66, green: 0.27, blue: 0.10, alpha: 1)
-    private static let gold = UIColor(red: 0.66, green: 0.52, blue: 0.08, alpha: 1)
+    private static let paper = UIColor(red: 0.94, green: 0.89, blue: 0.78, alpha: 1)
+    private static let ink = UIColor(red: 0.18, green: 0.13, blue: 0.09, alpha: 1)
+    private static let fadedInk = UIColor(red: 0.37, green: 0.27, blue: 0.19, alpha: 1)
+    private static let rubric = UIColor(red: 0.48, green: 0.18, blue: 0.11, alpha: 1)
+    private static let gold = UIColor(red: 0.84, green: 0.71, blue: 0.42, alpha: 1)
+    private static let cream = UIColor(red: 0.95, green: 0.90, blue: 0.80, alpha: 1)
 
-    static func render(_ notebook: Notebook, locale: Locale = .current) -> Data {
+    static func render(_ journal: Journal, locale: Locale = .current) -> Data {
         let bounds = CGRect(origin: .zero, size: pageSize)
-        let renderer = UIGraphicsPDFRenderer(bounds: bounds, format: format(for: notebook))
+        let format = UIGraphicsPDFRendererFormat()
+        format.documentInfo = [
+            kCGPDFContextTitle as String: journal.title,
+            kCGPDFContextCreator as String: "Hearthbound",
+        ]
+        let renderer = UIGraphicsPDFRenderer(bounds: bounds, format: format)
         return renderer.pdfData { context in
             var pageNumber = 0
             func newPage(numbered: Bool = true) {
                 context.beginPage()
                 pageNumber += 1
-                parchment.setFill()
+                paper.setFill()
                 context.fill(bounds)
                 if numbered {
-                    draw("\(pageNumber)", font: serif(9), color: fadedInk, centeredAt: CGPoint(x: bounds.midX, y: bounds.maxY - 28))
+                    draw("\(pageNumber - 1)", font: book(10), color: fadedInk, centeredAt: CGPoint(x: bounds.midX, y: bounds.maxY - 30))
                 }
             }
 
             newPage(numbered: false)
-            drawCover(notebook, locale: locale, in: bounds)
+            drawCover(journal, in: bounds)
 
-            let party = notebook.party
-            if !party.isEmpty {
+            let entries = journal.story
+            if !entries.isEmpty {
                 newPage()
-                drawParty(party, in: bounds, newPage: { newPage() })
-            }
-
-            for section in sections(of: notebook) {
-                newPage()
-                flow(chronicle(section, locale: locale), in: context, newPage: { newPage() })
+                flow(pages(entries, locale: locale), in: context, newPage: { newPage() })
             }
         }
     }
 
-    static func filename(for notebook: Notebook) -> String {
-        NotebookMarkdown.filename(for: notebook)
-    }
-
-    // MARK: Structure
-
-    /// A run of entries under one heading: each chapter, then loose pages; or the whole chronicle.
-    struct Section {
-        var title: String?
-        var summary: String
-        var entries: [Entry]
-    }
-
-    static func sections(of notebook: Notebook) -> [Section] {
-        let story = (notebook.entries ?? []).sorted { ($0.writtenAt, $0.createdAt) < ($1.writtenAt, $1.createdAt) }
-        let chapters = notebook.orderedChapters
-        guard !chapters.isEmpty else {
-            return story.isEmpty ? [] : [Section(title: nil, summary: "", entries: story)]
-        }
-        var sections = chapters.map { chapter in
-            Section(title: chapter.title, summary: chapter.summary, entries: story.filter { $0.chapter?.id == chapter.id })
-        }
-        let chapterIDs = Set(chapters.map(\.id))
-        let loose = story.filter { entry in entry.chapter.map { !chapterIDs.contains($0.id) } ?? true }
-        if !loose.isEmpty {
-            sections.append(Section(title: "Loose pages", summary: "", entries: loose))
-        }
-        return sections
+    static func filename(for journal: Journal) -> String {
+        JournalMarkdown.filename(for: journal)
     }
 
     // MARK: Pages
 
-    private static func format(for notebook: Notebook) -> UIGraphicsPDFRendererFormat {
-        let format = UIGraphicsPDFRendererFormat()
-        format.documentInfo = [
-            kCGPDFContextTitle as String: notebook.title,
-            kCGPDFContextCreator as String: "Hearthbound",
-        ]
-        return format
-    }
-
-    private static func drawCover(_ notebook: Notebook, locale: Locale, in bounds: CGRect) {
-        let leather = UIColor(notebook.coverStyle.colors.last ?? .brown)
+    private static func drawCover(_ journal: Journal, in bounds: CGRect) {
+        let leather = UIColor(journal.coverStyle.colors.last ?? .brown)
         let band = bounds.insetBy(dx: 36, dy: 60)
         leather.setFill()
         UIBezierPath(roundedRect: band, cornerRadius: 12).fill()
@@ -97,102 +63,33 @@ enum PDFBook {
         tooled.lineWidth = 1.5
         tooled.stroke()
 
-        let cream = UIColor(red: 0.98, green: 0.95, blue: 0.89, alpha: 1)
-        var y = band.minY + 120
-        y = drawCentered(notebook.title, font: serif(28, weight: .bold), color: cream, top: y, in: band.insetBy(dx: 28, dy: 0))
-        let subtitle = [notebook.gameTitle, notebook.platform].filter { !$0.isEmpty }.joined(separator: " · ")
-        if !subtitle.isEmpty {
-            y = drawCentered(subtitle, font: serif(13, italic: true), color: cream.withAlphaComponent(0.85), top: y + 10, in: band.insetBy(dx: 28, dy: 0))
-        }
-        var dateStyle = Date.FormatStyle(date: .long, time: .omitted)
-        dateStyle.locale = locale
-        let begun = "\(notebook.status.label) · begun \(notebook.startedAt.formatted(dateStyle))"
-        y = drawCentered(begun, font: serif(10), color: cream.withAlphaComponent(0.75), top: y + 18, in: band.insetBy(dx: 28, dy: 0))
-        if !notebook.summary.isEmpty {
-            _ = drawCentered(notebook.summary, font: serif(11, italic: true), color: cream, top: y + 30, in: band.insetBy(dx: 40, dy: 0))
+        let text = band.insetBy(dx: 32, dy: 0)
+        var y = drawCentered("The Journal of", font: book(15, italic: true), color: cream.withAlphaComponent(0.85), top: band.minY + 150, in: text)
+        y = drawCentered(journal.characterName, font: book(30, weight: .semibold), color: cream, top: y + 8, in: text)
+        if !journal.subtitle.isEmpty {
+            _ = drawCentered(journal.subtitle, font: book(13, italic: true), color: cream.withAlphaComponent(0.8), top: y + 14, in: text)
         }
     }
 
-    private static func drawParty(_ party: [PartyMember], in bounds: CGRect, newPage: () -> Void) {
-        let column = bounds.insetBy(dx: margin, dy: margin)
-        var y = drawCentered("The Party", font: serif(20, weight: .bold), color: ink, top: column.minY, in: column) + 18
-        let portrait: CGFloat = 54
-        for member in party {
-            let text = NSMutableAttributedString()
-            text.append(NSAttributedString(string: member.name, attributes: [.font: serif(14, weight: .semibold), .foregroundColor: ink]))
-            let role = [member.role, member.isRetired ? "retired" : ""].filter { !$0.isEmpty }.joined(separator: " · ")
-            if !role.isEmpty {
-                text.append(NSAttributedString(string: "\n\(role)", attributes: [.font: serif(10, italic: true), .foregroundColor: fadedInk]))
-            }
-            if !member.backstory.isEmpty {
-                text.append(NSAttributedString(string: "\n\(member.backstory)", attributes: [.font: serif(10.5), .foregroundColor: ink]))
-            }
-            let textWidth = column.width - portrait - 14
-            let height = max(portrait, text.boundingRect(with: CGSize(width: textWidth, height: .greatestFiniteMagnitude), options: [.usesLineFragmentOrigin], context: nil).height)
-            if y + height > column.maxY - 20 {
-                newPage()
-                y = column.minY
-            }
-            let circle = CGRect(x: column.minX, y: y, width: portrait, height: portrait)
-            if let data = member.portraitData, let image = UIImage(data: data) {
-                UIGraphicsGetCurrentContext()?.saveGState()
-                UIBezierPath(ovalIn: circle).addClip()
-                image.draw(in: aspectFill(image.size, in: circle))
-                UIGraphicsGetCurrentContext()?.restoreGState()
-            } else {
-                UIColor(hex: member.sigil.hex).setFill()
-                UIBezierPath(ovalIn: circle).fill()
-                draw(PartyRoster.initials(for: member.name), font: serif(18, weight: .semibold), color: .white, centeredAt: CGPoint(x: circle.midX, y: circle.midY - 11))
-            }
-            text.draw(with: CGRect(x: circle.maxX + 14, y: y, width: textWidth, height: height), options: [.usesLineFragmentOrigin], context: nil)
-            y += height + 18
-        }
-    }
-
-    /// The section's entries as one flowing run of text.
-    private static func chronicle(_ section: Section, locale: Locale) -> NSAttributedString {
+    /// Every entry as one flowing run of text: a date heading, then the words.
+    static func pages(_ entries: [Entry], locale: Locale) -> NSAttributedString {
         let text = NSMutableAttributedString()
-        let centered = NSMutableParagraphStyle()
-        centered.alignment = .center
-        centered.paragraphSpacing = 6
-        if let title = section.title {
-            text.append(NSAttributedString(string: title + "\n", attributes: [.font: serif(20, weight: .bold), .foregroundColor: ink, .paragraphStyle: centered]))
-            if !section.summary.isEmpty {
-                text.append(NSAttributedString(string: section.summary + "\n", attributes: [.font: serif(11, italic: true), .foregroundColor: fadedInk, .paragraphStyle: centered]))
-            }
-            text.append(NSAttributedString(string: "\n", attributes: [.font: serif(8)]))
-        }
         let heading = NSMutableParagraphStyle()
-        heading.paragraphSpacingBefore = 14
-        heading.paragraphSpacing = 2
+        heading.paragraphSpacingBefore = 16
+        heading.paragraphSpacing = 4
         let body = NSMutableParagraphStyle()
-        body.lineSpacing = 3
-        body.paragraphSpacing = 7
-        body.firstLineHeadIndent = 0
+        body.lineSpacing = 3.5
+        body.paragraphSpacing = 6
+        body.alignment = .justified
+        body.hyphenationFactor = 0.8
 
-        var dateStyle = Date.FormatStyle(date: .long, time: .omitted)
-        dateStyle.locale = locale
-        for entry in section.entries {
-            let title = entry.title.isEmpty ? entry.writtenAt.formatted(dateStyle) : entry.title
+        for entry in entries {
             text.append(NSAttributedString(
-                string: (entry.isTurningPoint ? "✦ " : "") + title + "\n",
-                attributes: [.font: serif(15, weight: .semibold), .foregroundColor: entry.isTurningPoint ? ember : ink, .paragraphStyle: heading]
+                string: entry.heading(locale: locale) + "\n",
+                attributes: [.font: book(13, weight: .semibold), .foregroundColor: rubric, .paragraphStyle: heading]
             ))
-            var meta = [entry.author?.name ?? "Narrator", entry.writtenAt.formatted(dateStyle)]
-            if !entry.inGameDate.isEmpty { meta.append(entry.inGameDate) }
-            if !entry.place.isEmpty { meta.append(entry.place) }
-            if !entry.quest.isEmpty { meta.append("Quest: \(entry.quest)") }
-            text.append(NSAttributedString(string: meta.joined(separator: " · ") + "\n", attributes: [.font: serif(9.5, italic: true), .foregroundColor: fadedInk]))
-            let feelings = entry.emotions.compactMap { felt in felt.emotion.map { "\($0.label)\(String(repeating: "•", count: felt.intensity))" } }
-            if !feelings.isEmpty {
-                text.append(NSAttributedString(string: "Feeling: \(feelings.joined(separator: ", "))\n", attributes: [.font: serif(9.5), .foregroundColor: ember]))
-            }
-            let bonds = entry.bonds.map { "\($0.targetName) (\($0.affinityLabel.lowercased()))" }
-            if !bonds.isEmpty {
-                text.append(NSAttributedString(string: "Bonds: \(bonds.joined(separator: ", "))\n", attributes: [.font: serif(9.5), .foregroundColor: fadedInk]))
-            }
             if !entry.body.isEmpty {
-                text.append(NSAttributedString(string: entry.body + "\n", attributes: [.font: serif(11.5), .foregroundColor: ink, .paragraphStyle: body]))
+                text.append(NSAttributedString(string: entry.body + "\n", attributes: [.font: book(12.5), .foregroundColor: ink, .paragraphStyle: body]))
             }
         }
         return text
@@ -223,7 +120,12 @@ enum PDFBook {
 
     // MARK: Drawing helpers
 
-    private static func serif(_ size: CGFloat, weight: UIFont.Weight = .regular, italic: Bool = false) -> UIFont {
+    /// Baskerville, the app's book face, falling back to the system serif.
+    static func book(_ size: CGFloat, weight: UIFont.Weight = .regular, italic: Bool = false) -> UIFont {
+        let name = italic ? "Baskerville-Italic" : (weight == .regular ? "Baskerville" : "Baskerville-SemiBold")
+        if let font = UIFont(name: name, size: size) {
+            return font
+        }
         var descriptor = UIFont.systemFont(ofSize: size, weight: weight).fontDescriptor
         descriptor = descriptor.withDesign(.serif) ?? descriptor
         if italic, let slanted = descriptor.withSymbolicTraits(descriptor.symbolicTraits.union(.traitItalic)) {
@@ -246,12 +148,5 @@ enum PDFBook {
         let text = NSAttributedString(string: string, attributes: [.font: font, .foregroundColor: color])
         let size = text.size()
         text.draw(at: CGPoint(x: point.x - size.width / 2, y: point.y))
-    }
-
-    private static func aspectFill(_ size: CGSize, in rect: CGRect) -> CGRect {
-        guard size.width > 0, size.height > 0 else { return rect }
-        let scale = max(rect.width / size.width, rect.height / size.height)
-        let fitted = CGSize(width: size.width * scale, height: size.height * scale)
-        return CGRect(x: rect.midX - fitted.width / 2, y: rect.midY - fitted.height / 2, width: fitted.width, height: fitted.height)
     }
 }

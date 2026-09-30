@@ -22,17 +22,13 @@ extension UNUserNotificationCenter: ReminderScheduling {
     }
 }
 
-/// Optional nudges to write, in the journal's voice: one after a play session the writer didn't
-/// write about yet, and one every evening at a chosen time. Both are off until turned on in
-/// Settings, and permission is only asked for then.
+/// An optional nudge to write every evening at a chosen time. Off until turned on in Settings,
+/// and permission is only asked for then.
 final class CampfireReminders {
-    static let afterSessionKey = "reminders.afterSession"
     static let eveningKey = "reminders.evening"
     /// Minutes after midnight.
     static let eveningTimeKey = "reminders.eveningTime"
     static let defaultEveningTime = 21 * 60
-    /// How long after a session the nudge comes.
-    static let afterSessionDelay: TimeInterval = 60 * 60
     static let eveningID = "campfire.evening"
     static let urlKey = "url"
 
@@ -46,42 +42,15 @@ final class CampfireReminders {
         self.defaults = defaults
     }
 
-    var remindsAfterSessions: Bool { defaults.bool(forKey: Self.afterSessionKey) }
     var remindsEvenings: Bool { defaults.bool(forKey: Self.eveningKey) }
     var eveningTime: Int {
         defaults.object(forKey: Self.eveningTimeKey) as? Int ?? Self.defaultEveningTime
     }
 
-    /// Asks for permission when a reminder is switched on. False means the switch should go back off.
+    /// Asks for permission when the reminder is switched on. False means the switch should go back off.
     func enable() async -> Bool {
         await scheduler.askPermission()
     }
-
-    // MARK: After a session
-
-    static func afterSessionID(for notebookID: UUID) -> String {
-        "campfire.session.\(notebookID.uuidString)"
-    }
-
-    /// The writer chose "remind me later" after logging a session in this notebook.
-    func sessionLogged(notebookID: UUID, notebookTitle: String, now: Date = .now) async {
-        guard remindsAfterSessions else { return }
-        let content = UNMutableNotificationContent()
-        content.title = "The fire's still warm"
-        content.body = "Write what happened in \(notebookTitle) before the embers fade."
-        content.sound = .default
-        content.userInfo = [Self.urlKey: WidgetSnapshot.writeURL(for: notebookID).absoluteString]
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: Self.afterSessionDelay, repeats: false)
-        // Same ID per notebook: a newer session replaces the older nudge.
-        await scheduler.schedule(UNNotificationRequest(identifier: Self.afterSessionID(for: notebookID), content: content, trigger: trigger))
-    }
-
-    /// An entry was written, so there's nothing left to nudge about in that notebook.
-    func entryWritten(in notebookID: UUID) {
-        scheduler.cancel([Self.afterSessionID(for: notebookID)])
-    }
-
-    // MARK: Evenings
 
     static func eveningComponents(minutes: Int) -> DateComponents {
         let clamped = min(max(0, minutes), 24 * 60 - 1)
@@ -93,8 +62,8 @@ final class CampfireReminders {
         scheduler.cancel([Self.eveningID])
         guard remindsEvenings else { return }
         let content = UNMutableNotificationContent()
-        content.title = "The campfire awaits"
-        content.body = "Set down tonight's tale while the embers glow."
+        content.title = "The candle's still lit"
+        content.body = "Set down today's deeds before the ink dries."
         content.sound = .default
         content.userInfo = [Self.urlKey: WidgetSnapshot.writeURL.absoluteString]
         let trigger = UNCalendarNotificationTrigger(dateMatching: Self.eveningComponents(minutes: eveningTime), repeats: true)

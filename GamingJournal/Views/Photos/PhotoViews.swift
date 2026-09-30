@@ -1,67 +1,4 @@
 import SwiftUI
-import PhotosUI
-
-/// Editor section: pick photos, see thumbnails, remove them.
-struct PhotoPickerSection: View {
-    @Binding var photos: [DraftPhoto]
-    @State private var pickerItems: [PhotosPickerItem] = []
-    @State private var isLoading = false
-
-    var body: some View {
-        Section("Photos") {
-            if !photos.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(photos) { photo in
-                            ThumbnailImage(data: photo.thumbnailData, side: 72)
-                                .overlay(alignment: .topTrailing) {
-                                    Button {
-                                        photos.removeAll { $0.id == photo.id }
-                                    } label: {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .symbolRenderingMode(.palette)
-                                            .foregroundStyle(.white, .black.opacity(0.6))
-                                    }
-                                    .buttonStyle(.plain)
-                                    .padding(3)
-                                    .accessibilityLabel("Remove photo")
-                                }
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-            }
-            PhotosPicker(selection: $pickerItems, maxSelectionCount: 10, matching: .images) {
-                HStack {
-                    Label("Add Photos", systemImage: "photo.on.rectangle.angled")
-                    if isLoading {
-                        Spacer()
-                        ProgressView()
-                    }
-                }
-            }
-            .disabled(isLoading)
-        }
-        .onChange(of: pickerItems) { _, items in
-            guard !items.isEmpty else { return }
-            Task { await load(items) }
-        }
-    }
-
-    private func load(_ items: [PhotosPickerItem]) async {
-        isLoading = true
-        defer {
-            isLoading = false
-            pickerItems = []
-        }
-        for item in items {
-            guard let data = try? await item.loadTransferable(type: Data.self),
-                  let processed = await Task.detached(operation: { PhotoProcessor.process(data) }).value
-            else { continue }
-            photos.append(DraftPhoto(imageData: processed.imageData, thumbnailData: processed.thumbnailData))
-        }
-    }
-}
 
 /// Square, cropped thumbnail from stored JPEG data.
 struct ThumbnailImage: View {
@@ -85,17 +22,11 @@ struct ThumbnailImage: View {
     }
 }
 
-/// A stored photo from a session or an entry, for the strip and viewer.
+/// A stored photo from an entry, for the strip and viewer.
 struct PhotoItem: Identifiable {
     let id: UUID
     let thumbnailData: Data?
     let imageData: Data?
-
-    init(_ photo: SessionPhoto) {
-        id = photo.id
-        thumbnailData = photo.thumbnailData
-        imageData = photo.imageData
-    }
 
     init(_ photo: EntryPhoto) {
         id = photo.id
@@ -111,10 +42,6 @@ struct PhotoStrip: View {
 
     init(photos: [PhotoItem]) {
         self.photos = photos
-    }
-
-    init(photos: [SessionPhoto]) {
-        self.photos = photos.map(PhotoItem.init)
     }
 
     init(photos: [EntryPhoto]) {

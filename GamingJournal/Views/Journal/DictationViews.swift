@@ -94,7 +94,7 @@ final class Dictation {
     }
 }
 
-/// A mic button under the entry text. While listening it shows the words as they come; stopping
+/// A mic button below the page. While listening it shows the words as they come; stopping
 /// adds them to the entry.
 struct DictationRow: View {
     @Binding var text: String
@@ -112,12 +112,13 @@ struct DictationRow: View {
                 } label: {
                     Label(dictation.isListening ? "Stop dictating" : "Dictate",
                           systemImage: dictation.isListening ? "stop.circle.fill" : "mic.fill")
-                        .foregroundStyle(dictation.isListening ? Theme.crimson : Theme.ember)
+                        .font(Theme.pageControl)
+                        .foregroundStyle(Theme.rubric)
                 }
                 .buttonStyle(.borderless)
                 if dictation.isListening {
                     Circle()
-                        .fill(Theme.crimson)
+                        .fill(Theme.rubric)
                         .frame(width: 8, height: 8)
                         .accessibilityHidden(true)
                     Text("Listening…")
@@ -127,7 +128,7 @@ struct DictationRow: View {
             }
             if dictation.isListening && !dictation.transcript.isEmpty {
                 Text(dictation.transcript)
-                    .font(Theme.prose)
+                    .font(Theme.bookItalic(17))
                     .foregroundStyle(Theme.fadedInk)
                     .accessibilityLabel("Heard so far: \(dictation.transcript)")
             }

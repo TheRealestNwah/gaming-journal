@@ -2,31 +2,29 @@
 
 ## Vision
 
-A notebook for each playthrough, written from a role-playing point of view. You start a notebook for a game, add your party, and write in character: what they did, how they felt, where they are and who they trust. Play-time tracking stays as a quiet extra.
-
-**Tone:** a leather-bound adventurer's journal by a campfire. Warm parchment, ember orange, deep crimson and gold, serif type, in-world copy ("Begin a new tale").
+The journal your character keeps, like the in-game journal in Skyrim or Morrowind. One journal per character; each is a book of dated entries on aged pages, turned like a book. Writing is a blank page: the in-game date, the words, maybe a picture. Nothing else on screen.
 
 All data is entered by hand; there is no online game database and no account.
 
-## Data model
+## Current direction (September 2026)
 
-A clean-slate schema (nothing has shipped), CloudKit-safe and versioned from here on.
+The app was rebuilt around this simpler idea. The notebook, party, emotion, bond, chapter, stats and play-session features below were removed; their tables are kept as history.
+
+| Item | Issue |
+|------|-------|
+| Journals and entries on a fresh, simpler data model | #116 |
+| Journal shelf, paged reader and writer in the in-game journal style | #117 |
+| Remove the party, emotions, bonds, chapters, stats and play sessions | #119 |
+| Point widgets, Siri, Spotlight, reminders, backup and export at journals | #118 |
+
+## Data model
 
 | Model | Key fields |
 |---|---|
-| **Notebook** (one playthrough) | title, game, platform, cover style (Ember / Forest / Frost / Arcane / Blood Moon), status (ongoing / completed / abandoned), started date, summary |
-| **Character** | name, role or class, portrait, backstory, sigil colour, party order |
-| **Entry** | written as a character; title, body, real date plus optional in-game date, emotions, place, quest, photos, turning-point flag |
-| **Emotion** (on an entry) | about 16 emotions in 5 groups (Resolve, Fire, Shadow, Warmth, Doubt), intensity 1–3 |
-| **Bond** (on an entry) | toward a character or an NPC name, affinity −3…+3, note |
-| **PlaySession** | kept; optionally belongs to a notebook |
+| **Journal** (one character) | character name, race/class/title, game, cover colour |
+| **Entry** | text, in-game date, date written, pictures |
 
-## Visual system
-
-- Palette: parchment and cream (light), charred wood and dark leather (dark); ember, crimson and gold accents; WCAG AA contrast
-- Type: New York serif for titles and entry text, system font for controls
-- Paper grain drawn in code, drifting embers and page-turn transitions (off under Reduce Motion), wax-seal badge for turning points
-- Shared components: `ParchmentCard`, `EmberButton`, `WaxSeal`, `LeatherCover`, `SectionFlourish`
+## History: the notebook app
 
 ## Build order
 
@@ -68,6 +66,8 @@ Approved features, in build order. Chapters come first because they carry schema
 | R27 | iPad layout with Library, Chronicle and entry side by side | #76 |
 
 Not planned for now: NPC codex, bond web, quest log, keepsakes, New Game+ and screenshot suggestions.
+
+All of R1–R27 shipped, then most of it was removed in the September 2026 rebuild (#116–#119).
 
 App name: Hearthbound (#45). Internal identifiers keep the `GamingJournal` names.
 

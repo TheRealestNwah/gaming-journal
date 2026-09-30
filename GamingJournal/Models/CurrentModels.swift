@@ -1,61 +1,48 @@
 import Foundation
 import SwiftData
 
-/// The schema the app reads and writes. Older versions are only kept for migration.
-typealias CurrentSchema = JournalSchemaV2
+/// The schema the app reads and writes.
+typealias CurrentSchema = HearthboundSchemaV1
 
-typealias Notebook = CurrentSchema.Notebook
-typealias PartyMember = CurrentSchema.PartyMember
-typealias Chapter = CurrentSchema.Chapter
+typealias Journal = CurrentSchema.Journal
 typealias Entry = CurrentSchema.Entry
 typealias EntryPhoto = CurrentSchema.EntryPhoto
-typealias PlaySession = CurrentSchema.PlaySession
-typealias SessionPhoto = CurrentSchema.SessionPhoto
 
-enum GamingJournalMigrationPlan: SchemaMigrationPlan {
+enum HearthboundMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [JournalSchemaV1.self, JournalSchemaV2.self]
+        [HearthboundSchemaV1.self]
     }
 
     static var stages: [MigrationStage] {
-        [v1ToV2]
-    }
-
-    /// Chapters and pinning are purely additive, so SwiftData can infer the mapping.
-    static var v1ToV2: MigrationStage {
-        .lightweight(fromVersion: JournalSchemaV1.self, toVersion: JournalSchemaV2.self)
+        []
     }
 }
 
-// MARK: - Notebook
+// MARK: - Journal
 
-extension Notebook {
+extension Journal {
     var coverStyle: CoverStyle {
         get { CoverStyle(rawValue: coverStyleRaw) ?? .ember }
         set { coverStyleRaw = newValue.rawValue }
     }
 
-    var status: NotebookStatus {
-        get { NotebookStatus(rawValue: statusRaw) ?? .ongoing }
-        set { statusRaw = newValue.rawValue }
+    /// "The Journal of Eira Stormborn".
+    var title: String {
+        "The Journal of \(characterName)"
     }
 
-    /// Party in order, retired members last.
-    var party: [PartyMember] {
-        (members ?? []).sorted {
-            if $0.isRetired != $1.isRetired { return !$0.isRetired }
-            return ($0.sortIndex, $0.createdAt) < ($1.sortIndex, $1.createdAt)
-        }
+    /// "Nord Dragonborn · Skyrim", or whichever of the two is filled in.
+    var subtitle: String {
+        [epithet, gameTitle].filter { !$0.isEmpty }.joined(separator: " · ")
     }
 
-    /// Entries newest first.
-    var chronicle: [Entry] {
-        (entries ?? []).sorted { ($0.writtenAt, $0.createdAt) > ($1.writtenAt, $1.createdAt) }
+    /// Entries oldest first, the way they read in the book.
+    var story: [Entry] {
+        (entries ?? []).sorted { ($0.writtenAt, $0.createdAt) < ($1.writtenAt, $1.createdAt) }
     }
 
-    /// Chapters in story order.
-    var orderedChapters: [Chapter] {
-        (chapters ?? []).sorted { ($0.sortIndex, $0.createdAt) < ($1.sortIndex, $1.createdAt) }
+    var latestEntry: Entry? {
+        (entries ?? []).max { ($0.writtenAt, $0.createdAt) < ($1.writtenAt, $1.createdAt) }
     }
 
     func touch(_ date: Date = .now) {
@@ -63,75 +50,27 @@ extension Notebook {
     }
 }
 
-// MARK: - Chapter
-
-extension Chapter {
-    /// Its entries, oldest first, the way they read in the book.
-    var story: [Entry] {
-        (entries ?? []).sorted { ($0.writtenAt, $0.createdAt) < ($1.writtenAt, $1.createdAt) }
-    }
-}
-
-// MARK: - Party member
-
-extension PartyMember {
-    var sigil: Sigil {
-        get { Sigil(rawValue: sigilRaw) ?? .ember }
-        set { sigilRaw = newValue.rawValue }
-    }
-
-    /// Their entries, newest first.
-    var journal: [Entry] {
-        (entries ?? []).sorted { ($0.writtenAt, $0.createdAt) > ($1.writtenAt, $1.createdAt) }
-    }
-}
-
 // MARK: - Entry
 
 extension Entry {
-    var emotions: [FeltEmotion] {
-        get { EntryCoding.decode([FeltEmotion].self, from: emotionsData) ?? [] }
-        set { emotionsData = EntryCoding.encode(FeltEmotion.normalized(newValue)) }
-    }
-
-    var bonds: [Bond] {
-        get { EntryCoding.decode([Bond].self, from: bondsData) ?? [] }
-        set { bondsData = EntryCoding.encode(newValue.map { $0.clamped() }) }
-    }
-
     var sortedPhotos: [EntryPhoto] {
         (photos ?? []).sorted { ($0.sortIndex, $0.createdAt) < ($1.sortIndex, $1.createdAt) }
     }
 
-    /// Word count of the body, for Journey stats.
-    var wordCount: Int {
-        body.split { $0.isWhitespace || $0.isNewline }.count
+    /// What heads the entry on the page: its in-game date, or else the day it was written.
+    func heading(locale: Locale = .current) -> String {
+        guard inGameDate.isEmpty else { return inGameDate }
+        var style = Date.FormatStyle(date: .long, time: .omitted)
+        style.locale = locale
+        return writtenAt.formatted(style)
     }
 }
 
-// MARK: - Play session
-
-extension PlaySession {
-    var mood: Mood? {
-        get { moodRaw.flatMap(Mood.init(rawValue:)) }
-        set { moodRaw = newValue?.rawValue }
-    }
-
-    var endDate: Date {
-        startDate.addingTimeInterval(TimeInterval(durationMinutes * 60))
-    }
-
-    /// "1h 30m", "45m", or "—" when no time was logged.
-    var formattedDuration: String {
-        PlaytimeFormatter.string(fromMinutes: durationMinutes)
-    }
-
-    /// Photos in strip order.
-    var sortedPhotos: [SessionPhoto] {
-        (photos ?? []).sorted { ($0.sortIndex, $0.createdAt) < ($1.sortIndex, $1.createdAt) }
-    }
-
-    static func clampedEnjoyment(_ value: Int?) -> Int? {
-        value.map { min(5, max(1, $0)) }
+/// Case- and accent-insensitive text for matching names typed into Siri or Shortcuts.
+enum SearchText {
+    static func normalize(_ text: String) -> String {
+        text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
     }
 }

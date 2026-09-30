@@ -1,9 +1,8 @@
 import SwiftUI
 
-/// Settings for the campfire reminders. Turning one on asks for notification permission; if
-/// that's refused the switch goes back off and says why.
+/// Settings for the evening reminder. Turning it on asks for notification permission; if that's
+/// refused the switch goes back off and says why.
 struct RemindersSection: View {
-    @AppStorage(CampfireReminders.afterSessionKey) private var afterSession = false
     @AppStorage(CampfireReminders.eveningKey) private var evening = false
     @AppStorage(CampfireReminders.eveningTimeKey) private var eveningTime = CampfireReminders.defaultEveningTime
     @State private var permissionRefused = false
@@ -11,22 +10,18 @@ struct RemindersSection: View {
 
     var body: some View {
         Section {
-            Toggle("After a session", systemImage: "hourglass", isOn: $afterSession)
-            Toggle("Every evening", systemImage: "moon.stars", isOn: $evening)
+            Toggle("Remind me every evening", systemImage: "moon.stars", isOn: $evening)
             if evening {
                 DatePicker("Time", selection: eveningDate, displayedComponents: .hourAndMinute)
             }
         } header: {
-            Text("Campfire reminders")
+            Text("Reminder")
         } footer: {
             Text(permissionRefused
                  ? "Notifications are off for Hearthbound. Turn them on in the Settings app to get reminders."
-                 : "After a session, choose \"Remind me later\" and you'll get a nudge an hour on, unless you've written by then. The evening reminder comes every day at the time you pick.")
+                 : "A nudge each day at the time you pick to set down what your character did.")
         }
-        .listRowBackground(Theme.vellum)
-        .onChange(of: afterSession) { _, isOn in
-            if isOn { confirmPermission { afterSession = false } }
-        }
+        .listRowBackground(Theme.paper.opacity(0.6))
         .onChange(of: evening) { _, isOn in
             if isOn {
                 confirmPermission { evening = false }
