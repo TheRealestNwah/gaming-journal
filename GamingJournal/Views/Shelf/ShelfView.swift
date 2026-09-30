@@ -69,6 +69,9 @@ struct ShelfView: View {
         ) { journal in
             Button("Delete \(journal.characterName)'s journal", role: .destructive) {
                 path.removeAll { $0.journal.id == journal.id }
+                // Its unfinished page and ribbon live outside the store.
+                DraftShelf().discard(for: journal.id)
+                RibbonShelf().setMark(nil, for: journal.id)
                 context.delete(journal)
                 try? context.save()
             }

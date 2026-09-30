@@ -153,7 +153,8 @@ extension JournalBackup.EntryRecord {
         createdAt = entry.createdAt
         updatedAt = entry.updatedAt
         photos = entry.sortedPhotos.compactMap { photo -> JournalBackup.Photo? in
-            guard let image = photo.imageData else { return nil }
+            // A photo missing its full image (not downloaded yet, or damaged) keeps its thumbnail.
+            guard let image = photo.imageData ?? photo.thumbnailData else { return nil }
             return JournalBackup.Photo(
                 id: photo.id,
                 imageData: image,

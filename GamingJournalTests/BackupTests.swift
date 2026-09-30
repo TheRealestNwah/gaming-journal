@@ -37,6 +37,16 @@ final class BackupTests: XCTestCase {
         XCTAssertEqual(imported.story.first?.sortedPhotos.first?.thumbnailData, Data([4]))
     }
 
+    func testPhotoMissingItsFullImageIsBackedUpByItsThumbnail() throws {
+        let context = try makeContext()
+        let journal = sampleJournal(in: context)
+        journal.story.first?.photos?.first?.imageData = nil
+        let backup = JournalBackup(exporting: [journal])
+        let photos = try XCTUnwrap(backup.journals.first?.entries.first?.photos)
+        XCTAssertEqual(photos.count, 1)
+        XCTAssertEqual(photos.first?.imageData, Data([4]))
+    }
+
     func testImportingTwiceAddsNothing() throws {
         let context = try makeContext()
         let journal = sampleJournal(in: context)

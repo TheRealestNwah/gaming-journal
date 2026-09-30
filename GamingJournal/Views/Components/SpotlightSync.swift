@@ -3,9 +3,10 @@ import SwiftData
 import SwiftUI
 
 extension View {
-    /// Keeps iOS search in step with the journals and opens what a search result points at.
-    func spotlightSync() -> some View {
-        modifier(SpotlightSync())
+    /// Keeps iOS search in step with the journals and answers a tapped search result: `onOpen`
+    /// gets its journal, and the entry when the result was one.
+    func spotlightSync(onOpen: @escaping (Journal, UUID?) -> Void) -> some View {
+        modifier(SpotlightSync(onOpen: onOpen))
     }
 }
 
@@ -13,14 +14,7 @@ private struct SpotlightSync: ViewModifier {
     @Environment(\.scenePhase) private var scenePhase
     @Query private var journals: [Journal]
     @AppStorage(SpotlightIndex.enabledKey) private var enabled = true
-    @State private var opened: Opened?
-
-    /// A search result being shown: a journal, at one entry's page if the result was an entry.
-    private struct Opened: Identifiable {
-        let id = UUID()
-        let journal: Journal
-        let entryID: UUID?
-    }
+    let onOpen: (Journal, UUID?) -> Void
 
     func body(content: Content) -> some View {
         content
@@ -36,11 +30,6 @@ private struct SpotlightSync: ViewModifier {
                 else { return }
                 open(target)
             }
-            .fullScreenCover(item: $opened) { opened in
-                NavigationStack {
-                    JournalView(journal: opened.journal, focusEntryID: opened.entryID)
-                }
-            }
     }
 
     private func rebuild() {
@@ -51,11 +40,11 @@ private struct SpotlightSync: ViewModifier {
         switch target {
         case .journal(let id):
             if let journal = journals.first(where: { $0.id == id }) {
-                opened = Opened(journal: journal, entryID: nil)
+                onOpen(journal, nil)
             }
         case .entry(let id):
             if let entry = journals.lazy.flatMap({ $0.entries ?? [] }).first(where: { $0.id == id }), let journal = entry.journal {
-                opened = Opened(journal: journal, entryID: entry.id)
+                onOpen(journal, entry.id)
             }
         }
     }

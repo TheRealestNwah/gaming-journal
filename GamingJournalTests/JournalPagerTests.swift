@@ -72,6 +72,19 @@ final class JournalPagerTests: XCTestCase {
         XCTAssertEqual(JournalPager.pageIndex(of: second.id, in: pages), secondStart?.index)
     }
 
+    func testPictureOnlyEntryKeepsItsHeadingWithItsPictures() {
+        let pager = JournalPager(charactersPerLine: 20, linesPerPage: 12)
+        // Heading and 6 lines leave 4 free: room for a heading and two lines, not the pictures.
+        let first = item(words(24))
+        let pictures = item("", photos: true)
+        let pages = pager.pages(for: [first, pictures])
+        let blocks = pages.flatMap(\.blocks).filter { $0.entryID == pictures.id }
+        XCTAssertEqual(blocks.count, 1)
+        XCTAssertEqual(blocks.first?.showsHeading, true)
+        XCTAssertEqual(blocks.first?.showsPhotos, true)
+        XCTAssertEqual(JournalPager.pageIndex(of: pictures.id, in: pages), 1)
+    }
+
     func testPhotosFollowTheLastWordsOfTheirEntry() {
         let pager = JournalPager(charactersPerLine: 30, linesPerPage: 20)
         let entry = item("Found a strange stone.", photos: true)

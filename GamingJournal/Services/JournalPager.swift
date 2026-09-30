@@ -75,10 +75,11 @@ struct JournalPager {
 
         for item in items {
             let paragraphs = Self.paragraphs(in: item.body)
-            let firstLines = paragraphs.first.map { lineCount(of: $0) } ?? (item.hasPhotos ? Self.photoLines : 0)
+            // Keep the heading with at least a couple of lines of what follows, or with the
+            // pictures when there are no words.
+            let keptLines = paragraphs.first.map { min(2, lineCount(of: $0)) } ?? (item.hasPhotos ? Self.photoLines : 0)
             let gap = blocks.isEmpty ? 0 : Self.entryGap
-            // Keep the heading with at least a couple of lines of what follows.
-            if !blocks.isEmpty && used + gap + Self.headingLines + min(2, firstLines) > linesPerPage {
+            if !blocks.isEmpty && used + gap + Self.headingLines + keptLines > linesPerPage {
                 turnPage()
             }
             used += (blocks.isEmpty ? 0 : Self.entryGap) + Self.headingLines
