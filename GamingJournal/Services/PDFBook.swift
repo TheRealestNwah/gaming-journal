@@ -1,4 +1,3 @@
-import CoreText
 import SwiftUI
 import UIKit
 
@@ -71,7 +70,17 @@ enum PDFBook {
         }
     }
 
-    /// Every entry as one flowing run of text: a date heading, then the words.
+    /// The text box on every page.
+    static var textBox: CGRect {
+        CGRect(origin: .zero, size: pageSize).insetBy(dx: margin, dy: margin)
+    }
+
+    /// The tallest a picture may be, so it always fits on a page with room for words around it.
+    static var maxPictureHeight: CGFloat {
+        (textBox.height * 0.45).rounded()
+    }
+
+    /// Every entry as one flowing run of text: a date heading, the words, then its pictures.
     static func pages(_ entries: [Entry], locale: Locale) -> NSAttributedString {
         let text = NSMutableAttributedString()
         let heading = NSMutableParagraphStyle()
@@ -82,6 +91,10 @@ enum PDFBook {
         body.paragraphSpacing = 6
         body.alignment = .justified
         body.hyphenationFactor = 0.8
+        let picture = NSMutableParagraphStyle()
+        picture.alignment = .center
+        picture.paragraphSpacingBefore = 6
+        picture.paragraphSpacing = 6
 
         for entry in entries {
             text.append(NSAttributedString(
@@ -91,30 +104,57 @@ enum PDFBook {
             if !entry.body.isEmpty {
                 text.append(NSAttributedString(string: entry.body + "\n", attributes: [.font: book(12.5), .foregroundColor: ink, .paragraphStyle: body]))
             }
+            for photo in entry.sortedPhotos {
+                guard let attachment = pictureAttachment(photo.imageData ?? photo.thumbnailData) else { continue }
+                let line = NSMutableAttributedString(attachment: attachment)
+                line.append(NSAttributedString(string: "\n"))
+                line.addAttributes([.font: book(12.5), .paragraphStyle: picture], range: NSRange(location: 0, length: line.length))
+                text.append(line)
+            }
         }
         return text
     }
 
-    /// Lays text into the page's text box, starting new pages until it's all set.
+    /// The size a picture is printed at: as large as fits the text box's width and
+    /// `maxPictureHeight`, never enlarged.
+    static func pictureSize(for size: CGSize) -> CGSize {
+        guard size.width > 0, size.height > 0 else { return .zero }
+        let scale = min(1, textBox.width / size.width, maxPictureHeight / size.height)
+        return CGSize(width: (size.width * scale).rounded(), height: (size.height * scale).rounded())
+    }
+
+    /// A picture sized for the page and downsampled to twice that size, which is sharp in print
+    /// without carrying full-size photos into the file.
+    private static func pictureAttachment(_ data: Data?) -> NSTextAttachment? {
+        guard let data, let image = UIImage(data: data) else { return nil }
+        let size = pictureSize(for: image.size)
+        guard size != .zero else { return nil }
+        let printed = PhotoProcessor.jpeg(image, maxDimension: max(size.width, size.height) * 2, quality: 0.8)
+            .flatMap(UIImage.init(data:)) ?? image
+        let attachment = NSTextAttachment(image: printed)
+        attachment.bounds = CGRect(origin: .zero, size: size)
+        return attachment
+    }
+
+    /// Lays text into the page's text box with TextKit, one text container per page, starting new
+    /// pages until it's all set. A picture that doesn't fit at the foot of a page moves to the next.
     private static func flow(_ text: NSAttributedString, in context: UIGraphicsPDFRendererContext, newPage: () -> Void) {
-        let framesetter = CTFramesetterCreateWithAttributedString(text)
-        let box = CGRect(origin: .zero, size: pageSize).insetBy(dx: margin, dy: margin)
-        var location = 0
-        while location < text.length {
-            let cg = context.cgContext
-            cg.saveGState()
-            // Core Text draws with the origin at the bottom left.
-            cg.textMatrix = .identity
-            cg.translateBy(x: 0, y: pageSize.height)
-            cg.scaleBy(x: 1, y: -1)
-            let flipped = CGRect(x: box.minX, y: pageSize.height - box.maxY, width: box.width, height: box.height)
-            let frame = CTFramesetterCreateFrame(framesetter, CFRange(location: location, length: 0), CGPath(rect: flipped, transform: nil), nil)
-            CTFrameDraw(frame, cg)
-            cg.restoreGState()
-            let visible = CTFrameGetVisibleStringRange(frame)
-            guard visible.length > 0 else { break }
-            location += visible.length
-            if location < text.length { newPage() }
+        let storage = NSTextStorage(attributedString: text)
+        let layout = NSLayoutManager()
+        storage.addLayoutManager(layout)
+        let box = textBox
+        var isFirstPage = true
+        while true {
+            let container = NSTextContainer(size: box.size)
+            container.lineFragmentPadding = 0
+            layout.addTextContainer(container)
+            let glyphs = layout.glyphRange(for: container)
+            guard glyphs.length > 0 else { break }
+            if !isFirstPage { newPage() }
+            isFirstPage = false
+            layout.drawBackground(forGlyphRange: glyphs, at: box.origin)
+            layout.drawGlyphs(forGlyphRange: glyphs, at: box.origin)
+            if NSMaxRange(glyphs) >= layout.numberOfGlyphs { break }
         }
     }
 
