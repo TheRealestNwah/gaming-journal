@@ -21,6 +21,9 @@ struct RootView: View {
                 guard let journal else { return }
                 path = [JournalRoute(journal: journal)]
                 writingIn = journal
+            } onOpenEntry: { entryID in
+                guard let journal = journals.first(where: { ($0.entries ?? []).contains { $0.id == entryID } }) else { return }
+                path = [JournalRoute(journal: journal, entryID: entryID)]
             }
             .fullScreenCover(item: $writingIn) { journal in
                 WriterView(journal: journal)
