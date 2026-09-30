@@ -1,3 +1,4 @@
+import CoreText
 import SwiftUI
 import UIKit
 
@@ -32,25 +33,26 @@ enum Theme {
 
     // MARK: Type
 
-    /// Baskerville, a book face that ships with iOS, scaled with Dynamic Type.
+    /// IM Fell English, the old-book face bundled with the app, scaled with Dynamic Type.
     static func book(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
-        .custom("Baskerville", size: size, relativeTo: style)
+        .custom(BookFont.roman, size: size, relativeTo: style)
     }
 
     static func bookItalic(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
-        .custom("Baskerville-Italic", size: size, relativeTo: style)
+        .custom(BookFont.italic, size: size, relativeTo: style)
     }
 
-    static func bookBold(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
-        .custom("Baskerville-SemiBold", size: size, relativeTo: style)
+    /// Small capitals, for dates and headings.
+    static func bookCaps(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
+        .custom(BookFont.smallCaps, size: size, relativeTo: style)
     }
 
     /// Entry text on a page.
     static let prose = book(19)
     /// The date above an entry.
-    static let dateLine = bookBold(17, relativeTo: .headline)
-    /// Small-caps style controls on a page ("‹ Journals", "Next ›").
-    static let pageControl = book(17, relativeTo: .callout)
+    static let dateLine = bookCaps(19, relativeTo: .headline)
+    /// Small-caps controls on a page ("‹ Journals", "Next ›").
+    static let pageControl = bookCaps(18, relativeTo: .callout)
 
     // MARK: Helpers
 
@@ -63,10 +65,10 @@ enum Theme {
     /// Book-face navigation titles and a quiet navigation bar. Call once at launch.
     static func applyAppearance() {
         let titles: [NSAttributedString.Key: Any] = [
-            .font: UIFont(name: "Baskerville-SemiBold", size: 18) ?? .preferredFont(forTextStyle: .headline),
+            .font: UIFont(name: BookFont.smallCaps, size: 19) ?? .preferredFont(forTextStyle: .headline),
         ]
         let largeTitles: [NSAttributedString.Key: Any] = [
-            .font: UIFont(name: "Baskerville", size: 34) ?? .preferredFont(forTextStyle: .largeTitle),
+            .font: UIFont(name: BookFont.roman, size: 34) ?? .preferredFont(forTextStyle: .largeTitle),
         ]
         let atRest = UINavigationBarAppearance()
         atRest.configureWithTransparentBackground()
@@ -79,6 +81,24 @@ enum Theme {
         UINavigationBar.appearance().scrollEdgeAppearance = atRest
         UINavigationBar.appearance().standardAppearance = scrolled
         UINavigationBar.appearance().compactAppearance = scrolled
+    }
+}
+
+/// IM Fell English by Igino Marini (SIL Open Font License, see `Fonts/IMFellEnglish-OFL.txt`).
+/// The files ship in the app bundle and are registered at launch, before anything draws text.
+enum BookFont {
+    static let roman = "IM_FELL_English_Roman"
+    static let italic = "IM_FELL_English_Italic"
+    static let smallCaps = "IM_FELL_English_SC"
+
+    /// Registers every bundled TrueType font with the process. Safe to call more than once.
+    static func register(in bundle: Bundle = .main) {
+        let urls = (bundle.urls(forResourcesWithExtension: "ttf", subdirectory: nil) ?? [])
+            + (bundle.urls(forResourcesWithExtension: "ttf", subdirectory: "Fonts") ?? [])
+        for url in urls {
+            // Fails harmlessly when the font is already registered.
+            CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+        }
     }
 }
 

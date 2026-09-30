@@ -26,7 +26,7 @@ The app is called **Hearthbound**. Its Xcode targets, schemes, bundle IDs, app g
 
 ## Tone and theme
 - The in-game journal look: aged paper with scorched edges, dark ink, red "rubric" ink for dates and actions; the shelf is dark wood with gilt. Pages stay paper in dark mode, just dimmer.
-- Type is Baskerville (ships with iOS) via `Theme.book` / `bookItalic` / `bookBold`, scaled with Dynamic Type.
+- Type is IM Fell English (SIL OFL, bundled in `GamingJournal/Fonts/` and `GamingJournalWidgets/Fonts/`, registered at launch by `BookFont.register()`) via `Theme.book` / `bookItalic` / `bookCaps`, scaled with Dynamic Type. It has no bold; small caps stand in.
 - Use the tokens and components in `Views/Theme/` (`PaperBackground`, `ShelfBook`, `WaxSeal`, `PageRule`) rather than raw colours or fonts. `ThemeTests` checks WCAG AA contrast.
 - Copy is in-world but clear ("Begin a new journal", "Take up the quill"). Every animation respects Reduce Motion.
 

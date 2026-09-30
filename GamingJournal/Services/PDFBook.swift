@@ -120,9 +120,10 @@ enum PDFBook {
 
     // MARK: Drawing helpers
 
-    /// Baskerville, the app's book face, falling back to the system serif.
+    /// IM Fell English, the app's book face (small capitals stand in for bold), falling back to
+    /// the system serif.
     static func book(_ size: CGFloat, weight: UIFont.Weight = .regular, italic: Bool = false) -> UIFont {
-        let name = italic ? "Baskerville-Italic" : (weight == .regular ? "Baskerville" : "Baskerville-SemiBold")
+        let name = italic ? BookFont.italic : (weight == .regular ? BookFont.roman : BookFont.smallCaps)
         if let font = UIFont(name: name, size: size) {
             return font
         }

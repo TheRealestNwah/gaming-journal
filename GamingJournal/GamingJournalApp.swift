@@ -7,6 +7,7 @@ struct GamingJournalApp: App {
     @State private var appLock: AppLock
 
     init() {
+        BookFont.register()
         Theme.applyAppearance()
         do {
             if LaunchOptions.isUITesting {
