@@ -380,6 +380,12 @@ private struct BlockView: View {
                     .foregroundStyle(Theme.rubric)
                     .padding(.top, 18)
                     .accessibilityAddTraits(.isHeader)
+                if !block.place.isEmpty {
+                    Text(block.place)
+                        .font(Theme.bookItalic(fontSize * 0.85))
+                        .foregroundStyle(Theme.fadedInk)
+                        .accessibilityLabel("At \(block.place)")
+                }
             }
             if !block.text.isEmpty {
                 Text(block.text)

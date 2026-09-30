@@ -91,6 +91,8 @@ enum PDFBook {
         body.paragraphSpacing = 6
         body.alignment = .justified
         body.hyphenationFactor = 0.8
+        let place = NSMutableParagraphStyle()
+        place.paragraphSpacing = 4
         let picture = NSMutableParagraphStyle()
         picture.alignment = .center
         picture.paragraphSpacingBefore = 6
@@ -101,6 +103,12 @@ enum PDFBook {
                 string: entry.heading(locale: locale) + "\n",
                 attributes: [.font: book(13, weight: .semibold), .foregroundColor: rubric, .paragraphStyle: heading]
             ))
+            if !entry.place.isEmpty {
+                text.append(NSAttributedString(
+                    string: entry.place + "\n",
+                    attributes: [.font: book(11.5, italic: true), .foregroundColor: fadedInk, .paragraphStyle: place]
+                ))
+            }
             if !entry.body.isEmpty {
                 text.append(NSAttributedString(string: entry.body + "\n", attributes: [.font: book(12.5), .foregroundColor: ink, .paragraphStyle: body]))
             }

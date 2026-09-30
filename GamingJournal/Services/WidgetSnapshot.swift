@@ -36,16 +36,19 @@ struct WidgetSnapshot: Codable, Equatable {
         var journalID: UUID
         var characterName: String
         var heading: String
+        /// Where the entry was written in the game, if it says.
+        var place: String?
         /// Opening of the body, trimmed for a small widget.
         var excerpt: String
         var writtenAt: Date
 
         static let excerptLength = 160
 
-        init(journalID: UUID, characterName: String, heading: String, excerpt: String, writtenAt: Date) {
+        init(journalID: UUID, characterName: String, heading: String, place: String? = nil, excerpt: String, writtenAt: Date) {
             self.journalID = journalID
             self.characterName = characterName
             self.heading = heading
+            self.place = place
             self.excerpt = excerpt
             self.writtenAt = writtenAt
         }
@@ -54,6 +57,7 @@ struct WidgetSnapshot: Codable, Equatable {
             journalID = entry.journal?.id ?? UUID()
             characterName = entry.journal?.characterName ?? ""
             heading = entry.heading()
+            place = entry.place.isEmpty ? nil : entry.place
             let body = entry.body.replacingOccurrences(of: "\n", with: " ")
             excerpt = body.count > Self.excerptLength
                 ? String(body.prefix(Self.excerptLength)).trimmingCharacters(in: .whitespaces) + "…"

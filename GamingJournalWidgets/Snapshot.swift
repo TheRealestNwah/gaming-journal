@@ -23,6 +23,7 @@ struct Snapshot: Codable {
         var journalID: UUID
         var characterName: String
         var heading: String
+        var place: String?
         var excerpt: String
         var writtenAt: Date
     }
@@ -36,6 +37,7 @@ struct Snapshot: Codable {
             journalID: UUID(),
             characterName: "Eira Stormborn",
             heading: "17th of Last Seed, 4E 201",
+            place: "Riverwood",
             excerpt: "Riverwood. The smith's wife fed me and asked no questions.",
             writtenAt: .now
         )

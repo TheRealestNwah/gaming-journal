@@ -15,6 +15,7 @@ struct WriterView: View {
     @State private var isLoadingPhotos = false
     @State private var dictation = Dictation()
     @FocusState private var bodyFocused: Bool
+    @FocusState private var placeFocused: Bool
     @ScaledMetric(relativeTo: .body) private var fontSize: CGFloat = 19
     private let drafts = DraftShelf()
 
@@ -43,7 +44,16 @@ struct WriterView: View {
                     .textInputAutocapitalization(.words)
                     .accessibilityIdentifier("inGameDate")
                     .submitLabel(.next)
+                    .onSubmit { placeFocused = true }
+                TextField("Place", text: $draft.place, prompt: Text("Where, e.g. Whiterun").foregroundStyle(Theme.fadedInk.opacity(0.7)))
+                    .font(Theme.bookItalic(17, relativeTo: .subheadline))
+                    .foregroundStyle(Theme.fadedInk)
+                    .textInputAutocapitalization(.words)
+                    .accessibilityIdentifier("place")
+                    .focused($placeFocused)
+                    .submitLabel(.next)
                     .onSubmit { bodyFocused = true }
+                    .padding(.top, 2)
                 dateHints
                     .padding(.top, 4)
 

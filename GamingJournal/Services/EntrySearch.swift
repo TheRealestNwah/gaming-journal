@@ -1,7 +1,7 @@
 import Foundation
 
-/// Finds entries by their words or in-game date. Every word typed must appear somewhere in the
-/// entry; case and accents don't matter.
+/// Finds entries by their words, in-game date or place. Every word typed must appear somewhere
+/// in the entry; case and accents don't matter.
 enum EntrySearch {
     /// An entry that matched, ready to list.
     struct Result: Identifiable, Equatable {
@@ -34,14 +34,14 @@ enum EntrySearch {
         guard !terms.isEmpty else { return [] }
         return journals
             .flatMap { journal in (journal.entries ?? []).map { (journal, $0) } }
-            .filter { journal, entry in matches(heading: entry.heading(locale: locale), body: entry.body, terms: terms) }
+            .filter { journal, entry in matches(heading: entry.headingWithPlace(locale: locale), body: entry.body, terms: terms) }
             .sorted { ($0.1.writtenAt, $0.1.createdAt) > ($1.1.writtenAt, $1.1.createdAt) }
             .map { journal, entry in
                 Result(
                     journalID: journal.id,
                     entryID: entry.id,
                     characterName: journal.characterName,
-                    heading: entry.heading(locale: locale),
+                    heading: entry.headingWithPlace(locale: locale),
                     snippet: snippet(of: entry.body, around: terms)
                 )
             }

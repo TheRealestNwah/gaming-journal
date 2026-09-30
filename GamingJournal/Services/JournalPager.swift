@@ -8,6 +8,8 @@ struct JournalPager {
     struct Item: Equatable {
         var id: UUID
         var heading: String
+        /// Shown under the heading; empty when the entry names no place.
+        var place: String = ""
         var body: String
         var hasPhotos: Bool
     }
@@ -20,6 +22,7 @@ struct JournalPager {
         /// The date heading shows where the entry starts, not where it carries on.
         var showsHeading: Bool
         var heading: String
+        var place: String
         var text: String
         /// The entry's pictures follow its last words.
         var showsPhotos: Bool
@@ -37,6 +40,8 @@ struct JournalPager {
 
     /// Lines a date heading takes, with the space above it.
     static let headingLines = 2
+    /// The extra line a place under the heading takes.
+    static let placeLines = 1
     /// Extra lines between entries; the heading's own space already separates them.
     static let entryGap = 0
     /// Lines a row of photo thumbnails takes.
@@ -79,10 +84,11 @@ struct JournalPager {
             // pictures when there are no words.
             let keptLines = paragraphs.first.map { min(2, lineCount(of: $0)) } ?? (item.hasPhotos ? Self.photoLines : 0)
             let gap = blocks.isEmpty ? 0 : Self.entryGap
-            if !blocks.isEmpty && used + gap + Self.headingLines + keptLines > linesPerPage {
+            let headingLines = Self.headingLines + (item.place.isEmpty ? 0 : Self.placeLines)
+            if !blocks.isEmpty && used + gap + headingLines + keptLines > linesPerPage {
                 turnPage()
             }
-            used += (blocks.isEmpty ? 0 : Self.entryGap) + Self.headingLines
+            used += (blocks.isEmpty ? 0 : Self.entryGap) + headingLines
 
             var showsHeading = true
             var part = 0
@@ -94,6 +100,7 @@ struct JournalPager {
                     part: part,
                     showsHeading: showsHeading,
                     heading: item.heading,
+                    place: item.place,
                     text: pieces.joined(separator: "\n"),
                     showsPhotos: showsPhotos
                 ))
@@ -212,6 +219,7 @@ extension JournalPager.Item {
     init(entry: Entry, locale: Locale = .current) {
         id = entry.id
         heading = entry.heading(locale: locale)
+        place = entry.place
         body = entry.body
         hasPhotos = !(entry.photos ?? []).isEmpty
     }

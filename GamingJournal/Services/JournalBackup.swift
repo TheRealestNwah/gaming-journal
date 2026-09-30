@@ -19,6 +19,8 @@ struct JournalBackup: Codable, Equatable {
         var id: UUID
         var body: String
         var inGameDate: String
+        /// Optional so backups made before places existed still import.
+        var place: String?
         var writtenAt: Date
         var createdAt: Date
         var updatedAt: Date
@@ -149,6 +151,7 @@ extension JournalBackup.EntryRecord {
         id = entry.id
         body = entry.body
         inGameDate = entry.inGameDate
+        place = entry.place.isEmpty ? nil : entry.place
         writtenAt = entry.writtenAt
         createdAt = entry.createdAt
         updatedAt = entry.updatedAt
@@ -167,7 +170,7 @@ extension JournalBackup.EntryRecord {
 
     /// A new, unsaved entry with the same values, ID and photos.
     func makeEntry() -> Entry {
-        let entry = Entry(id: id, body: body, inGameDate: inGameDate, writtenAt: writtenAt, createdAt: createdAt)
+        let entry = Entry(id: id, body: body, inGameDate: inGameDate, place: place ?? "", writtenAt: writtenAt, createdAt: createdAt)
         entry.updatedAt = updatedAt
         entry.photos = photos.map { photo in
             EntryPhoto(
