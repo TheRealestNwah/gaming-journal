@@ -22,7 +22,7 @@ struct JournalPager {
         /// The date heading shows where the entry starts, not where it carries on.
         var showsHeading: Bool
         var heading: String
-        var place: String
+        var place: String = ""
         var text: String
         /// The entry's pictures follow its last words.
         var showsPhotos: Bool
