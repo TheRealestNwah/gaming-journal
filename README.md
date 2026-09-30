@@ -4,6 +4,10 @@ The journal your character keeps, like the one in an Elder Scrolls game. Start a
 
 Everything lives on-device (SwiftData), with optional iCloud sync. No account and no online game database; you write everything yourself.
 
+> **Built with AI.** Hearthbound's code, tests and documentation were written by
+> Claude, an AI model from Anthropic, directed and tested by the maintainer.
+> See [AI disclosure](#ai-disclosure).
+
 ## Features
 
 - **A shelf of journals**, one per character, each a leather-bound book with the character's name, race or class, and game.
@@ -65,6 +69,22 @@ CI builds without signing, so it only checks that sync compiles. Syncing between
 ## CI
 
 GitHub Actions builds the app and runs the unit and UI smoke tests on every pull request. PRs that only touch docs skip the build. To test `main` by hand, use "Run workflow".
+
+## AI disclosure
+
+Hearthbound was built with [Claude Code](https://claude.com/claude-code), Anthropic's
+AI coding assistant. Claude wrote the code, tests and documentation. The
+maintainer ([@TheRealestNwah](https://github.com/TheRealestNwah)) decided what
+it should do, tested it, and made the release decisions. Commits written with
+Claude carry a `Co-Authored-By: Claude` trailer, so the git history shows which
+changes were AI-written.
+
+## Support
+
+Everything on my GitHub is free of charge and open source. If you find it
+useful and want to leave a tip or buy me a coffee, you can do that at
+[ko-fi.com/morrowheat23](https://ko-fi.com/morrowheat23). It's appreciated,
+never expected.
 
 ## License
 
