@@ -29,12 +29,31 @@ A journal's ribbon is kept per device in UserDefaults, not in the model.
 | Ribbon bookmark so a journal reopens where you left off | #125 |
 | Pictures in the PDF book export | #126 |
 
+## Planned
+
+Green-lit by the owner, September 2026.
+
+| Item | Issue |
+|------|-------|
+| More in-game calendars for Next day (Harptos, real-world dates) | #144 |
+| Share an entry as a picture of its page | #145 |
+| Two facing pages on iPad | #146 |
+| A place line under an entry's date | #147 |
+| Take a picture with the camera in the writer | #148 |
+| Show what was written a year ago | #149 |
+| Undo tearing out an entry | #150 |
+| Change the date an entry is filed under | #151 |
+| Highlight search words on the page a result opens | #152 |
+| Turn pages with the arrow keys | #153 |
+| Turn pages with a page curl | #154 |
+| Export the PDF book without freezing the app | #155 |
+| Make the reader easier to use with VoiceOver | #156 |
+
 ## Ideas
 
 Not planned yet; each needs the owner's go-ahead.
 
-- Share an entry as an image card
-- iPad layout with two facing pages
+- Run on a Mac next to the game (the iPad app on Apple silicon, or Mac Catalyst)
 
 Removed on purpose, not coming back unless the owner asks: party, emotions, bonds, chapters, stats and play sessions.
 
