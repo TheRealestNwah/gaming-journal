@@ -7,18 +7,21 @@ struct DraftShelf {
     struct Saved: Codable, Equatable {
         var body: String
         var inGameDate: String
+        /// Optional so pages kept before places existed still read.
+        var place: String?
         var writtenAt: Date
         var savedAt: Date
 
         init(_ draft: EntryDraft, savedAt: Date = .now) {
             body = draft.body
             inGameDate = draft.inGameDate
+            place = draft.place
             writtenAt = draft.writtenAt
             self.savedAt = savedAt
         }
 
         var draft: EntryDraft {
-            EntryDraft(body: body, inGameDate: inGameDate, writtenAt: writtenAt)
+            EntryDraft(body: body, inGameDate: inGameDate, place: place ?? "", writtenAt: writtenAt)
         }
 
         /// The opening words, for the offer to continue.

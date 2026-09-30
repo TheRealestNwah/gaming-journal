@@ -61,6 +61,12 @@ struct LatestEntryView: View {
                     .foregroundStyle(Page.rubric)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
+                if let place = latest.place, family != .systemSmall {
+                    Text(place)
+                        .font(Page.bookItalic(12, relativeTo: .caption))
+                        .foregroundStyle(Page.faded)
+                        .lineLimit(1)
+                }
                 Text(latest.excerpt)
                     .font(Page.book(family == .systemSmall ? 14 : 15))
                     .foregroundStyle(Page.ink)

@@ -11,7 +11,7 @@ All data is entered by hand; there is no online game database and no account.
 | Model | Key fields |
 |---|---|
 | **Journal** (one character) | character name, race/class/title, game, cover colour |
-| **Entry** | text, in-game date, date written, pictures |
+| **Entry** | text, in-game date, place, date written, pictures |
 
 A journal's ribbon is kept per device in UserDefaults, not in the model.
 

@@ -11,6 +11,9 @@ enum JournalMarkdown {
         for entry in journal.story {
             lines.append("")
             lines.append("## \(entry.heading(locale: locale))")
+            if !entry.place.isEmpty {
+                lines.append("*\(entry.place)*")
+            }
             if !entry.body.isEmpty {
                 lines.append("")
                 lines.append(entry.body)

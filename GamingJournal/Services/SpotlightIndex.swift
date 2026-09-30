@@ -53,7 +53,7 @@ enum SpotlightIndex {
     /// searchable, never what was written.
     static func item(for entry: Entry, includeText: Bool) -> CSSearchableItem {
         let attributes = CSSearchableItemAttributeSet(contentType: .content)
-        attributes.title = entry.heading()
+        attributes.title = entry.headingWithPlace()
         let byline = entry.journal?.title ?? ""
         if includeText {
             let body = entry.body.split(whereSeparator: \.isNewline).joined(separator: " ")
@@ -61,7 +61,7 @@ enum SpotlightIndex {
         } else {
             attributes.contentDescription = byline
         }
-        attributes.keywords = [entry.journal?.characterName ?? "", entry.inGameDate].filter { !$0.isEmpty }
+        attributes.keywords = [entry.journal?.characterName ?? "", entry.inGameDate, entry.place].filter { !$0.isEmpty }
         attributes.contentCreationDate = entry.writtenAt
         return CSSearchableItem(
             uniqueIdentifier: Target.entry(entry.id).identifier,

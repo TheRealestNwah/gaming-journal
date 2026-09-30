@@ -2,8 +2,8 @@ import XCTest
 @testable import GamingJournal
 
 final class JournalPagerTests: XCTestCase {
-    private func item(_ body: String, heading: String = "16th of Last Seed", photos: Bool = false) -> JournalPager.Item {
-        JournalPager.Item(id: UUID(), heading: heading, body: body, hasPhotos: photos)
+    private func item(_ body: String, heading: String = "16th of Last Seed", place: String = "", photos: Bool = false) -> JournalPager.Item {
+        JournalPager.Item(id: UUID(), heading: heading, place: place, body: body, hasPhotos: photos)
     }
 
     /// Words of `length` letters, so line counts are easy to reason about.
@@ -47,12 +47,13 @@ final class JournalPagerTests: XCTestCase {
 
     func testNoPageOverflows() {
         let pager = JournalPager(charactersPerLine: 20, linesPerPage: 15)
-        let items = (0..<12).map { index in item(words(5 + index * 7), photos: index % 4 == 0) }
+        let items = (0..<12).map { index in item(words(5 + index * 7), place: index % 3 == 0 ? "Whiterun" : "", photos: index % 4 == 0) }
         for page in pager.pages(for: items) {
             var lines = 0
             for (position, block) in page.blocks.enumerated() {
                 if block.showsHeading {
                     lines += (position == 0 ? 0 : JournalPager.entryGap) + JournalPager.headingLines
+                    if !block.place.isEmpty { lines += JournalPager.placeLines }
                 }
                 lines += JournalPager.paragraphs(in: block.text).reduce(0) { $0 + pager.lineCount(of: $1) }
                 if block.showsPhotos { lines += JournalPager.photoLines }
@@ -83,6 +84,16 @@ final class JournalPagerTests: XCTestCase {
         XCTAssertEqual(blocks.first?.showsHeading, true)
         XCTAssertEqual(blocks.first?.showsPhotos, true)
         XCTAssertEqual(JournalPager.pageIndex(of: pictures.id, in: pages), 1)
+    }
+
+    func testPlaceGoesWithTheHeadingOnly() {
+        let pager = JournalPager(charactersPerLine: 14, linesPerPage: 20)
+        let blocks = pager.pages(for: [item(words(90), place: "Whiterun")]).flatMap(\.blocks)
+        XCTAssertEqual(blocks.first?.place, "Whiterun")
+        XCTAssertTrue(blocks.allSatisfy { $0.place == "Whiterun" })
+        // The place takes a line, so the first page holds one line less of text.
+        let withoutPlace = pager.pages(for: [item(words(90))]).flatMap(\.blocks)
+        XCTAssertEqual(pager.wrap(blocks[0].text).count + 1, pager.wrap(withoutPlace[0].text).count)
     }
 
     func testPhotosFollowTheLastWordsOfTheirEntry() {

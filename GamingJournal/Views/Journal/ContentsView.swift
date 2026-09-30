@@ -21,7 +21,7 @@ struct ContentsView: View {
 
     private var shown: [Entry] {
         guard !terms.isEmpty else { return entries }
-        return entries.filter { EntrySearch.matches(heading: $0.heading(), body: $0.body, terms: terms) }
+        return entries.filter { EntrySearch.matches(heading: $0.headingWithPlace(), body: $0.body, terms: terms) }
     }
 
     var body: some View {
@@ -93,6 +93,11 @@ struct ContentsView: View {
                 if let page = startPages[entry.id] {
                     pageNumber(page)
                 }
+            }
+            if !entry.place.isEmpty {
+                Text(entry.place)
+                    .font(Theme.bookItalic(16))
+                    .foregroundStyle(Theme.fadedInk)
             }
             let words = terms.isEmpty ? EntrySearch.opening(of: entry.body, length: 90) : EntrySearch.snippet(of: entry.body, around: terms)
             if !words.isEmpty {

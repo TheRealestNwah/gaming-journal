@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 /// The schema the app reads and writes.
-typealias CurrentSchema = HearthboundSchemaV1
+typealias CurrentSchema = HearthboundSchemaV2
 
 typealias Journal = CurrentSchema.Journal
 typealias Entry = CurrentSchema.Entry
@@ -10,12 +10,15 @@ typealias EntryPhoto = CurrentSchema.EntryPhoto
 
 enum HearthboundMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [HearthboundSchemaV1.self]
+        [HearthboundSchemaV1.self, HearthboundSchemaV2.self]
     }
 
     static var stages: [MigrationStage] {
-        []
+        [v1ToV2]
     }
+
+    /// Adds `Entry.place`, which defaults to empty.
+    static let v1ToV2 = MigrationStage.lightweight(fromVersion: HearthboundSchemaV1.self, toVersion: HearthboundSchemaV2.self)
 }
 
 // MARK: - Journal
@@ -63,6 +66,11 @@ extension Entry {
         var style = Date.FormatStyle(date: .long, time: .omitted)
         style.locale = locale
         return writtenAt.formatted(style)
+    }
+
+    /// The heading and the place together, for lists and search: "17th of Last Seed · Whiterun".
+    func headingWithPlace(locale: Locale = .current) -> String {
+        place.isEmpty ? heading(locale: locale) : "\(heading(locale: locale)) · \(place)"
     }
 }
 

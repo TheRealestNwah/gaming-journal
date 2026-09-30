@@ -12,23 +12,28 @@ struct DraftPhoto: Identifiable, Equatable {
 struct EntryDraft: Equatable {
     var body = ""
     var inGameDate = ""
+    var place = ""
     var writtenAt = Date.now
     var photos: [DraftPhoto] = []
 
-    init(body: String = "", inGameDate: String = "", writtenAt: Date = .now) {
+    init(body: String = "", inGameDate: String = "", place: String = "", writtenAt: Date = .now) {
         self.body = body
         self.inGameDate = inGameDate
+        self.place = place
         self.writtenAt = writtenAt
     }
 
-    /// A fresh page, dated like the journal's latest entry so the writer only has to nudge it.
+    /// A fresh page, dated and placed like the journal's latest entry so the writer only has to
+    /// nudge it.
     static func new(in journal: Journal, now: Date = .now) -> EntryDraft {
-        EntryDraft(inGameDate: journal.latestEntry?.inGameDate ?? "", writtenAt: now)
+        let latest = journal.latestEntry
+        return EntryDraft(inGameDate: latest?.inGameDate ?? "", place: latest?.place ?? "", writtenAt: now)
     }
 
     init(entry: Entry) {
         body = entry.body
         inGameDate = entry.inGameDate
+        place = entry.place
         writtenAt = entry.writtenAt
         // A photo missing its image (not yet downloaded, or damaged) stays in the draft, shown by
         // its thumbnail or a placeholder, so saving doesn't take it for removed. Saving only
@@ -60,6 +65,7 @@ struct EntryDraft: Equatable {
     func apply(to entry: Entry, in journal: Journal, now: Date = .now) {
         entry.body = body.trimmingCharacters(in: .whitespacesAndNewlines)
         entry.inGameDate = inGameDate.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        entry.place = place.split(whereSeparator: \.isWhitespace).joined(separator: " ")
         entry.writtenAt = writtenAt
         entry.updatedAt = now
         entry.journal = journal
