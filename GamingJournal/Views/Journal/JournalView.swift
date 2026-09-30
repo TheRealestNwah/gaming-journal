@@ -150,9 +150,10 @@ struct JournalView: View {
             }
         }
         .onChange(of: journal.entries?.count) { oldCount, newCount in
-            // Written a new entry: show where it landed, the last page.
+            // Written a new entry: show where it landed. That's usually the last page, but an entry
+            // filed under an earlier date goes back among the others.
             if (newCount ?? 0) > (oldCount ?? 0) {
-                anchor = .latest
+                anchor = (journal.entries ?? []).max { $0.createdAt < $1.createdAt }.map { Anchor.entry($0.id) } ?? .latest
                 settle(animated: true)
             }
         }

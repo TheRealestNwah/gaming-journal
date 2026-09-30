@@ -23,8 +23,12 @@ enum PhotoProcessor {
     }
 
     static func process(_ data: Data) -> Processed? {
-        guard let image = UIImage(data: data),
-              let full = jpeg(image, maxDimension: maxDimension, quality: 0.85),
+        UIImage(data: data).flatMap { process($0) }
+    }
+
+    /// A photo straight from the camera.
+    static func process(_ image: UIImage) -> Processed? {
+        guard let full = jpeg(image, maxDimension: maxDimension, quality: 0.85),
               let thumbnail = jpeg(image, maxDimension: thumbnailDimension, quality: 0.7)
         else { return nil }
         return Processed(imageData: full, thumbnailData: thumbnail)

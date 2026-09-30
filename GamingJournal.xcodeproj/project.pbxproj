@@ -513,6 +513,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Hearthbound;
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Face ID keeps your journal sealed so only you can read it.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "The camera lets you add a picture of your screen to a journal entry.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The microphone lets you dictate journal entries.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech recognition turns what you say into journal entries, on your device when it can.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -548,6 +549,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Hearthbound;
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Face ID keeps your journal sealed so only you can read it.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "The camera lets you add a picture of your screen to a journal entry.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The microphone lets you dictate journal entries.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech recognition turns what you say into journal entries, on your device when it can.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -766,6 +768,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Hearthbound;
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Face ID keeps your journal sealed so only you can read it.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "The camera lets you add a picture of your screen to a journal entry.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The microphone lets you dictate journal entries.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech recognition turns what you say into journal entries, on your device when it can.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

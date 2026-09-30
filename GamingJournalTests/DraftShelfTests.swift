@@ -122,6 +122,27 @@ final class EntryDraftTests: XCTestCase {
         XCTAssertEqual(entry.sortedPhotos[0].thumbnailData, Data([7]))
     }
 
+    func testEntryFiledUnderAnEarlierDateTakesItsPlaceInTheBook() throws {
+        let context = try makeContext()
+        let journal = Journal(characterName: "Eira")
+        context.insert(journal)
+        let now = Date(timeIntervalSince1970: 2_000_000)
+        let first = Entry(body: "First", writtenAt: now.addingTimeInterval(-200))
+        let second = Entry(body: "Second", writtenAt: now.addingTimeInterval(-100))
+        for entry in [first, second] {
+            context.insert(entry)
+            entry.journal = journal
+        }
+
+        var draft = EntryDraft.new(in: journal, now: now)
+        draft.body = "Typed in late"
+        draft.writtenAt = now.addingTimeInterval(-150)
+        let late = Entry(createdAt: now)
+        context.insert(late)
+        draft.apply(to: late, in: journal, now: now)
+        XCTAssertEqual(journal.story.map(\.body), ["First", "Typed in late", "Second"])
+    }
+
     func testBlankDraftIsNotWorthSaving() {
         XCTAssertFalse(EntryDraft(body: " \n ").isValid)
         XCTAssertFalse(EntryDraft(inGameDate: "Day 3").isValid)
