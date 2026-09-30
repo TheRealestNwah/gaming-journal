@@ -30,9 +30,15 @@ struct EntryDraft: Equatable {
         body = entry.body
         inGameDate = entry.inGameDate
         writtenAt = entry.writtenAt
-        photos = entry.sortedPhotos.compactMap { photo -> DraftPhoto? in
-            guard let image = photo.imageData else { return nil }
-            return DraftPhoto(id: photo.id, imageData: image, thumbnailData: photo.thumbnailData ?? image)
+        // A photo missing its image (not yet downloaded, or damaged) stays in the draft, shown by
+        // its thumbnail or a placeholder, so saving doesn't take it for removed. Saving only
+        // reorders photos already on the entry; it never writes these bytes back.
+        photos = entry.sortedPhotos.map { photo in
+            DraftPhoto(
+                id: photo.id,
+                imageData: photo.imageData ?? photo.thumbnailData ?? Data(),
+                thumbnailData: photo.thumbnailData ?? photo.imageData ?? Data()
+            )
         }
     }
 

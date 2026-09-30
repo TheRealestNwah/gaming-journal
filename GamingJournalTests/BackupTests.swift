@@ -62,6 +62,20 @@ final class BackupTests: XCTestCase {
         XCTAssertEqual(journal.story.count, 2)
     }
 
+    func testImportedEntriesMoveTheirJournalUpTheShelf() throws {
+        let context = try makeContext()
+        let journal = sampleJournal(in: context)
+        journal.updatedAt = .distantPast
+        let later = Date(timeIntervalSince1970: 2_000_000_000)
+        var backup = JournalBackup(exporting: [journal])
+        backup.journals[0].entries.append(JournalBackup.EntryRecord(
+            id: UUID(), body: "Whiterun.", inGameDate: "",
+            writtenAt: later, createdAt: later, updatedAt: later, photos: []
+        ))
+        _ = try JournalImporter.importBackup(backup, into: context)
+        XCTAssertEqual(journal.updatedAt, later)
+    }
+
     func testOlderAndNewerFormatsAreRefusedClearly() throws {
         XCTAssertThrowsError(try JournalBackup.decode(Data(#"{"version": 2, "exportedAt": "2026-01-01T00:00:00Z", "sessions": []}"#.utf8))) { error in
             XCTAssertEqual(error as? JournalBackup.BackupError, .olderFormat)

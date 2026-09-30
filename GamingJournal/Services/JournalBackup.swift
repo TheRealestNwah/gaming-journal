@@ -225,6 +225,10 @@ enum JournalImporter {
                 context.insert(entry)
                 entry.journal = journal
                 report.entriesAdded += 1
+                // The shelf is ordered by this, so a journal that gained entries moves up.
+                if entry.updatedAt > journal.updatedAt {
+                    journal.updatedAt = entry.updatedAt
+                }
             }
         }
         try context.save()
