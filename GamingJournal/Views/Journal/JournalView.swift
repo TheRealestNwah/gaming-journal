@@ -41,6 +41,15 @@ struct JournalView: View {
     @State private var tornOut: TornOut?
     /// An entry put back by Undo, to turn to once it's in the book again.
     @State private var restoredEntryID: UUID?
+    /// An entry drawn as a picture, waiting in the share sheet.
+    @State private var sharing: SharedPicture?
+    /// The PDF book is being typeset in the background.
+    @State private var isBindingBook = false
+
+    private struct SharedPicture: Identifiable {
+        let id = UUID()
+        let image: UIImage
+    }
 
     private struct TornOut: Equatable {
         let record: JournalBackup.EntryRecord
@@ -154,7 +163,21 @@ struct JournalView: View {
             .padding(.bottom, 70)
         }
         .overlay(alignment: .bottomLeading) {
-            if let tornOut {
+            if isBindingBook {
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text("Binding the book…")
+                        .font(Theme.bookItalic(16, relativeTo: .footnote))
+                        .foregroundStyle(Theme.ink)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(Theme.paper, in: RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.paperEdge, lineWidth: 1))
+                .padding(.leading, 24)
+                .padding(.bottom, 76)
+                .accessibilityElement(children: .combine)
+            } else if let tornOut {
                 UndoNote(text: "Torn out: \(tornOut.heading)", onUndo: undoTearOut)
                     .padding(.leading, 24)
                     .padding(.trailing, 110)
@@ -202,6 +225,10 @@ struct JournalView: View {
                 restoredEntryID = nil
                 settle(animated: true)
             }
+        }
+        .sheet(item: $sharing) { shared in
+            ShareSheet(items: [shared.image])
+                .presentationDetents([.medium, .large])
         }
         .fullScreenCover(item: $writing) { request in
             WriterView(journal: journal, entry: request.entry)
@@ -311,6 +338,8 @@ struct JournalView: View {
                         writing = WriterRequest(entry: entry)
                     } onDelete: { entry in
                         pendingDelete = entry
+                    } onShare: { entry in
+                        share(entry)
                     }
                     .padding(.horizontal, Self.pagePadding)
                     .accessibilityElement(children: .contain)
@@ -321,6 +350,23 @@ struct JournalView: View {
                 }
             }
         }
+    }
+
+    // MARK: Sharing and export
+
+    private func share(_ entry: Entry) {
+        guard let image = EntryCard(entry: entry, journal: journal).render() else { return }
+        sharing = SharedPicture(image: image)
+    }
+
+    /// Typesets the PDF book off the main thread, so a journal full of pictures doesn't freeze
+    /// the page while it's bound.
+    private func exportPDF() async {
+        isBindingBook = true
+        defer { isBindingBook = false }
+        let book = PDFBook.Book(journal)
+        let data = await Task.detached(priority: .userInitiated) { PDFBook.render(book) }.value
+        bookExport = ExportDocument(data: data, contentType: .pdf, filename: PDFBook.filename(for: journal))
     }
 
     // MARK: Tearing out
@@ -404,8 +450,9 @@ struct JournalView: View {
                 }
                 Button("Edit Journal", systemImage: "pencil") { isEditingJournal = true }
                 Button("Export as PDF Book", systemImage: "book.closed") {
-                    bookExport = ExportDocument(data: PDFBook.render(journal), contentType: .pdf, filename: PDFBook.filename(for: journal))
+                    Task { await exportPDF() }
                 }
+                .disabled(isBindingBook)
                 Button("Export as Markdown", systemImage: "doc.text") {
                     bookExport = ExportDocument(
                         data: Data(JournalMarkdown.render(journal).utf8),
@@ -457,6 +504,7 @@ private struct PageView: View {
     var showsRibbon = false
     let onEdit: (Entry) -> Void
     let onDelete: (Entry) -> Void
+    let onShare: (Entry) -> Void
 
     var body: some View {
         // Scrolls only if the layout estimate ever overfills a page.
@@ -473,6 +521,7 @@ private struct PageView: View {
                         .contextMenu {
                             if let entry = entries[block.entryID] {
                                 Button("Edit Entry", systemImage: "pencil") { onEdit(entry) }
+                                Button("Share as Picture", systemImage: "square.and.arrow.up") { onShare(entry) }
                                 Button("Delete Entry", systemImage: "trash", role: .destructive) { onDelete(entry) }
                             }
                         }

@@ -17,6 +17,18 @@ final class PDFBookTests: XCTestCase {
         try XCTUnwrap(PDFDocument(data: PDFBook.render(journal, locale: Locale(identifier: "en_US"))))
     }
 
+    func testBookCanBeTypesetOffTheMainThread() async throws {
+        let journal = makeJournal()
+        journal.story.first?.place = "Helgen"
+        let book = PDFBook.Book(journal, locale: Locale(identifier: "en_US"))
+        XCTAssertEqual(book.entries.map(\.heading).first, "16th of Last Seed, 4E 201")
+        XCTAssertEqual(book.entries.first?.place, "Helgen")
+        let data = await Task.detached { PDFBook.render(book) }.value
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        XCTAssertEqual(pdf.pageCount, 2)
+        XCTAssertTrue(try XCTUnwrap(pdf.page(at: 1)?.string).contains("Helgen"))
+    }
+
     func testBookHasCoverThenDatedEntries() throws {
         let pdf = try document(makeJournal())
         XCTAssertEqual(pdf.pageCount, 2)
