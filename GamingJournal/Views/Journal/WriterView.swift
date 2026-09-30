@@ -13,6 +13,7 @@ struct WriterView: View {
     @State private var unfinished: DraftShelf.Saved?
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var isLoadingPhotos = false
+    @State private var dictation = Dictation()
     @FocusState private var bodyFocused: Bool
     @ScaledMetric(relativeTo: .body) private var fontSize: CGFloat = 19
     private let drafts = DraftShelf()
@@ -95,6 +96,9 @@ struct WriterView: View {
     private var topBar: some View {
         HStack {
             Button("Cancel") {
+                // End a take first, so its words don't land after the page is discarded.
+                dictation.stop()
+                _ = dictation.takeTranscript()
                 if entry == nil && unfinished == nil { drafts.discard(for: journal.id) }
                 dismiss()
             }
@@ -155,7 +159,7 @@ struct WriterView: View {
 
     private var tools: some View {
         HStack(alignment: .top, spacing: 22) {
-            DictationRow(text: $draft.body)
+            DictationRow(text: $draft.body, dictation: dictation)
             PhotosPicker(selection: $pickerItems, maxSelectionCount: 6, matching: .images) {
                 Label(isLoadingPhotos ? "Adding…" : "Picture", systemImage: "photo")
                     .font(Theme.pageControl)
@@ -201,12 +205,17 @@ struct WriterView: View {
     // MARK: Actions
 
     private func save() {
+        // Words from a take still running go in too. A copy, so the change doesn't put the saved
+        // page back on the draft shelf.
+        var page = draft
+        dictation.stop()
+        page.body = DictationText.append(dictation.takeTranscript(), to: page.body)
         if let entry {
-            draft.apply(to: entry, in: journal)
+            page.apply(to: entry, in: journal)
         } else {
             let entry = Entry()
             context.insert(entry)
-            draft.apply(to: entry, in: journal)
+            page.apply(to: entry, in: journal)
             drafts.discard(for: journal.id)
         }
         try? context.save()

@@ -100,10 +100,10 @@ final class Dictation {
 }
 
 /// A mic button below the page. While listening it shows the words as they come; stopping
-/// adds them to the entry.
+/// adds them to the entry. The writer owns `dictation`, so Done and Cancel can end a take first.
 struct DictationRow: View {
     @Binding var text: String
-    @State private var dictation = Dictation()
+    let dictation: Dictation
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {

@@ -11,7 +11,11 @@ struct RootView: View {
 
     var body: some View {
         ShelfView(path: $path)
-            .spotlightSync()
+            // Opened on the shelf's own stack, like an in-app search result, so nothing is
+            // presented over it that would block a write link.
+            .spotlightSync { journal, entryID in
+                path = [JournalRoute(journal: journal, entryID: entryID)]
+            }
             .widgetSync { journalID in
                 let journal = journalID.flatMap { id in journals.first { $0.id == id } } ?? journals.first
                 guard let journal else { return }
