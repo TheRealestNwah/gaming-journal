@@ -5,35 +5,36 @@ import SwiftData
 struct ShelfView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Journal.updatedAt, order: .reverse) private var journals: [Journal]
-    @Binding var path: [Journal]
+    @Binding var path: [JournalRoute]
     @State private var isCreating = false
     @State private var editing: Journal?
     @State private var pendingDelete: Journal?
     @State private var isShowingSettings = false
+    @State private var query = ""
 
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
                 VStack(spacing: 22) {
                     header
-                    ForEach(journals) { journal in
-                        NavigationLink(value: journal) {
-                            ShelfBook(name: journal.characterName, subtitle: journal.subtitle, style: journal.coverStyle)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityHint("Opens the journal")
-                        .contextMenu {
-                            Button("Edit", systemImage: "pencil") { editing = journal }
-                            Button("Delete", systemImage: "trash", role: .destructive) { pendingDelete = journal }
+                    if !journals.isEmpty {
+                        BookSearchField(text: $query, prompt: "Search the journals", onWood: true)
+                    }
+                    if EntrySearch.terms(in: query).isEmpty {
+                        books
+                    } else {
+                        SearchResults(results: EntrySearch.results(for: query, in: journals), query: query) { result in
+                            guard let journal = journals.first(where: { $0.id == result.journalID }) else { return }
+                            path.append(JournalRoute(journal: journal, entryID: result.entryID))
                         }
                     }
-                    beginButton
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 32)
                 .frame(maxWidth: 620)
                 .frame(maxWidth: .infinity)
             }
+            .scrollDismissesKeyboard(.immediately)
             .background(WoodBackground())
             .navigationTitle("Journals")
             .toolbar {
@@ -47,12 +48,12 @@ struct ShelfView: View {
                 }
             }
             .toolbarBackground(.hidden, for: .navigationBar)
-            .navigationDestination(for: Journal.self) { journal in
-                JournalView(journal: journal)
+            .navigationDestination(for: JournalRoute.self) { route in
+                JournalView(journal: route.journal, focusEntryID: route.entryID)
             }
         }
         .sheet(isPresented: $isCreating) {
-            JournalEditorView { journal in path = [journal] }
+            JournalEditorView { journal in path = [JournalRoute(journal: journal)] }
         }
         .sheet(item: $editing) { journal in
             JournalEditorView(journal: journal)
@@ -67,7 +68,7 @@ struct ShelfView: View {
             presenting: pendingDelete
         ) { journal in
             Button("Delete \(journal.characterName)'s journal", role: .destructive) {
-                path.removeAll { $0.id == journal.id }
+                path.removeAll { $0.journal.id == journal.id }
                 context.delete(journal)
                 try? context.save()
             }
@@ -75,6 +76,23 @@ struct ShelfView: View {
             Text("Every page in it is lost. This can't be undone.")
         }
         .sensoryFeedback(.success, trigger: journals.count) { old, new in new > old }
+    }
+
+    /// The journals on the shelf, and a place for a new one.
+    @ViewBuilder
+    private var books: some View {
+        ForEach(journals) { journal in
+            NavigationLink(value: JournalRoute(journal: journal)) {
+                ShelfBook(name: journal.characterName, subtitle: journal.subtitle, style: journal.coverStyle)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens the journal")
+            .contextMenu {
+                Button("Edit", systemImage: "pencil") { editing = journal }
+                Button("Delete", systemImage: "trash", role: .destructive) { pendingDelete = journal }
+            }
+        }
+        beginButton
     }
 
     private var header: some View {
@@ -203,6 +221,64 @@ struct JournalEditorView: View {
             try? context.save()
             dismiss()
             onCreate?(journal)
+        }
+    }
+}
+
+/// A journal to open from the shelf, at one entry's page when a search result points there.
+struct JournalRoute: Hashable {
+    let journal: Journal
+    var entryID: UUID?
+}
+
+/// Entries matching a search on the shelf. Tapping one opens its journal at that page.
+private struct SearchResults: View {
+    let results: [EntrySearch.Result]
+    let query: String
+    let onOpen: (EntrySearch.Result) -> Void
+
+    var body: some View {
+        if results.isEmpty {
+            Text("No entry speaks of “\(query.trimmingCharacters(in: .whitespaces))”.")
+                .font(Theme.bookItalic(18))
+                .foregroundStyle(Theme.woodFaded)
+                .multilineTextAlignment(.center)
+                .padding(.top, 20)
+        } else {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ForEach(results) { result in
+                    Button { onOpen(result) } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(result.characterName)
+                                    .font(Theme.bookCaps(16, relativeTo: .subheadline))
+                                    .foregroundStyle(Theme.gold)
+                                Spacer(minLength: 8)
+                                Text(result.heading)
+                                    .font(Theme.bookItalic(15, relativeTo: .footnote))
+                                    .foregroundStyle(Theme.woodFaded)
+                                    .multilineTextAlignment(.trailing)
+                            }
+                            if !result.snippet.isEmpty {
+                                Text(result.snippet)
+                                    .font(Theme.book(17))
+                                    .foregroundStyle(Theme.woodInk)
+                                    .lineLimit(3)
+                            }
+                        }
+                        .padding(.vertical, 14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityHint("Opens the journal at this entry")
+                    Rectangle()
+                        .fill(Theme.gold.opacity(0.25))
+                        .frame(height: 1)
+                        .accessibilityHidden(true)
+                }
+            }
         }
     }
 }

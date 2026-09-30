@@ -88,6 +88,36 @@ final class SmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["Begin a new journal"].waitForExistence(timeout: Self.step))
     }
 
+    func testSearchOpensTheJournalAtTheEntry() {
+        let app = launch(demoData: true)
+        type("dragonstone", into: app.textFields["Search the journals"])
+        let result = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "wall that spoke")).firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: Self.step), "No search result: " + app.debugDescription)
+        result.tap()
+        XCTAssertTrue(app.buttons["Write a new entry"].waitForExistence(timeout: Self.step))
+        XCTAssertTrue(element(containing: "The Journal of Eira Stormborn", in: app).exists)
+    }
+
+    func testContentsTurnsToTheFirstEntry() {
+        let app = launch(demoData: true)
+        let journal = element(containing: "Eira Stormborn", in: app)
+        XCTAssertTrue(journal.waitForExistence(timeout: Self.step))
+        journal.tap()
+        let contents = app.buttons["contents"]
+        XCTAssertTrue(contents.waitForExistence(timeout: Self.step))
+        contents.tap()
+
+        XCTAssertTrue(app.navigationBars["Contents"].waitForExistence(timeout: Self.step))
+        let first = app.buttons.matching(identifier: "contentsEntry").firstMatch
+        XCTAssertTrue(first.waitForExistence(timeout: Self.step))
+        first.tap()
+
+        // The sheet closes on the first page.
+        let closed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.navigationBars["Contents"])
+        wait(for: [closed], timeout: Self.step)
+        XCTAssertFalse(app.buttons["Previous page"].isEnabled)
+    }
+
     func testSettingsOpenFromTheShelf() {
         let app = launch()
         app.buttons["Settings"].tap()

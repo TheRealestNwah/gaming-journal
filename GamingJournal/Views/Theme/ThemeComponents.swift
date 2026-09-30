@@ -183,3 +183,74 @@ struct WaxSeal: View {
         .padding()
     }
 }
+
+// MARK: - Search
+
+/// A search field in the book style: gilt on the wood shelf, ink on a page.
+struct BookSearchField: View {
+    @Binding var text: String
+    var prompt: String
+    var onWood = false
+
+    private var ink: Color { onWood ? Theme.woodInk : Theme.ink }
+    private var faded: Color { onWood ? Theme.woodFaded : Theme.fadedInk }
+    private var edge: Color { onWood ? Theme.gold.opacity(0.6) : Theme.fadedInk.opacity(0.5) }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(faded)
+                .accessibilityHidden(true)
+            TextField(prompt, text: $text, prompt: Text(prompt).foregroundStyle(faded))
+                .font(Theme.book(18))
+                .foregroundStyle(ink)
+                .tint(onWood ? Theme.gold : Theme.rubric)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+            if !text.isEmpty {
+                Button {
+                    text = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(faded)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(RoundedRectangle(cornerRadius: 8).fill(onWood ? Color.black.opacity(0.25) : Theme.paperEdge.opacity(0.25)))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(edge, lineWidth: 1))
+    }
+}
+
+// MARK: - Ribbon
+
+/// A book's silk ribbon, hanging down with a notched end, marking a page.
+struct RibbonMarker: View {
+    var length: CGFloat = 46
+    var width: CGFloat = 14
+
+    var body: some View {
+        RibbonShape()
+            .fill(LinearGradient(colors: [Theme.wax, Color(hex: 0xA33A2A), Theme.wax], startPoint: .leading, endPoint: .trailing))
+            .frame(width: width, height: length)
+            .shadow(color: .black.opacity(0.3), radius: 1.5, y: 1)
+    }
+}
+
+/// A strip with a swallowtail cut at the bottom.
+struct RibbonShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let notch = min(rect.width * 0.6, rect.height * 0.3)
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY - notch))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.closeSubpath()
+        return path
+    }
+}

@@ -3,13 +3,16 @@ import SwiftData
 import UniformTypeIdentifiers
 
 /// A character's journal, read like a book: dated entries on aged pages, turned with Prev and
-/// Next or a swipe. It opens on the latest page, where the next entry will go.
+/// Next or a swipe. It opens at the ribbon if one is laid, otherwise on the latest page, where the
+/// next entry will go.
 struct JournalView: View {
     let journal: Journal
 
     init(journal: Journal, focusEntryID: UUID? = nil) {
         self.journal = journal
-        _anchor = State(initialValue: focusEntryID.map(Anchor.entry) ?? .latest)
+        let ribbon = RibbonShelf().mark(for: journal.id)
+        _ribbon = State(initialValue: ribbon)
+        _anchor = State(initialValue: focusEntryID.map(Anchor.entry) ?? ribbon.map(Anchor.mark) ?? .latest)
     }
 
     @Environment(\.dismiss) private var dismiss
@@ -26,6 +29,8 @@ struct JournalView: View {
     @State private var isEditingJournal = false
     @State private var pendingDelete: Entry?
     @State private var bookExport: ExportDocument?
+    @State private var ribbon: RibbonMark?
+    @State private var isShowingContents = false
 
     /// The writer, for a new entry or for changing one.
     private struct WriterRequest: Identifiable {
@@ -35,10 +40,12 @@ struct JournalView: View {
     }
 
     /// What the open page follows while the layout settles or changes (size, text size, new
-    /// entries): the latest page, the page an entry is on, or wherever the reader turned to.
+    /// entries): the latest page, the page an entry starts on, the ribbon's page, or wherever the
+    /// reader turned to.
     private enum Anchor: Equatable {
         case latest
         case entry(UUID)
+        case mark(RibbonMark)
         case free
     }
 
@@ -65,10 +72,11 @@ struct JournalView: View {
     private var book: some View {
         let laidOut = pages
         let entries = Dictionary((journal.entries ?? []).map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let ribbonIndex = ribbonPage(in: laidOut)
         return ZStack(alignment: .bottomTrailing) {
             PaperBackground()
             VStack(spacing: 0) {
-                topBar
+                topBar(ribbonIndex: ribbonIndex)
                 Text(journal.title)
                     .font(Theme.bookItalic(18, relativeTo: .headline))
                     .foregroundStyle(Theme.fadedInk)
@@ -103,6 +111,14 @@ struct JournalView: View {
                         Color.clear
                             .onAppear { measured(geometry.size) }
                             .onChange(of: geometry.size) { _, size in measured(size) }
+                    }
+                }
+                .overlay(alignment: .topTrailing) {
+                    if hasOpened && ribbonIndex == pageIndex {
+                        RibbonMarker()
+                            .padding(.trailing, Self.pagePadding + 8)
+                            .offset(y: -11)
+                            .accessibilityLabel("The ribbon marks this page")
                     }
                 }
 
@@ -146,6 +162,21 @@ struct JournalView: View {
         .sheet(isPresented: $isEditingJournal) {
             JournalEditorView(journal: journal)
         }
+        .sheet(isPresented: $isShowingContents) {
+            let laidOut = pages
+            ContentsView(
+                entries: journal.story,
+                startPages: JournalPager.startPages(in: laidOut),
+                ribbonPage: ribbonPage(in: laidOut)
+            ) { choice in
+                isShowingContents = false
+                switch choice {
+                case .entry(let id): anchor = .entry(id)
+                case .ribbon: if let ribbon { anchor = .mark(ribbon) }
+                }
+                settle(animated: true)
+            }
+        }
         .confirmationDialog(
             "Tear out this entry?",
             isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
@@ -186,6 +217,7 @@ struct JournalView: View {
         switch anchor {
         case .latest: target = last
         case .entry(let id): target = JournalPager.pageIndex(of: id, in: pages) ?? last
+        case .mark(let mark): target = JournalPager.pageIndex(of: mark.entryID, part: mark.part, in: pages) ?? last
         case .free: target = min(pageIndex, last)
         }
         show(target, animated: animated)
@@ -201,6 +233,24 @@ struct JournalView: View {
 
     private var laidOutCount: Int { pages.count }
 
+    // MARK: Ribbon
+
+    private func ribbonPage(in pages: [JournalPager.Page]) -> Int? {
+        ribbon.flatMap { JournalPager.pageIndex(of: $0.entryID, part: $0.part, in: pages) }
+    }
+
+    /// Lays the ribbon in the open page, or takes it out with nil.
+    private func setRibbon(_ mark: RibbonMark?) {
+        ribbon = mark
+        RibbonShelf().setMark(mark, for: journal.id)
+    }
+
+    private func layRibbonHere() {
+        let pages = pages
+        guard pages.indices.contains(pageIndex) else { return }
+        setRibbon(RibbonMark(page: pages[pageIndex]))
+    }
+
     private func show(_ index: Int, animated: Bool) {
         settledIndex = index
         guard index != pageIndex else { return }
@@ -213,7 +263,7 @@ struct JournalView: View {
 
     // MARK: Bars
 
-    private var topBar: some View {
+    private func topBar(ribbonIndex: Int?) -> some View {
         HStack {
             Button {
                 dismiss()
@@ -222,7 +272,21 @@ struct JournalView: View {
             }
             .accessibilityLabel("Back to journals")
             Spacer()
+            Button {
+                isShowingContents = true
+            } label: {
+                Image(systemName: "list.bullet")
+                    .accessibilityLabel("Contents")
+            }
+            .accessibilityIdentifier("contents")
+            .padding(.trailing, 14)
             Menu {
+                if ribbonIndex == pageIndex {
+                    Button("Take Out the Ribbon", systemImage: "bookmark.slash") { setRibbon(nil) }
+                } else {
+                    Button("Lay the Ribbon Here", systemImage: "bookmark") { layRibbonHere() }
+                        .disabled(journal.entries?.isEmpty ?? true)
+                }
                 Button("Edit Journal", systemImage: "pencil") { isEditingJournal = true }
                 Button("Export as PDF Book", systemImage: "book.closed") {
                     bookExport = ExportDocument(data: PDFBook.render(journal), contentType: .pdf, filename: PDFBook.filename(for: journal))

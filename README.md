@@ -7,7 +7,8 @@ Everything lives on-device (SwiftData), with optional iCloud sync. No account an
 ## Features
 
 - **A shelf of journals**, one per character, each a leather-bound book with the character's name, race or class, and game.
-- **Pages you turn**: entries read like a book, under their in-game date ("16th of Last Seed, 4E 201"). Prev / Next or a swipe turns the page, and a journal opens on its latest page.
+- **Pages you turn**: entries read like a book, under their in-game date ("16th of Last Seed, 4E 201"). Prev / Next or a swipe turns the page. A **Contents** page lists every entry with its page number, and a **ribbon** marks your place so the journal reopens there (otherwise it opens on the latest page).
+- **Search** every journal from the shelf, or one journal from its Contents, and jump straight to the entry.
 - **A blank page to write on**: the in-game date (with a **Next day** button that knows the Elder Scrolls calendar), the words, **dictation**, and pictures pasted in. Unfinished pages are kept if the app closes.
 - **Around iOS**: a latest-entry widget, a "Write in…" widget for a chosen journal, a Control Center button, **Siri and Shortcuts** ("Write as Eira in Hearthbound"), **Spotlight**, and an optional evening **reminder**.
 - **Face ID lock** (optional). While locked, widgets and Spotlight hide your writing.

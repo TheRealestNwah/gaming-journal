@@ -91,4 +91,23 @@ final class JournalPagerTests: XCTestCase {
         XCTAssertEqual(pager.charactersPerLine, 37)
         XCTAssertEqual(pager.linesPerPage, 24)
     }
+
+    func testStartPagesAndRibbonPages() throws {
+        // 45 lines of text over 20-line pages: the long entry runs across three pages.
+        let pager = JournalPager(charactersPerLine: 14, linesPerPage: 20)
+        let first = item("Short.")
+        let long = item(words(90))
+        let pages = pager.pages(for: [first, long])
+        let starts = JournalPager.startPages(in: pages)
+        XCTAssertEqual(starts[first.id], 0)
+        XCTAssertEqual(starts[long.id], JournalPager.pageIndex(of: long.id, in: pages))
+
+        let parts = pages.flatMap(\.blocks).filter { $0.entryID == long.id }.map(\.part)
+        let lastPart = try XCTUnwrap(parts.max())
+        XCTAssertEqual(JournalPager.pageIndex(of: long.id, part: 0, in: pages), starts[long.id])
+        XCTAssertEqual(JournalPager.pageIndex(of: long.id, part: lastPart, in: pages), pages.count - 1)
+        // A part the entry no longer runs to lands on its last page.
+        XCTAssertEqual(JournalPager.pageIndex(of: long.id, part: lastPart + 5, in: pages), pages.count - 1)
+        XCTAssertNil(JournalPager.pageIndex(of: UUID(), part: 0, in: pages))
+    }
 }

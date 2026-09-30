@@ -147,6 +147,23 @@ struct JournalPager {
         pages.first { page in page.blocks.contains { $0.entryID == entryID } }?.index
     }
 
+    /// The page holding part `part` of an entry. If the entry now runs to fewer parts (a larger
+    /// text size, say), the page holding its last part.
+    static func pageIndex(of entryID: UUID, part: Int, in pages: [Page]) -> Int? {
+        pages.last { page in page.blocks.contains { $0.entryID == entryID && $0.part <= part } }?.index
+    }
+
+    /// The page each entry starts on, for a table of contents.
+    static func startPages(in pages: [Page]) -> [UUID: Int] {
+        var starts: [UUID: Int] = [:]
+        for page in pages {
+            for block in page.blocks where starts[block.entryID] == nil {
+                starts[block.entryID] = page.index
+            }
+        }
+        return starts
+    }
+
     // MARK: Measuring
 
     static func paragraphs(in text: String) -> [String] {
