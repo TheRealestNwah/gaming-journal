@@ -30,6 +30,8 @@ enum Theme {
     static let gold = Color(hex: 0xD6B46A)
     /// Sealing wax.
     static let wax = Color(hex: 0x8E2A1C)
+    /// A wash of gilt behind searched-for words on a page. Light enough that ink stays readable.
+    static let highlight = Color(hex: 0xD6B46A).opacity(0.45)
 
     // MARK: Type
 

@@ -3,16 +3,18 @@ import SwiftData
 import UniformTypeIdentifiers
 
 /// A character's journal, read like a book: dated entries on aged pages, turned with Prev and
-/// Next or a swipe. It opens at the ribbon if one is laid, otherwise on the latest page, where the
-/// next entry will go.
+/// Next, a swipe or the arrow keys. It opens at the ribbon if one is laid, otherwise on the latest
+/// page, where the next entry will go.
 struct JournalView: View {
     let journal: Journal
 
-    init(journal: Journal, focusEntryID: UUID? = nil) {
+    /// `highlight` is a search query whose words are marked on the page it opens at.
+    init(journal: Journal, focusEntryID: UUID? = nil, highlight: String = "") {
         self.journal = journal
         let ribbon = RibbonShelf().mark(for: journal.id)
         _ribbon = State(initialValue: ribbon)
         _anchor = State(initialValue: focusEntryID.map(Anchor.entry) ?? ribbon.map(Anchor.mark) ?? .latest)
+        _highlightTerms = State(initialValue: focusEntryID == nil ? [] : EntrySearch.terms(in: highlight))
     }
 
     @Environment(\.dismiss) private var dismiss
@@ -31,6 +33,17 @@ struct JournalView: View {
     @State private var bookExport: ExportDocument?
     @State private var ribbon: RibbonMark?
     @State private var isShowingContents = false
+    /// Search words marked on the page a result opened at, until the reader turns away.
+    @State private var highlightTerms: [String]
+    /// The entry just torn out, while it can still be put back.
+    @State private var tornOut: TornOut?
+    /// An entry put back by Undo, to turn to once it's in the book again.
+    @State private var restoredEntryID: UUID?
+
+    private struct TornOut: Equatable {
+        let record: JournalBackup.EntryRecord
+        let heading: String
+    }
 
     /// The writer, for a new entry or for changing one.
     private struct WriterRequest: Identifiable {
@@ -93,7 +106,7 @@ struct JournalView: View {
                     if hasOpened {
                         TabView(selection: $pageIndex) {
                             ForEach(laidOut) { page in
-                                PageView(page: page, entries: entries, fontSize: fontSize) { entry in
+                                PageView(page: page, entries: entries, fontSize: fontSize, highlight: highlightTerms) { entry in
                                     writing = WriterRequest(entry: entry)
                                 } onDelete: { entry in
                                     pendingDelete = entry
@@ -138,6 +151,21 @@ struct JournalView: View {
             .padding(.trailing, 24)
             .padding(.bottom, 70)
         }
+        .overlay(alignment: .bottomLeading) {
+            if let tornOut {
+                UndoNote(text: "Torn out: \(tornOut.heading)", onUndo: undoTearOut)
+                    .padding(.leading, 24)
+                    .padding(.trailing, 110)
+                    .padding(.bottom, 76)
+                    .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                    .task(id: tornOut) {
+                        try? await Task.sleep(for: .seconds(8))
+                        guard !Task.isCancelled else { return }
+                        self.tornOut = nil
+                    }
+            }
+        }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: tornOut)
         .toolbar(.hidden, for: .navigationBar)
         .onChange(of: laidOut.count) {
             if hasOpened { settle() }
@@ -147,13 +175,16 @@ struct JournalView: View {
             if index != settledIndex {
                 settledIndex = index
                 anchor = index == laidOut.count - 1 ? .latest : .free
+                highlightTerms = []
             }
         }
         .onChange(of: journal.entries?.count) { oldCount, newCount in
             // Written a new entry: show where it landed. That's usually the last page, but an entry
             // filed under an earlier date goes back among the others.
             if (newCount ?? 0) > (oldCount ?? 0) {
-                anchor = (journal.entries ?? []).max { $0.createdAt < $1.createdAt }.map { Anchor.entry($0.id) } ?? .latest
+                let newest = (journal.entries ?? []).max { $0.createdAt < $1.createdAt }
+                anchor = (restoredEntryID ?? newest?.id).map(Anchor.entry) ?? .latest
+                restoredEntryID = nil
                 settle(animated: true)
             }
         }
@@ -184,13 +215,9 @@ struct JournalView: View {
             titleVisibility: .visible,
             presenting: pendingDelete
         ) { entry in
-            Button("Delete Entry", role: .destructive) {
-                journal.touch()
-                context.delete(entry)
-                try? context.save()
-            }
+            Button("Delete Entry", role: .destructive) { tearOut(entry) }
         } message: { entry in
-            Text("The entry for \(entry.heading()) will be gone for good.")
+            Text("The entry for \(entry.heading()) will be torn out of the journal.")
         }
         .fileExporter(
             isPresented: Binding(get: { bookExport != nil }, set: { if !$0 { bookExport = nil } }),
@@ -229,7 +256,31 @@ struct JournalView: View {
         let last = max(0, laidOutCount - 1)
         let target = min(max(0, index), last)
         anchor = target == last ? .latest : .free
+        highlightTerms = []
         show(target, animated: true)
+    }
+
+    // MARK: Tearing out
+
+    /// Deletes an entry, keeping a copy (pictures included) for a few seconds so Undo can put it back.
+    private func tearOut(_ entry: Entry) {
+        let copy = TornOut(record: JournalBackup.EntryRecord(entry: entry), heading: entry.heading())
+        journal.touch()
+        context.delete(entry)
+        try? context.save()
+        tornOut = copy
+        AccessibilityNotification.Announcement("Entry torn out. Undo is available.").post()
+    }
+
+    private func undoTearOut() {
+        guard let tornOut else { return }
+        self.tornOut = nil
+        let entry = tornOut.record.makeEntry()
+        context.insert(entry)
+        entry.journal = journal
+        journal.touch()
+        restoredEntryID = entry.id
+        try? context.save()
     }
 
     private var laidOutCount: Int { pages.count }
@@ -314,6 +365,7 @@ struct JournalView: View {
     private func bottomBar(pageCount: Int) -> some View {
         HStack {
             Button("‹ Prev") { turn(to: pageIndex - 1) }
+                .keyboardShortcut(.leftArrow, modifiers: [])
                 .disabled(pageIndex == 0)
                 .accessibilityLabel("Previous page")
             Spacer()
@@ -322,6 +374,7 @@ struct JournalView: View {
                 .foregroundStyle(Theme.fadedInk)
             Spacer()
             Button("Next ›") { turn(to: pageIndex + 1) }
+                .keyboardShortcut(.rightArrow, modifiers: [])
                 .disabled(pageIndex >= pageCount - 1)
                 .accessibilityLabel("Next page")
         }
@@ -337,6 +390,7 @@ private struct PageView: View {
     let page: JournalPager.Page
     let entries: [UUID: Entry]
     let fontSize: CGFloat
+    let highlight: [String]
     let onEdit: (Entry) -> Void
     let onDelete: (Entry) -> Void
 
@@ -351,7 +405,7 @@ private struct PageView: View {
                         .padding(.top, 18)
                 }
                 ForEach(page.blocks) { block in
-                    BlockView(block: block, entry: entries[block.entryID], fontSize: fontSize)
+                    BlockView(block: block, entry: entries[block.entryID], fontSize: fontSize, highlight: highlight)
                         .contextMenu {
                             if let entry = entries[block.entryID] {
                                 Button("Edit Entry", systemImage: "pencil") { onEdit(entry) }
@@ -372,6 +426,7 @@ private struct BlockView: View {
     let block: JournalPager.Block
     let entry: Entry?
     let fontSize: CGFloat
+    let highlight: [String]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -389,7 +444,7 @@ private struct BlockView: View {
                 }
             }
             if !block.text.isEmpty {
-                Text(block.text)
+                Text(marked(block.text))
                     .font(Theme.book(fontSize))
                     .lineSpacing(fontSize * 0.22)
                     .foregroundStyle(Theme.ink)
@@ -401,5 +456,41 @@ private struct BlockView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
+    }
+
+    /// The text with any search words washed in gilt.
+    private func marked(_ text: String) -> AttributedString {
+        var attributed = AttributedString(text)
+        for range in EntrySearch.ranges(of: highlight, in: text) {
+            if let marked = Range(range, in: attributed) {
+                attributed[marked].backgroundColor = Theme.highlight
+            }
+        }
+        return attributed
+    }
+}
+
+/// A short note after tearing out an entry, with a way to put it back.
+private struct UndoNote: View {
+    let text: String
+    let onUndo: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(text)
+                .font(Theme.bookItalic(16, relativeTo: .footnote))
+                .foregroundStyle(Theme.ink)
+                .lineLimit(1)
+            Button("Undo", action: onUndo)
+                .font(Theme.pageControl)
+                .foregroundStyle(Theme.rubric)
+                .keyboardShortcut("z", modifiers: .command)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(Theme.paper, in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.paperEdge, lineWidth: 1))
+        .shadow(color: .black.opacity(0.2), radius: 6, y: 2)
+        .accessibilityElement(children: .combine)
     }
 }

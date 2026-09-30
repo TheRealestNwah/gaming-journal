@@ -69,6 +69,28 @@ enum EntrySearch {
         return (start > flat.startIndex ? "…" : "") + text
     }
 
+    /// Every place any of `terms` appears in `text`, in order and without overlaps, for marking
+    /// the words on a page.
+    static func ranges(of terms: [String], in text: String) -> [Range<String.Index>] {
+        var found: [Range<String.Index>] = []
+        for term in terms where !term.isEmpty {
+            var searchStart = text.startIndex
+            while let range = text.range(of: term, options: options, range: searchStart..<text.endIndex) {
+                found.append(range)
+                searchStart = range.upperBound
+            }
+        }
+        var merged: [Range<String.Index>] = []
+        for range in found.sorted(by: { $0.lowerBound < $1.lowerBound }) {
+            if let last = merged.last, range.lowerBound <= last.upperBound {
+                merged[merged.count - 1] = last.lowerBound..<max(last.upperBound, range.upperBound)
+            } else {
+                merged.append(range)
+            }
+        }
+        return merged
+    }
+
     /// The first words of `body`, trimmed to `length` characters at a word boundary.
     static func opening(of body: String, length: Int = 110) -> String {
         let flat = body.split(whereSeparator: \.isWhitespace).joined(separator: " ")

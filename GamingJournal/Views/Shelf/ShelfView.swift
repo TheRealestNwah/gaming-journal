@@ -25,7 +25,7 @@ struct ShelfView: View {
                     } else {
                         SearchResults(results: EntrySearch.results(for: query, in: journals), query: query) { result in
                             guard let journal = journals.first(where: { $0.id == result.journalID }) else { return }
-                            path.append(JournalRoute(journal: journal, entryID: result.entryID))
+                            path.append(JournalRoute(journal: journal, entryID: result.entryID, highlight: query))
                         }
                     }
                 }
@@ -49,7 +49,7 @@ struct ShelfView: View {
             }
             .toolbarBackground(.hidden, for: .navigationBar)
             .navigationDestination(for: JournalRoute.self) { route in
-                JournalView(journal: route.journal, focusEntryID: route.entryID)
+                JournalView(journal: route.journal, focusEntryID: route.entryID, highlight: route.highlight)
             }
         }
         .sheet(isPresented: $isCreating) {
@@ -228,10 +228,12 @@ struct JournalEditorView: View {
     }
 }
 
-/// A journal to open from the shelf, at one entry's page when a search result points there.
+/// A journal to open from the shelf, at one entry's page when a search result points there, with
+/// the words searched for marked on it.
 struct JournalRoute: Hashable {
     let journal: Journal
     var entryID: UUID?
+    var highlight = ""
 }
 
 /// Entries matching a search on the shelf. Tapping one opens its journal at that page.

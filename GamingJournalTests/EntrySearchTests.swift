@@ -8,6 +8,14 @@ final class EntrySearchTests: XCTestCase {
         return journal
     }
 
+    func testRangesMarkEveryMatchWithoutOverlaps() {
+        let text = "The Dragon, the dragonstone, and the café."
+        let marked = EntrySearch.ranges(of: ["dragon", "dragonstone", "cafe"], in: text).map { String(text[$0]) }
+        XCTAssertEqual(marked, ["Dragon", "dragonstone", "café"])
+        XCTAssertTrue(EntrySearch.ranges(of: [], in: text).isEmpty)
+        XCTAssertTrue(EntrySearch.ranges(of: ["giant"], in: text).isEmpty)
+    }
+
     func testFindsEveryWordIgnoringCaseAndAccents() {
         let old = Entry(body: "The dragon came down on Helgen.", inGameDate: "16th of Last Seed", writtenAt: Date(timeIntervalSince1970: 1_000))
         let new = Entry(body: "A DRAGON over Whiterun, and the Jarl's café.", writtenAt: Date(timeIntervalSince1970: 2_000))
