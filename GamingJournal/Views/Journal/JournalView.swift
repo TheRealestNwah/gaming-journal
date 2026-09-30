@@ -3,7 +3,7 @@ import SwiftData
 import UniformTypeIdentifiers
 
 /// A character's journal, read like a book: dated entries on aged pages, turned with Prev and
-/// Next, a swipe or the arrow keys. It opens at the ribbon if one is laid, otherwise on the latest
+/// Next, a swipe or the arrow keys, with a page curl. A wide iPad screen shows two facing pages. It opens at the ribbon if one is laid, otherwise on the latest
 /// page, where the next entry will go.
 struct JournalView: View {
     let journal: Journal
@@ -26,6 +26,8 @@ struct JournalView: View {
     @State private var settledIndex = 0
     @State private var anchor: Anchor
     @State private var textArea = CGSize.zero
+    /// The whole screen's size, which decides between one page and two facing pages.
+    @State private var screenSize = CGSize.zero
     @State private var hasOpened = false
     @State private var writing: WriterRequest?
     @State private var isEditingJournal = false
@@ -64,9 +66,14 @@ struct JournalView: View {
 
     private static let pagePadding: CGFloat = 30
 
+    /// 2 when facing pages are open, otherwise 1. `pageIndex` is always the first page of a spread.
+    private var perSpread: Int {
+        JournalPager.pagesPerSpread(width: screenSize.width, height: screenSize.height)
+    }
+
     private var pages: [JournalPager.Page] {
         let pager = JournalPager(
-            width: max(1, textArea.width - Self.pagePadding * 2),
+            width: max(1, textArea.width / Double(perSpread) - Self.pagePadding * 2),
             height: max(1, textArea.height - 16),
             fontSize: fontSize
         )
@@ -101,21 +108,24 @@ struct JournalView: View {
                     .padding(.top, 10)
 
                 ZStack {
-                    // Shown once the page size is known, already turned to the right page:
-                    // a paged TabView ignores a jump made while it's first appearing.
+                    // Shown once the page size is known, already turned to the right page.
                     if hasOpened {
-                        TabView(selection: $pageIndex) {
-                            ForEach(laidOut) { page in
-                                PageView(page: page, entries: entries, fontSize: fontSize, highlight: highlightTerms) { entry in
-                                    writing = WriterRequest(entry: entry)
-                                } onDelete: { entry in
-                                    pendingDelete = entry
-                                }
-                                .padding(.horizontal, Self.pagePadding)
-                                .tag(page.index)
+                        BookPager(
+                            spreadCount: spreadCount(laidOut.count),
+                            spread: Binding(get: { pageIndex / perSpread }, set: { pageIndex = $0 * perSpread }),
+                            curls: !reduceMotion
+                        ) { spread in
+                            AnyView(spreadView(spread, pages: laidOut, entries: entries, ribbonIndex: ribbonIndex))
+                        }
+                        // The curl is fixed when the pager is made.
+                        .id(reduceMotion)
+                        .accessibilityScrollAction { edge in
+                            switch edge {
+                            case .trailing: turn(to: pageIndex + perSpread)
+                            case .leading: turn(to: pageIndex - perSpread)
+                            default: break
                             }
                         }
-                        .tabViewStyle(.page(indexDisplayMode: .never))
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -126,18 +136,10 @@ struct JournalView: View {
                             .onChange(of: geometry.size) { _, size in measured(size) }
                     }
                 }
-                .overlay(alignment: .topTrailing) {
-                    if hasOpened && ribbonIndex == pageIndex {
-                        RibbonMarker()
-                            .padding(.trailing, Self.pagePadding + 8)
-                            .offset(y: -11)
-                            .accessibilityLabel("The ribbon marks this page")
-                    }
-                }
 
                 bottomBar(pageCount: laidOut.count)
             }
-            .frame(maxWidth: 640)
+            .frame(maxWidth: perSpread == 2 ? 1280 : 640)
             .frame(maxWidth: .infinity)
 
             Button {
@@ -166,6 +168,16 @@ struct JournalView: View {
             }
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: tornOut)
+        .background {
+            GeometryReader { geometry in
+                Color.clear
+                    .onAppear { screenSize = geometry.size }
+                    .onChange(of: geometry.size) { _, size in screenSize = size }
+            }
+        }
+        .onChange(of: perSpread) {
+            if hasOpened { settle() }
+        }
         .toolbar(.hidden, for: .navigationBar)
         .onChange(of: laidOut.count) {
             if hasOpened { settle() }
@@ -174,8 +186,11 @@ struct JournalView: View {
             // A swipe: follow the reader from here on.
             if index != settledIndex {
                 settledIndex = index
-                anchor = index == laidOut.count - 1 ? .latest : .free
+                anchor = index / perSpread == spreadCount(laidOut.count) - 1 ? .latest : .free
                 highlightTerms = []
+            }
+            if UIAccessibility.isVoiceOverRunning {
+                AccessibilityNotification.PageScrolled(pageLabel(pageCount: laidOut.count)).post()
             }
         }
         .onChange(of: journal.entries?.count) { oldCount, newCount in
@@ -248,16 +263,64 @@ struct JournalView: View {
         case .mark(let mark): target = JournalPager.pageIndex(of: mark.entryID, part: mark.part, in: pages) ?? last
         case .free: target = min(pageIndex, last)
         }
-        show(target, animated: animated)
+        show(JournalPager.spreadStart(of: target, pagesPerSpread: perSpread), animated: animated)
     }
 
     /// Prev and Next.
     private func turn(to index: Int) {
-        let last = max(0, laidOutCount - 1)
-        let target = min(max(0, index), last)
+        let last = JournalPager.spreadStart(of: max(0, laidOutCount - 1), pagesPerSpread: perSpread)
+        let target = JournalPager.spreadStart(of: min(max(0, index), last), pagesPerSpread: perSpread)
         anchor = target == last ? .latest : .free
         highlightTerms = []
         show(target, animated: true)
+    }
+
+    // MARK: Spreads
+
+    private func spreadCount(_ pageCount: Int) -> Int {
+        max(1, (pageCount + perSpread - 1) / perSpread)
+    }
+
+    /// "page 3 of 10", or "pages 3–4 of 10" with facing pages.
+    private func pageLabel(pageCount: Int) -> String {
+        let first = min(pageIndex, max(0, pageCount - 1)) + 1
+        let second = min(first + perSpread - 1, pageCount)
+        return second > first ? "pages \(first)–\(second) of \(pageCount)" : "page \(first) of \(pageCount)"
+    }
+
+    /// One spread: a page, or two facing pages with the gutter between them.
+    private func spreadView(_ spread: Int, pages: [JournalPager.Page], entries: [UUID: Entry], ribbonIndex: Int?) -> some View {
+        let first = spread * perSpread
+        return HStack(spacing: 0) {
+            ForEach(first..<(first + perSpread), id: \.self) { index in
+                if index > first {
+                    Rectangle()
+                        .fill(Theme.paperEdge.opacity(0.6))
+                        .frame(width: 1)
+                        .padding(.vertical, 12)
+                        .accessibilityHidden(true)
+                }
+                if pages.indices.contains(index) {
+                    PageView(
+                        page: pages[index],
+                        entries: entries,
+                        fontSize: fontSize,
+                        highlight: highlightTerms,
+                        showsRibbon: ribbonIndex == index
+                    ) { entry in
+                        writing = WriterRequest(entry: entry)
+                    } onDelete: { entry in
+                        pendingDelete = entry
+                    }
+                    .padding(.horizontal, Self.pagePadding)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel("Page \(index + 1)")
+                } else {
+                    // The blank page facing the last one.
+                    Color.clear.frame(maxWidth: .infinity)
+                }
+            }
+        }
     }
 
     // MARK: Tearing out
@@ -333,7 +396,7 @@ struct JournalView: View {
             .accessibilityIdentifier("contents")
             .padding(.trailing, 14)
             Menu {
-                if ribbonIndex == pageIndex {
+                if ribbonIndex.map({ $0 / perSpread }) == pageIndex / perSpread {
                     Button("Take Out the Ribbon", systemImage: "bookmark.slash") { setRibbon(nil) }
                 } else {
                     Button("Lay the Ribbon Here", systemImage: "bookmark") { layRibbonHere() }
@@ -364,18 +427,18 @@ struct JournalView: View {
 
     private func bottomBar(pageCount: Int) -> some View {
         HStack {
-            Button("‹ Prev") { turn(to: pageIndex - 1) }
+            Button("‹ Prev") { turn(to: pageIndex - perSpread) }
                 .keyboardShortcut(.leftArrow, modifiers: [])
                 .disabled(pageIndex == 0)
                 .accessibilityLabel("Previous page")
             Spacer()
-            Text("page \(min(pageIndex, pageCount - 1) + 1) of \(pageCount)")
+            Text(pageLabel(pageCount: pageCount))
                 .font(Theme.bookItalic(15, relativeTo: .footnote))
                 .foregroundStyle(Theme.fadedInk)
             Spacer()
-            Button("Next ›") { turn(to: pageIndex + 1) }
+            Button("Next ›") { turn(to: pageIndex + perSpread) }
                 .keyboardShortcut(.rightArrow, modifiers: [])
-                .disabled(pageIndex >= pageCount - 1)
+                .disabled(pageIndex + perSpread > pageCount - 1)
                 .accessibilityLabel("Next page")
         }
         .font(Theme.pageControl)
@@ -391,6 +454,7 @@ private struct PageView: View {
     let entries: [UUID: Entry]
     let fontSize: CGFloat
     let highlight: [String]
+    var showsRibbon = false
     let onEdit: (Entry) -> Void
     let onDelete: (Entry) -> Void
 
@@ -418,6 +482,13 @@ private struct PageView: View {
             .padding(.bottom, 8)
         }
         .scrollBounceBehavior(.basedOnSize)
+        .overlay(alignment: .topTrailing) {
+            if showsRibbon {
+                RibbonMarker()
+                    .padding(.trailing, 8)
+                    .accessibilityLabel("The ribbon marks this page")
+            }
+        }
     }
 }
 

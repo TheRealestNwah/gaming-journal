@@ -150,6 +150,17 @@ struct JournalPager {
         return pages
     }
 
+    /// How many pages lie open at once in a space of `width` × `height` points: two facing pages
+    /// on a wide landscape screen (an iPad), otherwise one.
+    static func pagesPerSpread(width: Double, height: Double) -> Int {
+        width >= 960 && width > height ? 2 : 1
+    }
+
+    /// The first page of the spread holding `page`.
+    static func spreadStart(of page: Int, pagesPerSpread: Int) -> Int {
+        page - page % max(1, pagesPerSpread)
+    }
+
     /// The page an entry starts on.
     static func pageIndex(of entryID: UUID, in pages: [Page]) -> Int? {
         pages.first { page in page.blocks.contains { $0.entryID == entryID } }?.index
