@@ -57,8 +57,7 @@ struct LatestEntryView: View {
         if let latest = entry.snapshot?.latestEntry {
             VStack(alignment: .leading, spacing: 5) {
                 Text(latest.heading)
-                    .font(Page.book(13, relativeTo: .caption))
-                    .fontWeight(.semibold)
+                    .font(Page.bookCaps(14, relativeTo: .caption))
                     .foregroundStyle(Page.rubric)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)

@@ -53,7 +53,7 @@ struct JournalPager {
 
     /// Estimates line capacity from the page's text area and the body font size.
     init(width: Double, height: Double, fontSize: Double) {
-        // Slightly generous per-character and per-line sizes for Baskerville with the page's line
+        // Slightly generous per-character and per-line sizes for IM Fell with the page's line
         // spacing, so an estimate fills a page without overfilling it.
         self.init(
             charactersPerLine: Int(width / (fontSize * 0.48)),

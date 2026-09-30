@@ -1,3 +1,4 @@
+import CoreText
 import Foundation
 import SwiftUI
 
@@ -48,19 +49,34 @@ struct Snapshot: Codable {
     }
 }
 
-/// The app's page colours and book face, for widgets.
+/// The app's page colours and book face (IM Fell English, bundled with the extension), for widgets.
 enum Page {
+    /// Registers the bundled fonts once per extension process.
+    static let fontsRegistered: Bool = {
+        for url in Bundle.main.urls(forResourcesWithExtension: "ttf", subdirectory: nil) ?? [] {
+            CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+        }
+        return true
+    }()
+
     static let paper = [Color(red: 0.94, green: 0.89, blue: 0.78), Color(red: 0.86, green: 0.77, blue: 0.60)]
     static let ink = Color(red: 0.18, green: 0.13, blue: 0.09)
     static let faded = Color(red: 0.37, green: 0.27, blue: 0.19)
     static let rubric = Color(red: 0.48, green: 0.18, blue: 0.11)
 
     static func book(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
-        .custom("Baskerville", size: size, relativeTo: style)
+        _ = fontsRegistered
+        return .custom("IM_FELL_English_Roman", size: size, relativeTo: style)
     }
 
     static func bookItalic(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
-        .custom("Baskerville-Italic", size: size, relativeTo: style)
+        _ = fontsRegistered
+        return .custom("IM_FELL_English_Italic", size: size, relativeTo: style)
+    }
+
+    static func bookCaps(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
+        _ = fontsRegistered
+        return .custom("IM_FELL_English_SC", size: size, relativeTo: style)
     }
 
     static var background: some View {

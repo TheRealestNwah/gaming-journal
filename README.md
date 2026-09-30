@@ -13,7 +13,7 @@ Everything lives on-device (SwiftData), with optional iCloud sync. No account an
 - **Face ID lock** (optional). While locked, widgets and Spotlight hide your writing.
 - **Export**: a character's journal as a **PDF book** or **Markdown**, and a JSON **backup** of everything that imports without duplicating.
 
-**Look and feel**: aged paper and ink, red rubric dates, Baskerville throughout; the shelf is dark wood with gilt. Pages stay paper in dark mode, dimmed like a book read by candlelight.
+**Look and feel**: aged paper and ink, red rubric dates, IM Fell English throughout (an old-book face by Igino Marini, SIL Open Font License); the shelf is dark wood with gilt. Pages stay paper in dark mode, dimmed like a book read by candlelight.
 
 ## Status
 

@@ -57,3 +57,13 @@ final class ThemeContrastTests: XCTestCase {
         XCTAssertEqual((0..<5).map { _ in a.next() }, (0..<5).map { _ in b.next() })
     }
 }
+
+/// The bundled book face must load, or every page silently falls back to the system font.
+final class BookFontTests: XCTestCase {
+    func testBundledFontsAreRegistered() {
+        BookFont.register()
+        for name in [BookFont.roman, BookFont.italic, BookFont.smallCaps] {
+            XCTAssertNotNil(UIFont(name: name, size: 17), "\(name) isn't available")
+        }
+    }
+}
