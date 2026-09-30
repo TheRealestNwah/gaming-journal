@@ -54,7 +54,7 @@ enum InGameDate {
         return try! NSRegularExpression(pattern: pattern, options: [.caseInsensitive])
     }()
 
-    private static let eraYear = try! NSRegularExpression(pattern: "(\\d+)\\s*E\\s*(\\d+)", options: [.caseInsensitive])
+    private static let eraYear = try! NSRegularExpression(pattern: "(\\d+)\\s*E\\s*(?<year>\\d+)", options: [.caseInsensitive])
 
     private static func nextTamrielDay(after text: String) -> String? {
         let range = NSRange(text.startIndex..., in: text)
@@ -85,11 +85,11 @@ enum InGameDate {
         return result
     }
 
-    /// "…, 4E 201" becomes "…, 4E 202".
+    /// "…, 4E 201" becomes "…, 4E 202". `pattern` captures the year as `year`.
     private static func incrementingYear(in text: String, pattern: NSRegularExpression = eraYear) -> String {
         let range = NSRange(text.startIndex..., in: text)
         guard let match = pattern.firstMatch(in: text, range: range),
-              let yearRange = Range(match.range(at: 2), in: text),
+              let yearRange = Range(match.range(withName: "year"), in: text),
               let year = Int(text[yearRange])
         else { return text }
         return text.replacingCharacters(in: yearRange, with: String(year + 1))
@@ -122,7 +122,7 @@ enum InGameDate {
         return try! NSRegularExpression(pattern: "^(\(festivals.joined(separator: "|")))\\b(.*)$", options: [.caseInsensitive])
     }()
 
-    private static let daleReckoningYear = try! NSRegularExpression(pattern: "(\\d+)\\s*(DR)", options: [.caseInsensitive])
+    private static let daleReckoningYear = try! NSRegularExpression(pattern: "(?<year>\\d+)\\s*DR", options: [.caseInsensitive])
 
     private static func nextHarptosDay(after text: String) -> String? {
         let range = NSRange(text.startIndex..., in: text)
@@ -205,8 +205,11 @@ enum InGameDate {
         guard let nextDay = next.day, let nextMonth = next.month else { return nil }
 
         // Change each part where it's written, so the date keeps the writer's own style.
+        // The day's ordinal suffix is replaced along with it ("4th" → "5th").
+        let suffixRange = Range(match.range(withName: "suffix"), in: text)
         var changes: [(range: Range<String.Index>, text: String)] = [
-            (dayRange, match.range(withName: "suffix").location != NSNotFound ? ordinal(nextDay) : String(nextDay)),
+            (dayRange.lowerBound..<(suffixRange?.upperBound ?? dayRange.upperBound),
+             suffixRange != nil ? ordinal(nextDay) : String(nextDay)),
             (monthRange, englishMonths[nextMonth - 1]),
         ]
         if let yearRange, let nextYear = next.year, year != nil {
