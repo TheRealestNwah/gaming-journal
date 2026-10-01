@@ -441,7 +441,8 @@ struct JournalView: View {
             Button {
                 dismiss()
             } label: {
-                Image(systemName: "chevron.left")
+                // The shelf, not a left arrow, so it isn't mistaken for turning back a page.
+                Image(systemName: "books.vertical")
             }
             .accessibilityLabel("Back to journals")
             Spacer()
