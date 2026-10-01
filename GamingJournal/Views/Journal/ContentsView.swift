@@ -76,7 +76,7 @@ struct ContentsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button("Close", systemImage: "xmark") { dismiss() }
                 }
             }
         }
