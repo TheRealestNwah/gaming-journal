@@ -133,6 +133,9 @@ final class SmokeTests: XCTestCase {
 
     func testSettingsOpenFromTheShelf() {
         let app = launch()
+        // The shelf's own heading is the only title; the bar shows none (#167).
+        XCTAssertTrue(app.buttons["Begin a new journal"].waitForExistence(timeout: Self.step))
+        XCTAssertFalse(app.navigationBars.staticTexts["Journals"].exists)
         app.buttons["Settings"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: Self.step))
         app.navigationBars["Settings"].buttons["Done"].tap()

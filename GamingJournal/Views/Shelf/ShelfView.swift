@@ -37,6 +37,8 @@ struct ShelfView: View {
             .scrollDismissesKeyboard(.immediately)
             .background(WoodBackground())
             .navigationTitle("Journals")
+            // Inline, so the hidden principal item replaces the title instead of a large one showing.
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     // The shelf's own heading does the job; keep the bar clear.
