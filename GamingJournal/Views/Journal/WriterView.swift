@@ -9,6 +9,9 @@ struct WriterView: View {
     let journal: Journal
     private let entry: Entry?
     @State private var draft: EntryDraft
+    /// The page as it opened, to tell whether × would throw anything away.
+    private let original: EntryDraft
+    @State private var isConfirmingDiscard = false
     /// An unfinished new entry left in this journal, offered back until the writer decides.
     @State private var unfinished: DraftShelf.Saved?
     @State private var pickerItems: [PhotosPickerItem] = []
@@ -22,7 +25,9 @@ struct WriterView: View {
     init(journal: Journal, entry: Entry? = nil) {
         self.journal = journal
         self.entry = entry
-        _draft = State(initialValue: entry.map(EntryDraft.init(entry:)) ?? EntryDraft.new(in: journal))
+        let original = entry.map(EntryDraft.init(entry:)) ?? EntryDraft.new(in: journal)
+        self.original = original
+        _draft = State(initialValue: original)
         _unfinished = State(initialValue: entry == nil ? DraftShelf().saved(for: journal.id) : nil)
     }
 
@@ -115,8 +120,13 @@ struct WriterView: View {
     private var topBar: some View {
         HStack {
             Button("Cancel", systemImage: "xmark") {
-                if entry == nil && unfinished == nil { drafts.discard(for: journal.id) }
-                dismiss()
+                if draft == original { discard() } else { isConfirmingDiscard = true }
+            }
+            .confirmationDialog("Discard this page?", isPresented: $isConfirmingDiscard, titleVisibility: .visible) {
+                Button("Discard Page", role: .destructive, action: discard)
+                Button("Keep Writing", role: .cancel) {}
+            } message: {
+                Text(entry == nil ? "What you've written here will be lost." : "Your changes to this entry will be lost.")
             }
             Spacer()
             Button("Done", systemImage: "checkmark", action: save)
@@ -225,6 +235,11 @@ struct WriterView: View {
     }
 
     // MARK: Actions
+
+    private func discard() {
+        if entry == nil && unfinished == nil { drafts.discard(for: journal.id) }
+        dismiss()
+    }
 
     private func save() {
         if let entry {

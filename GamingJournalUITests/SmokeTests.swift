@@ -138,6 +138,23 @@ final class SmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["Previous page"].waitForExistence(timeout: Self.step))
     }
 
+    func testClosingAWrittenPageAsksFirst() {
+        let app = launch(demoData: true)
+        let journal = element(containing: "Eira Stormborn", in: app)
+        XCTAssertTrue(journal.waitForExistence(timeout: Self.step))
+        journal.tap()
+        app.buttons["Write a new entry"].tap()
+        type("Half a thought", into: app.textViews["entryBody"])
+        app.buttons["Cancel"].tap()
+
+        // Written words aren't thrown away without asking (#179).
+        let discard = app.buttons["Discard Page"]
+        XCTAssertTrue(discard.waitForExistence(timeout: Self.step))
+        discard.tap()
+        XCTAssertTrue(app.buttons["Write a new entry"].waitForExistence(timeout: Self.step))
+        XCTAssertFalse(element(containing: "Half a thought", in: app).exists)
+    }
+
     func testSettingsOpenFromTheShelf() {
         let app = launch()
         // The shelf's own heading is the only title: the bar stays inline-height rather than
