@@ -4,6 +4,7 @@ import SwiftData
 /// Home: every character's journal lying on a dark wood shelf.
 struct ShelfView: View {
     @Environment(\.modelContext) private var context
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \Journal.updatedAt, order: .reverse) private var journals: [Journal]
     @Binding var path: [JournalRoute]
     @State private var isCreating = false
@@ -11,14 +12,18 @@ struct ShelfView: View {
     @State private var pendingDelete: Journal?
     @State private var isShowingSettings = false
     @State private var query = ""
+    @State private var isSearching = false
+    @FocusState private var searchFocused: Bool
 
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
                 VStack(spacing: 22) {
                     header
-                    if !journals.isEmpty {
+                    if isSearching && !journals.isEmpty {
                         BookSearchField(text: $query, prompt: "Search the journals", onWood: true)
+                            .focused($searchFocused)
+                            .onAppear { searchFocused = true }
                     }
                     if EntrySearch.terms(in: query).isEmpty {
                         books
@@ -32,6 +37,7 @@ struct ShelfView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 32)
                 .frame(maxWidth: 620)
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: isSearching)
                 .frame(maxWidth: .infinity)
             }
             .scrollDismissesKeyboard(.immediately)
@@ -44,11 +50,19 @@ struct ShelfView: View {
                     // The shelf's own heading does the job; keep the bar clear.
                     Color.clear.frame(width: 1, height: 1).accessibilityHidden(true)
                 }
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItemGroup(placement: .primaryAction) {
+                    if !journals.isEmpty {
+                        Button(isSearching ? "Close search" : "Search", systemImage: isSearching ? "xmark" : "magnifyingglass") {
+                            toggleSearch()
+                        }
+                        .keyboardShortcut("f", modifiers: .command)
+                    }
+                    Button("Begin a new journal", systemImage: "plus") { isCreating = true }
+                        .keyboardShortcut("n", modifiers: [.command, .shift])
                     Button("Settings", systemImage: "gearshape") { isShowingSettings = true }
-                        .tint(Theme.gold)
                 }
             }
+            .tint(Theme.gold)
             .toolbarBackground(.hidden, for: .navigationBar)
             .navigationDestination(for: JournalRoute.self) { route in
                 JournalView(journal: route.journal, focusEntryID: route.entryID, highlight: route.highlight)
@@ -83,7 +97,7 @@ struct ShelfView: View {
         .sensoryFeedback(.success, trigger: journals.count) { old, new in new > old }
     }
 
-    /// The journals on the shelf, and a place for a new one.
+    /// The journals on the shelf, or a pointer to + when there are none.
     @ViewBuilder
     private var books: some View {
         ForEach(journals) { journal in
@@ -97,38 +111,31 @@ struct ShelfView: View {
                 Button("Delete", systemImage: "trash", role: .destructive) { pendingDelete = journal }
             }
         }
-        beginButton
+        if journals.isEmpty {
+            Text("Tap + to begin a journal.")
+                .font(Theme.bookItalic(18, relativeTo: .body))
+                .foregroundStyle(Theme.woodFaded)
+                .padding(.top, 24)
+        }
+    }
+
+    /// Shows the search field, focused, or closes it and clears the search.
+    private func toggleSearch() {
+        if isSearching {
+            query = ""
+            isSearching = false
+        } else {
+            isSearching = true
+        }
     }
 
     private var header: some View {
-        VStack(spacing: 4) {
-            Text("Journals")
-                .font(Theme.book(40, relativeTo: .largeTitle))
-                .foregroundStyle(Theme.woodInk)
-                .accessibilityAddTraits(.isHeader)
-            Text(journals.isEmpty ? "Every hero keeps a journal." : "One for every life you've lived.")
-                .font(Theme.bookItalic(17, relativeTo: .subheadline))
-                .foregroundStyle(Theme.woodFaded)
-        }
-        .multilineTextAlignment(.center)
-        .padding(.top, 8)
-        .padding(.bottom, 6)
-    }
-
-    private var beginButton: some View {
-        Button { isCreating = true } label: {
-            Label("Begin a new journal", systemImage: "plus")
-                .font(Theme.book(20, relativeTo: .headline))
-                .foregroundStyle(Theme.gold)
-                .frame(maxWidth: .infinity, minHeight: 64)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(Theme.gold.opacity(0.6), style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
-                )
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .keyboardShortcut("n", modifiers: [.command, .shift])
+        Text("Journals")
+            .font(Theme.book(40, relativeTo: .largeTitle))
+            .foregroundStyle(Theme.woodInk)
+            .accessibilityAddTraits(.isHeader)
+            .padding(.top, 8)
+            .padding(.bottom, 6)
     }
 }
 
@@ -199,10 +206,10 @@ struct JournalEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel", systemImage: "xmark") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(journal == nil ? "Begin" : "Save", action: save)
+                    Button(journal == nil ? "Begin" : "Save", systemImage: "checkmark", action: save)
                         .disabled(trimmedName.isEmpty)
                 }
             }

@@ -10,8 +10,8 @@ Everything lives on-device (SwiftData), with optional iCloud sync. No account an
 
 ## Features
 
-- **A shelf of journals**, one per character, each a leather-bound book with the character's name, race or class, and game.
-- **Pages you turn**: entries read like a book, under their in-game date ("16th of Last Seed, 4E 201") and optional place. Prev / Next, a swipe, or hardware arrow keys turn the page with a curl; Reduce Motion uses a plain slide for swipes and immediate button turns. Wide landscape iPads show two facing pages. VoiceOver supports heading navigation and page-turn gestures and announces the page number.
+- **A shelf of journals**, one per character, each a leather-bound book with the character's name, race or class, and game. Search (magnifying glass), a new journal (+) and Settings sit in the top bar.
+- **Pages you turn**: entries read like a book, under their in-game date ("16th of Last Seed, 4E 201") and optional place. The ← / → arrows, a swipe, or hardware arrow keys turn the page with a curl; Reduce Motion uses a plain slide for swipes and immediate button turns. Wide landscape iPads show two facing pages. VoiceOver supports heading navigation and page-turn gestures and announces the page number.
 - **Find your place**: a **Contents** page lists every entry with its page number, and a **ribbon** marks your place so the journal reopens there (otherwise it opens on the latest page). Search from the shelf or Contents; matching words on the opened page are highlighted until you turn away.
 - **A blank page to write on**: the in-game date (with a **Next day** button for Elder Scrolls, Harptos, real-world dates and numbered days), the place, the words (the keyboard's own mic dictates), and pictures from the library or camera. Tap an entry on the page to amend it. Unfinished pages are kept if the app closes; after deleting an entry, **Undo** briefly restores it with its pictures.
 - **Around iOS**: a latest-entry widget, a "Write in…" widget for a chosen journal, a Control Center button, **Siri and Shortcuts** ("Write as Eira in Hearthbound"), **Spotlight**, and an optional evening **reminder**.

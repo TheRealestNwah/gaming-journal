@@ -2,8 +2,8 @@ import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 
-/// A character's journal, read like a book: dated entries on aged pages, turned with Prev and
-/// Next, a swipe or the arrow keys, with a page curl. Tapping an entry opens it to amend. A wide
+/// A character's journal, read like a book: dated entries on aged pages, turned with the arrows,
+/// a swipe or the arrow keys, with a page curl. Tapping an entry opens it to amend. A wide
 /// iPad screen shows two facing pages. It opens at the ribbon if one is laid, otherwise on the
 /// latest page, where the next entry will go.
 struct JournalView: View {
@@ -313,7 +313,14 @@ struct JournalView: View {
         max(1, (pageCount + perSpread - 1) / perSpread)
     }
 
-    /// "page 3 of 10", or "pages 3–4 of 10" with facing pages.
+    /// "3 of 10", or "3–4 of 10" with facing pages, under the page.
+    private func pageNumbers(pageCount: Int) -> String {
+        let first = min(pageIndex, max(0, pageCount - 1)) + 1
+        let second = min(first + perSpread - 1, pageCount)
+        return second > first ? "\(first)–\(second) of \(pageCount)" : "\(first) of \(pageCount)"
+    }
+
+    /// "page 3 of 10", or "pages 3–4 of 10" with facing pages, for VoiceOver.
     private func pageLabel(pageCount: Int) -> String {
         let first = min(pageIndex, max(0, pageCount - 1)) + 1
         let second = min(first + perSpread - 1, pageCount)
@@ -434,7 +441,7 @@ struct JournalView: View {
             Button {
                 dismiss()
             } label: {
-                Text("‹ Journals")
+                Image(systemName: "chevron.left")
             }
             .accessibilityLabel("Back to journals")
             Spacer()
@@ -480,16 +487,17 @@ struct JournalView: View {
 
     private func bottomBar(pageCount: Int) -> some View {
         HStack {
-            Button("‹ Prev") { turn(to: pageIndex - perSpread) }
+            Button { turn(to: pageIndex - perSpread) } label: { Image(systemName: "arrow.left") }
                 .keyboardShortcut(.leftArrow, modifiers: [])
                 .disabled(pageIndex == 0)
                 .accessibilityLabel("Previous page")
             Spacer()
-            Text(pageLabel(pageCount: pageCount))
+            Text(pageNumbers(pageCount: pageCount))
                 .font(Theme.bookItalic(15, relativeTo: .footnote))
                 .foregroundStyle(Theme.fadedInk)
+                .accessibilityLabel(pageLabel(pageCount: pageCount))
             Spacer()
-            Button("Next ›") { turn(to: pageIndex + perSpread) }
+            Button { turn(to: pageIndex + perSpread) } label: { Image(systemName: "arrow.right") }
                 .keyboardShortcut(.rightArrow, modifiers: [])
                 .disabled(pageIndex + perSpread > pageCount - 1)
                 .accessibilityLabel("Next page")

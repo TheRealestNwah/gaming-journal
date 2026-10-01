@@ -100,6 +100,7 @@ final class SmokeTests: XCTestCase {
 
     func testSearchOpensTheJournalAtTheEntry() {
         let app = launch(demoData: true)
+        app.buttons["Search"].tap()
         type("dragonstone", into: app.textFields["Search the journals"])
         let result = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "wall that spoke")).firstMatch
         XCTAssertTrue(result.waitForExistence(timeout: Self.step), "No search result: " + app.debugDescription)
@@ -132,7 +133,7 @@ final class SmokeTests: XCTestCase {
 
         // Tapping an entry opens it to amend (#170).
         element(containing: "headsman", in: app).tap()
-        XCTAssertTrue(app.staticTexts["Amend the page"].waitForExistence(timeout: Self.step))
+        XCTAssertTrue(app.textViews["entryBody"].waitForExistence(timeout: Self.step))
         app.buttons["Cancel"].tap()
         XCTAssertTrue(app.buttons["Previous page"].waitForExistence(timeout: Self.step))
     }
@@ -145,7 +146,7 @@ final class SmokeTests: XCTestCase {
         XCTAssertLessThan(app.navigationBars.firstMatch.frame.height, 70)
         app.buttons["Settings"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: Self.step))
-        app.navigationBars["Settings"].buttons["Done"].tap()
+        app.navigationBars["Settings"].buttons["Close"].tap()
         XCTAssertTrue(app.buttons["Begin a new journal"].waitForExistence(timeout: Self.step))
     }
 }

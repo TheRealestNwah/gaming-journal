@@ -114,19 +114,17 @@ struct WriterView: View {
 
     private var topBar: some View {
         HStack {
-            Button("Cancel") {
+            Button("Cancel", systemImage: "xmark") {
                 if entry == nil && unfinished == nil { drafts.discard(for: journal.id) }
                 dismiss()
             }
             Spacer()
-            Text(entry == nil ? "A new page" : "Amend the page")
-                .font(Theme.bookItalic(16, relativeTo: .headline))
-                .foregroundStyle(Theme.fadedInk)
-            Spacer()
-            Button("Done", action: save)
+            Button("Done", systemImage: "checkmark", action: save)
                 .fontWeight(.semibold)
                 .disabled(!draft.isValid)
         }
+        .labelStyle(.iconOnly)
+        .imageScale(.large)
         .font(Theme.pageControl)
         .foregroundStyle(Theme.rubric)
         .buttonStyle(.pageControl)
@@ -171,21 +169,26 @@ struct WriterView: View {
     private var tools: some View {
         HStack(alignment: .top, spacing: 22) {
             PhotosPicker(selection: $pickerItems, maxSelectionCount: 6, matching: .images) {
-                Label(isLoadingPhotos ? "Adding…" : "Picture", systemImage: "photo")
-                    .font(Theme.pageControl)
+                Label("Add a picture", systemImage: "photo")
             }
             .disabled(isLoadingPhotos)
             if CameraPicker.isAvailable {
                 Button {
                     isShowingCamera = true
                 } label: {
-                    Label("Camera", systemImage: "camera")
-                        .font(Theme.pageControl)
+                    Label("Take a picture", systemImage: "camera")
                 }
                 .disabled(isLoadingPhotos)
             }
+            if isLoadingPhotos {
+                ProgressView()
+                    .accessibilityLabel("Adding pictures")
+            }
             Spacer(minLength: 0)
         }
+        .labelStyle(.iconOnly)
+        .imageScale(.large)
+        .font(Theme.pageControl)
         .foregroundStyle(Theme.rubric)
         .padding(.vertical, 10)
     }

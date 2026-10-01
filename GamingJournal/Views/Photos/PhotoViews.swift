@@ -109,7 +109,7 @@ struct PhotoViewer: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button("Close", systemImage: "xmark") { dismiss() }
                 }
             }
         }
