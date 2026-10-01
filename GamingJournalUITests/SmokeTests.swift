@@ -21,6 +21,14 @@ final class SmokeTests: XCTestCase {
         return app
     }
 
+    /// Keep real app renders available in CI even when the smoke tests pass.
+    private func capture(_ name: String, in app: XCUIApplication) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
     /// Rows combine their text into one accessibility label, so match on part of it.
     private func element(containing text: String, in app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
@@ -68,6 +76,7 @@ final class SmokeTests: XCTestCase {
 
         type("16th of Last Seed", into: app.textFields["inGameDate"])
         type("Praise the sun", into: app.textViews["entryBody"])
+        capture("04-writer", in: app)
         app.buttons["Done"].tap()
 
         XCTAssertTrue(element(containing: "Praise the sun", in: app).waitForExistence(timeout: Self.step))
@@ -83,6 +92,7 @@ final class SmokeTests: XCTestCase {
         // The latest page ends with the latest entry (which may have started on the page before).
         let ending = element(containing: "never learned", in: app)
         XCTAssertTrue(ending.waitForExistence(timeout: Self.step), "Latest page not shown: " + app.debugDescription)
+        capture("05-journal-latest-page", in: app)
         XCTAssertFalse(app.buttons["Next page"].isEnabled)
         app.buttons["Back to journals"].tap()
         XCTAssertTrue(app.buttons["Begin a new journal"].waitForExistence(timeout: Self.step))
@@ -100,6 +110,7 @@ final class SmokeTests: XCTestCase {
 
     func testContentsTurnsToTheFirstEntry() {
         let app = launch(demoData: true)
+        capture("01-shelf", in: app)
         let journal = element(containing: "Eira Stormborn", in: app)
         XCTAssertTrue(journal.waitForExistence(timeout: Self.step))
         journal.tap()
@@ -110,12 +121,14 @@ final class SmokeTests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Contents"].waitForExistence(timeout: Self.step))
         let first = app.buttons.matching(identifier: "contentsEntry").firstMatch
         XCTAssertTrue(first.waitForExistence(timeout: Self.step))
+        capture("03-contents", in: app)
         first.tap()
 
         // The sheet closes on the first page.
         let closed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.navigationBars["Contents"])
         wait(for: [closed], timeout: Self.step)
         XCTAssertFalse(app.buttons["Previous page"].isEnabled)
+        capture("02-journal-first-page", in: app)
     }
 
     func testSettingsOpenFromTheShelf() {
