@@ -21,8 +21,29 @@ struct WidgetSnapshot: Codable, Equatable {
             .flatMap(UUID.init(uuidString:))
     }
 
+    static func isEntryURL(_ url: URL) -> Bool {
+        url.scheme == entryURL.scheme && url.host == entryURL.host
+    }
+
     static func isWriteURL(_ url: URL) -> Bool {
         url.scheme == writeURL.scheme && url.host == writeURL.host
+    }
+
+    /// Opens the journal at one entry's page.
+    static let entryURL = URL(string: "gamingjournal://entry")!
+
+    static func entryURL(for entryID: UUID) -> URL {
+        var components = URLComponents(url: entryURL, resolvingAgainstBaseURL: false)!
+        components.queryItems = [URLQueryItem(name: "id", value: entryID.uuidString)]
+        return components.url!
+    }
+
+    /// The entry an entry link points at.
+    static func entryID(inEntryURL url: URL) -> UUID? {
+        guard url.scheme == entryURL.scheme, url.host == entryURL.host else { return nil }
+        return URLComponents(url: url, resolvingAgainstBaseURL: false)?
+            .queryItems?.first { $0.name == "id" }?.value
+            .flatMap(UUID.init(uuidString:))
     }
 
     static func writeURL(for journalID: UUID) -> URL {
@@ -41,6 +62,8 @@ struct WidgetSnapshot: Codable, Equatable {
         /// Opening of the body, trimmed for a small widget.
         var excerpt: String
         var writtenAt: Date
+        /// Set for memories, which open at their entry.
+        var entryID: UUID?
 
         static let excerptLength = 160
 
@@ -63,11 +86,58 @@ struct WidgetSnapshot: Codable, Equatable {
                 ? String(body.prefix(Self.excerptLength)).trimmingCharacters(in: .whitespaces) + "…"
                 : body
             writtenAt = entry.writtenAt
+            entryID = entry.id
         }
+    }
+
+    /// What the "On this day" widget shows on `day`: an entry written on that date in an earlier
+    /// year, or failing that, within a few days of it.
+    struct DayMemory: Codable, Equatable {
+        /// Start of the day this memory is for.
+        var day: Date
+        var entry: LatestEntry
     }
 
     var generatedAt: Date
     var latestEntry: LatestEntry?
+    /// A memory for each of the coming days that has one, so the widget moves on at midnight
+    /// without the app. Nil when there are none (or the journal is locked).
+    var memories: [DayMemory]? = nil
+
+    /// How far either side of the date a memory may come from when nothing was written on it.
+    static let memorySlack = 3
+
+    /// Picks a memory for each of `days` days from `today`: an entry from an earlier year written
+    /// on the same month and day (most recent year first), else the oldest entry within
+    /// `memorySlack` days of its anniversary.
+    static func memories(from entries: [Entry], today: Date, days: Int = 7, calendar: Calendar = .current) -> [DayMemory] {
+        let start = calendar.startOfDay(for: today)
+        return (0..<days).compactMap { offset -> DayMemory? in
+            guard let day = calendar.date(byAdding: .day, value: offset, to: start),
+                  let yearBefore = calendar.date(byAdding: .day, value: -(365 - memorySlack), to: day)
+            else { return nil }
+            let year = calendar.component(.year, from: day)
+            let best = entries
+                // Written in an earlier year, not just last week across New Year.
+                .filter { $0.writtenAt < yearBefore }
+                .compactMap { entry -> (entry: Entry, distance: Int)? in
+                    let parts = calendar.dateComponents([.month, .day], from: entry.writtenAt)
+                    // The anniversary nearest the day, which may fall in the year either side.
+                    let distances = [year - 1, year, year + 1].compactMap { anniversaryYear -> Int? in
+                        guard let sameDay = calendar.date(from: DateComponents(year: anniversaryYear, month: parts.month, day: parts.day)) else { return nil }
+                        return calendar.dateComponents([.day], from: day, to: sameDay).day.map(abs)
+                    }
+                    guard let distance = distances.min(), distance <= memorySlack else { return nil }
+                    return (entry, distance)
+                }
+                .min { left, right in
+                    if (left.distance == 0) != (right.distance == 0) { return left.distance == 0 }
+                    if left.distance == 0 { return left.entry.writtenAt > right.entry.writtenAt }
+                    return left.entry.writtenAt < right.entry.writtenAt
+                }
+            return best.map { DayMemory(day: day, entry: LatestEntry(entry: $0.entry)) }
+        }
+    }
 
     func encoded() throws -> Data {
         let encoder = JSONEncoder()

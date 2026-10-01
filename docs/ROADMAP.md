@@ -29,12 +29,6 @@ A journal's ribbon is kept per device in UserDefaults, not in the model.
 | Ribbon bookmark so a journal reopens where you left off | #125 |
 | Pictures in the PDF book export | #126 |
 
-## Planned
-
-Green-lit by the owner, September 2026.
-
-| Item | Issue |
-|------|-------|
 | More in-game calendars for Next day (Harptos, real-world dates) | #144 |
 | Share an entry as a picture of its page | #145 |
 | Two facing pages on iPad | #146 |
@@ -48,6 +42,21 @@ Green-lit by the owner, September 2026.
 | Turn pages with a page curl | #154 |
 | Export the PDF book without freezing the app | #155 |
 | Make the reader easier to use with VoiceOver | #156 |
+
+## Validation still needed
+
+The approved September 2026 feature list is implemented. Simulator CI checks builds, service
+tests and core UI flows; it does not prove real-device behavior. The remaining acceptance work
+is tracked in [#30](https://github.com/TheRealestNwah/hearthbound/issues/30): camera and photo
+permissions, widget timelines and links, hardware keyboard navigation, VoiceOver, page curls,
+iPad resizing, dictation, signing, and two-device iCloud sync. The Free Team scheme is not built
+by CI.
+
+The On This Day widget prepares seven days of memories when the app opens or its writing
+changes. It clears expired memories; reopen the app to prepare the next week. Exact anniversaries
+take priority, otherwise it shows the oldest entry within three days of the date in an earlier year.
+
+No approved feature remains unimplemented on this roadmap. New features need a scoped issue.
 
 ## Ideas
 

@@ -12,6 +12,13 @@ struct Snapshot: Codable {
     static let key = "widgetSnapshot"
     static let writeURL = URL(string: "gamingjournal://write")!
 
+    /// Mirror of the app's `WidgetSnapshot.entryURL(for:)`.
+    static func entryURL(for entryID: UUID) -> URL {
+        var components = URLComponents(string: "gamingjournal://entry")!
+        components.queryItems = [URLQueryItem(name: "id", value: entryID.uuidString)]
+        return components.url!
+    }
+
     /// Mirror of the app's `WidgetSnapshot.writeURL(for:)`.
     static func writeURL(for journalID: UUID) -> URL {
         var components = URLComponents(url: writeURL, resolvingAgainstBaseURL: false)!
@@ -26,10 +33,17 @@ struct Snapshot: Codable {
         var place: String?
         var excerpt: String
         var writtenAt: Date
+        var entryID: UUID?
+    }
+
+    struct DayMemory: Codable {
+        var day: Date
+        var entry: LatestEntry
     }
 
     var generatedAt: Date
     var latestEntry: LatestEntry?
+    var memories: [DayMemory]?
 
     static let placeholder = Snapshot(
         generatedAt: .now,

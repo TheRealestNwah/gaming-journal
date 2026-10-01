@@ -15,7 +15,44 @@ enum PDFBook {
     private static let gold = UIColor(red: 0.84, green: 0.71, blue: 0.42, alpha: 1)
     private static let cream = UIColor(red: 0.95, green: 0.90, blue: 0.80, alpha: 1)
 
+    /// Everything the book prints, copied out of the store so it can be typeset off the main
+    /// thread (a journal full of pictures takes a while).
+    struct Book: Sendable {
+        struct Page: Sendable {
+            var heading: String
+            var place: String
+            var body: String
+            var pictures: [Data]
+        }
+
+        var title: String
+        var characterName: String
+        var subtitle: String
+        var coverStyle: CoverStyle
+        var entries: [Page]
+
+        init(_ journal: Journal, locale: Locale = .current) {
+            title = journal.title
+            characterName = journal.characterName
+            subtitle = journal.subtitle
+            coverStyle = journal.coverStyle
+            entries = journal.story.map { entry in
+                Page(
+                    heading: entry.heading(locale: locale),
+                    place: entry.place,
+                    body: entry.body,
+                    pictures: entry.sortedPhotos.compactMap { $0.imageData ?? $0.thumbnailData }
+                )
+            }
+        }
+    }
+
     static func render(_ journal: Journal, locale: Locale = .current) -> Data {
+        render(Book(journal, locale: locale))
+    }
+
+    /// Typesets a copied-out book. Safe to call off the main thread.
+    static func render(_ journal: Book) -> Data {
         let bounds = CGRect(origin: .zero, size: pageSize)
         let format = UIGraphicsPDFRendererFormat()
         format.documentInfo = [
@@ -38,10 +75,9 @@ enum PDFBook {
             newPage(numbered: false)
             drawCover(journal, in: bounds)
 
-            let entries = journal.story
-            if !entries.isEmpty {
+            if !journal.entries.isEmpty {
                 newPage()
-                flow(pages(entries, locale: locale), in: context, newPage: { newPage() })
+                flow(pages(journal.entries), in: context, newPage: { newPage() })
             }
         }
     }
@@ -52,7 +88,7 @@ enum PDFBook {
 
     // MARK: Pages
 
-    private static func drawCover(_ journal: Journal, in bounds: CGRect) {
+    private static func drawCover(_ journal: Book, in bounds: CGRect) {
         let leather = UIColor(journal.coverStyle.colors.last ?? .brown)
         let band = bounds.insetBy(dx: 36, dy: 60)
         leather.setFill()
@@ -81,7 +117,7 @@ enum PDFBook {
     }
 
     /// Every entry as one flowing run of text: a date heading, the words, then its pictures.
-    static func pages(_ entries: [Entry], locale: Locale) -> NSAttributedString {
+    static func pages(_ entries: [Book.Page]) -> NSAttributedString {
         let text = NSMutableAttributedString()
         let heading = NSMutableParagraphStyle()
         heading.paragraphSpacingBefore = 16
@@ -100,7 +136,7 @@ enum PDFBook {
 
         for entry in entries {
             text.append(NSAttributedString(
-                string: entry.heading(locale: locale) + "\n",
+                string: entry.heading + "\n",
                 attributes: [.font: book(13, weight: .semibold), .foregroundColor: rubric, .paragraphStyle: heading]
             ))
             if !entry.place.isEmpty {
@@ -112,8 +148,8 @@ enum PDFBook {
             if !entry.body.isEmpty {
                 text.append(NSAttributedString(string: entry.body + "\n", attributes: [.font: book(12.5), .foregroundColor: ink, .paragraphStyle: body]))
             }
-            for photo in entry.sortedPhotos {
-                guard let attachment = pictureAttachment(photo.imageData ?? photo.thumbnailData) else { continue }
+            for imageData in entry.pictures {
+                guard let attachment = pictureAttachment(imageData) else { continue }
                 let line = NSMutableAttributedString(attachment: attachment)
                 line.append(NSAttributedString(string: "\n"))
                 line.addAttributes([.font: book(12.5), .paragraphStyle: picture], range: NSRange(location: 0, length: line.length))

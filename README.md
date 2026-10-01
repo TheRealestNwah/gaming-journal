@@ -5,24 +5,25 @@ The journal your character keeps, like the one in an Elder Scrolls game. Start a
 Everything lives on-device (SwiftData), with optional iCloud sync. No account and no online game database; you write everything yourself.
 
 > **Built with AI.** Hearthbound's code, tests and documentation were written by
-> Claude, an AI model from Anthropic, directed and tested by the maintainer.
+> Claude and OpenAI Codex, directed by the maintainer.
 > See [AI disclosure](#ai-disclosure).
 
 ## Features
 
 - **A shelf of journals**, one per character, each a leather-bound book with the character's name, race or class, and game.
-- **Pages you turn**: entries read like a book, under their in-game date ("16th of Last Seed, 4E 201"). Prev / Next or a swipe turns the page. A **Contents** page lists every entry with its page number, and a **ribbon** marks your place so the journal reopens there (otherwise it opens on the latest page).
-- **Search** every journal from the shelf, or one journal from its Contents, and jump straight to the entry.
-- **A blank page to write on**: the in-game date (with a **Next day** button that knows the Elder Scrolls calendar), the words, **dictation**, and pictures pasted in. Unfinished pages are kept if the app closes.
+- **Pages you turn**: entries read like a book, under their in-game date ("16th of Last Seed, 4E 201") and optional place. Prev / Next, a swipe, or hardware arrow keys turn the page with a curl; Reduce Motion uses a plain slide for swipes and immediate button turns. Wide landscape iPads show two facing pages. VoiceOver supports heading navigation and page-turn gestures and announces the page number.
+- **Find your place**: a **Contents** page lists every entry with its page number, and a **ribbon** marks your place so the journal reopens there (otherwise it opens on the latest page). Search from the shelf or Contents; matching words on the opened page are highlighted until you turn away.
+- **A blank page to write on**: the in-game date (with a **Next day** button for Elder Scrolls, Harptos, real-world dates and numbered days), the place, the words, **dictation**, and pictures from the library or camera. Change the real-world filing date to put a late entry in order. Unfinished pages are kept if the app closes; after deleting an entry, **Undo** briefly restores it with its pictures.
 - **Around iOS**: a latest-entry widget, a "Write in…" widget for a chosen journal, a Control Center button, **Siri and Shortcuts** ("Write as Eira in Hearthbound"), **Spotlight**, and an optional evening **reminder**.
+- **On This Day**: a widget opens an entry from the same date in a past year, or the oldest entry within three days of that date. The app prepares a week of memories when opened; reopen it to prepare another week. Expired memories clear automatically.
 - **Face ID lock** (optional). While locked, widgets and Spotlight hide your writing.
-- **Export**: a character's journal as a **PDF book** or **Markdown**, and a JSON **backup** of everything that imports without duplicating.
+- **Share and export**: share an entry's opening words and first picture as an aged-paper image, or export the complete journal as a **PDF book** or **Markdown**. PDF typesetting runs in the background with a progress indicator. A JSON **backup** of everything imports without duplicating.
 
 **Look and feel**: aged paper and ink, red rubric dates, IM Fell English throughout (an old-book face by Igino Marini, SIL Open Font License); the shelf is dark wood with gilt. Pages stay paper in dark mode, dimmed like a book read by candlelight.
 
 ## Status
 
-Rebuilt around one journal per character (#116–#119). Some things still need checking on a real device (#30).
+Rebuilt around one journal per character (#116–#119), with the approved September roadmap features implemented. See [the roadmap](docs/ROADMAP.md) and the [real-device checklist](https://github.com/TheRealestNwah/hearthbound/issues/30) for validation still needed. Simulator CI does not verify signing, camera capture, VoiceOver gestures or two-device iCloud sync.
 
 ## Requirements
 
@@ -72,12 +73,12 @@ GitHub Actions builds the app and runs the unit and UI smoke tests on every pull
 
 ## AI disclosure
 
-Hearthbound was built with [Claude Code](https://claude.com/claude-code), Anthropic's
-AI coding assistant. Claude wrote the code, tests and documentation. The
-maintainer ([@TheRealestNwah](https://github.com/TheRealestNwah)) decided what
-it should do, tested it, and made the release decisions. Commits written with
-Claude carry a `Co-Authored-By: Claude` trailer, so the git history shows which
-changes were AI-written.
+Hearthbound was built with [Claude Code](https://claude.com/claude-code) and
+[OpenAI Codex](https://openai.com/codex/). These tools contributed code, tests and
+documentation under the direction of the maintainer
+([@TheRealestNwah](https://github.com/TheRealestNwah)), who decides the product
+direction and releases. Git history records the changes; the device checklist
+tracks hands-on validation still outstanding.
 
 ## Support
 

@@ -13,6 +13,7 @@ struct WriterView: View {
     @State private var unfinished: DraftShelf.Saved?
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var isLoadingPhotos = false
+    @State private var isShowingCamera = false
     @State private var dictation = Dictation()
     @FocusState private var bodyFocused: Bool
     @FocusState private var placeFocused: Bool
@@ -95,6 +96,13 @@ struct WriterView: View {
         .onChange(of: draft) { _, draft in
             if entry == nil && unfinished == nil { drafts.keep(draft, for: journal.id) }
         }
+        .fullScreenCover(isPresented: $isShowingCamera) {
+            CameraPicker { image in
+                isShowingCamera = false
+                if let image { Task { await add(image) } }
+            }
+            .ignoresSafeArea()
+        }
         .onChange(of: pickerItems) { _, items in
             guard !items.isEmpty else { return }
             Task { await load(items) }
@@ -138,8 +146,15 @@ struct WriterView: View {
                 }
                 .accessibilityHint("Sets the date to \(next)")
             }
-            Text("written \(draft.writtenAt.formatted(date: .abbreviated, time: .omitted))")
-                .foregroundStyle(Theme.fadedInk)
+            // The book is ordered by this date, so an entry typed in late can be filed back.
+            HStack(spacing: 6) {
+                Text("written")
+                    .foregroundStyle(Theme.fadedInk)
+                DatePicker("Written", selection: $draft.writtenAt, in: ...Date.now, displayedComponents: .date)
+                    .labelsHidden()
+                    .accessibilityLabel("Written on")
+                    .accessibilityIdentifier("writtenAt")
+            }
         }
         .font(Theme.bookItalic(15, relativeTo: .footnote))
     }
@@ -175,6 +190,15 @@ struct WriterView: View {
                     .font(Theme.pageControl)
             }
             .disabled(isLoadingPhotos)
+            if CameraPicker.isAvailable {
+                Button {
+                    isShowingCamera = true
+                } label: {
+                    Label("Camera", systemImage: "camera")
+                        .font(Theme.pageControl)
+                }
+                .disabled(isLoadingPhotos)
+            }
             Spacer(minLength: 0)
         }
         .foregroundStyle(Theme.rubric)
@@ -230,6 +254,13 @@ struct WriterView: View {
         }
         try? context.save()
         dismiss()
+    }
+
+    private func add(_ image: UIImage) async {
+        isLoadingPhotos = true
+        defer { isLoadingPhotos = false }
+        guard let processed = await Task.detached(operation: { PhotoProcessor.process(image) }).value else { return }
+        draft.photos.append(DraftPhoto(imageData: processed.imageData, thumbnailData: processed.thumbnailData))
     }
 
     private func load(_ items: [PhotosPickerItem]) async {

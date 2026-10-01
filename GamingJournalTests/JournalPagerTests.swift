@@ -110,6 +110,16 @@ final class JournalPagerTests: XCTestCase {
         XCTAssertEqual(pages[0].blocks[0].text, "First thought.\nSecond thought.")
     }
 
+    func testFacingPagesOnlyOnWideLandscapeScreens() {
+        XCTAssertEqual(JournalPager.pagesPerSpread(width: 1180, height: 820), 2, "iPad landscape")
+        XCTAssertEqual(JournalPager.pagesPerSpread(width: 820, height: 1180), 1, "iPad portrait")
+        XCTAssertEqual(JournalPager.pagesPerSpread(width: 932, height: 430), 1, "iPhone landscape")
+        XCTAssertEqual(JournalPager.pagesPerSpread(width: 393, height: 852), 1, "iPhone portrait")
+        XCTAssertEqual(JournalPager.spreadStart(of: 5, pagesPerSpread: 2), 4)
+        XCTAssertEqual(JournalPager.spreadStart(of: 4, pagesPerSpread: 2), 4)
+        XCTAssertEqual(JournalPager.spreadStart(of: 5, pagesPerSpread: 1), 5)
+    }
+
     func testSizeEstimateGivesSensibleCapacity() {
         let pager = JournalPager(width: 342, height: 657, fontSize: 19)
         XCTAssertEqual(pager.charactersPerLine, 37)
