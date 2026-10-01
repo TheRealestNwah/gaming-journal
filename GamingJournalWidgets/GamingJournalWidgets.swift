@@ -112,16 +112,16 @@ struct MemoryProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<MemoryEntry>) -> Void) {
-        completion(Timeline(entries: Self.entries(from: Snapshot.load()), policy: .never))
+        completion(Timeline(entries: Self.entries(from: Snapshot.load()), policy: .atEnd))
     }
 
-    /// One timeline entry for today and one at each following midnight, blank on days with no memory.
+    /// Seven days and a final empty day, so the last memory never stays on screen past its date.
     static func entries(from snapshot: Snapshot?, now: Date = .now, calendar: Calendar = .current) -> [MemoryEntry] {
         let today = calendar.startOfDay(for: now)
         let memories = snapshot?.memories ?? []
-        return (0..<7).compactMap { offset in
+        return (0...7).compactMap { offset in
             guard let day = calendar.date(byAdding: .day, value: offset, to: today) else { return nil }
-            let memory = memories.first { calendar.isDate($0.day, inSameDayAs: day) }
+            let memory = offset < 7 ? memories.first { calendar.isDate($0.day, inSameDayAs: day) } : nil
             return MemoryEntry(date: offset == 0 ? now : day, memory: memory)
         }
     }

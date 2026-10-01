@@ -59,6 +59,27 @@ final class BackupTests: XCTestCase {
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<Entry>()), 1)
     }
 
+    func testDeletedEntryCanBeRestoredWithItsIdentityDatesAndPictures() throws {
+        let context = try makeContext()
+        let journal = sampleJournal(in: context)
+        let original = try XCTUnwrap(journal.story.first)
+        original.place = "Helgen"
+        let record = JournalBackup.EntryRecord(entry: original)
+        try context.save()
+        context.delete(original)
+        try context.save()
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<Entry>()), 0)
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<EntryPhoto>()), 0)
+
+        let restored = record.makeEntry()
+        context.insert(restored)
+        restored.journal = journal
+        try context.save()
+        XCTAssertEqual(JournalBackup.EntryRecord(entry: restored), record)
+        XCTAssertEqual(journal.story.map(\.id), [record.id])
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<EntryPhoto>()), 1)
+    }
+
     func testNewEntriesJoinAJournalAlreadyPresent() throws {
         let context = try makeContext()
         let journal = sampleJournal(in: context)

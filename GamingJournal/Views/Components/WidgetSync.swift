@@ -18,8 +18,8 @@ private struct WidgetSync: ViewModifier {
     let onOpenEntry: (UUID) -> Void
 
     /// Changes whenever anything a widget shows might have changed.
-    private var fingerprint: [String] {
-        entries.prefix(1).map { "\($0.id)|\($0.inGameDate)|\($0.body.prefix(200))|\($0.updatedAt.timeIntervalSince1970)" }
+    private var fingerprint: [WidgetSnapshot.LatestEntry] {
+        entries.filter { $0.journal != nil }.map(WidgetSnapshot.LatestEntry.init(entry:))
     }
 
     func body(content: Content) -> some View {
@@ -29,7 +29,7 @@ private struct WidgetSync: ViewModifier {
             .onChange(of: QuickWriteRoster(journals: journals)) { saveRoster() }
             .onChange(of: fingerprint) { publish() }
             .onChange(of: scenePhase) { _, phase in
-                if phase != .active { publish() }
+                publish()
             }
             .onOpenURL { url in
                 if WidgetSnapshot.isWriteURL(url) {

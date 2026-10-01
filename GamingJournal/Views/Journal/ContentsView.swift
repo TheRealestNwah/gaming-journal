@@ -4,7 +4,7 @@ import SwiftUI
 /// ribbon if one is laid. Picking a line turns the book to that page.
 struct ContentsView: View {
     enum Choice {
-        case entry(UUID)
+        case entry(UUID, query: String)
         case ribbon
     }
 
@@ -50,7 +50,7 @@ struct ContentsView: View {
                         PageRule()
                     }
                     ForEach(shown) { entry in
-                        Button { onChoose(.entry(entry.id)) } label: {
+                        Button { onChoose(.entry(entry.id, query: query)) } label: {
                             line(for: entry)
                         }
                         .buttonStyle(.plain)

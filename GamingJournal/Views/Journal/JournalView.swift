@@ -245,8 +245,12 @@ struct JournalView: View {
             ) { choice in
                 isShowingContents = false
                 switch choice {
-                case .entry(let id): anchor = .entry(id)
-                case .ribbon: if let ribbon { anchor = .mark(ribbon) }
+                case .entry(let id, let query):
+                    anchor = .entry(id)
+                    highlightTerms = EntrySearch.terms(in: query)
+                case .ribbon:
+                    highlightTerms = []
+                    if let ribbon { anchor = .mark(ribbon) }
                 }
                 settle(animated: true)
             }
@@ -551,13 +555,13 @@ private struct BlockView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             if block.showsHeading {
-                Text(block.heading)
+                Text(marked(block.heading))
                     .font(Theme.dateLine)
                     .foregroundStyle(Theme.rubric)
                     .padding(.top, 18)
                     .accessibilityAddTraits(.isHeader)
                 if !block.place.isEmpty {
-                    Text(block.place)
+                    Text(marked(block.place))
                         .font(Theme.bookItalic(fontSize * 0.85))
                         .foregroundStyle(Theme.fadedInk)
                         .accessibilityLabel("At \(block.place)")

@@ -108,8 +108,8 @@ struct WidgetSnapshot: Codable, Equatable {
     static let memorySlack = 3
 
     /// Picks a memory for each of `days` days from `today`: an entry from an earlier year written
-    /// on the same month and day, else the nearest within `memorySlack` days; the most recent year
-    /// wins a tie.
+    /// on the same month and day (most recent year first), else the oldest entry within
+    /// `memorySlack` days of its anniversary.
     static func memories(from entries: [Entry], today: Date, days: Int = 7, calendar: Calendar = .current) -> [DayMemory] {
         let start = calendar.startOfDay(for: today)
         return (0..<days).compactMap { offset -> DayMemory? in
@@ -130,7 +130,11 @@ struct WidgetSnapshot: Codable, Equatable {
                     guard let distance = distances.min(), distance <= memorySlack else { return nil }
                     return (entry, distance)
                 }
-                .min { ($0.distance, -$0.entry.writtenAt.timeIntervalSince1970) < ($1.distance, -$1.entry.writtenAt.timeIntervalSince1970) }
+                .min { left, right in
+                    if (left.distance == 0) != (right.distance == 0) { return left.distance == 0 }
+                    if left.distance == 0 { return left.entry.writtenAt > right.entry.writtenAt }
+                    return left.entry.writtenAt < right.entry.writtenAt
+                }
             return best.map { DayMemory(day: day, entry: LatestEntry(entry: $0.entry)) }
         }
     }
