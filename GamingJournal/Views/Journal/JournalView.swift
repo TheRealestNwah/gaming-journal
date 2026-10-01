@@ -3,8 +3,9 @@ import SwiftData
 import UniformTypeIdentifiers
 
 /// A character's journal, read like a book: dated entries on aged pages, turned with Prev and
-/// Next, a swipe or the arrow keys, with a page curl. A wide iPad screen shows two facing pages. It opens at the ribbon if one is laid, otherwise on the latest
-/// page, where the next entry will go.
+/// Next, a swipe or the arrow keys, with a page curl. Tapping an entry opens it to amend. A wide
+/// iPad screen shows two facing pages. It opens at the ribbon if one is laid, otherwise on the
+/// latest page, where the next entry will go.
 struct JournalView: View {
     let journal: Journal
 
@@ -471,6 +472,7 @@ struct JournalView: View {
         }
         .font(Theme.pageControl)
         .foregroundStyle(Theme.rubric)
+        .buttonStyle(.pageControl)
         .padding(.horizontal, 24)
         .padding(.top, 6)
         .padding(.bottom, 4)
@@ -494,6 +496,7 @@ struct JournalView: View {
         }
         .font(Theme.pageControl)
         .foregroundStyle(Theme.rubric)
+        .buttonStyle(.pageControl)
         .padding(.horizontal, 30)
         .padding(.vertical, 12)
     }
@@ -522,6 +525,14 @@ private struct PageView: View {
                 }
                 ForEach(page.blocks) { block in
                     BlockView(block: block, entry: entries[block.entryID], fontSize: fontSize, highlight: highlight)
+                        // A tap opens the entry to amend; the long-press menu has the rest.
+                        .onTapGesture {
+                            if let entry = entries[block.entryID] { onEdit(entry) }
+                        }
+                        .accessibilityAction {
+                            if let entry = entries[block.entryID] { onEdit(entry) }
+                        }
+                        .accessibilityHint("Opens the entry to amend")
                         .contextMenu {
                             if let entry = entries[block.entryID] {
                                 Button("Edit Entry", systemImage: "pencil") { onEdit(entry) }

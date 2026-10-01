@@ -49,7 +49,7 @@ The approved September 2026 feature list is implemented. Simulator CI checks bui
 tests and core UI flows; it does not prove real-device behavior. The remaining acceptance work
 is tracked in [#30](https://github.com/TheRealestNwah/hearthbound/issues/30): camera and photo
 permissions, widget timelines and links, hardware keyboard navigation, VoiceOver, page curls,
-iPad resizing, dictation, signing, and two-device iCloud sync. The Free Team scheme is not built
+iPad resizing, signing, and two-device iCloud sync. The Free Team scheme is not built
 by CI.
 
 The On This Day widget prepares seven days of memories when the app opens or its writing
@@ -66,7 +66,7 @@ Not planned yet; each needs the owner's go-ahead.
 
 Removed on purpose, not coming back unless the owner asks: party, emotions, bonds, chapters, stats and play sessions.
 
-Needs a human: on-device checks of widgets, photo picking, dictation and iCloud sync (#30).
+Needs a human: on-device checks of widgets, photo picking and iCloud sync (#30).
 
 ## History
 

@@ -129,6 +129,12 @@ final class SmokeTests: XCTestCase {
         wait(for: [closed], timeout: Self.step)
         XCTAssertFalse(app.buttons["Previous page"].isEnabled)
         capture("02-journal-first-page", in: app)
+
+        // Tapping an entry opens it to amend (#170).
+        element(containing: "headsman", in: app).tap()
+        XCTAssertTrue(app.staticTexts["Amend the page"].waitForExistence(timeout: Self.step))
+        app.buttons["Cancel"].tap()
+        XCTAssertTrue(app.buttons["Previous page"].waitForExistence(timeout: Self.step))
     }
 
     func testSettingsOpenFromTheShelf() {
