@@ -7,7 +7,7 @@ The app is called **Hearthbound**. Its Xcode targets, schemes, bundle IDs, app g
 ## Layout
 - `GamingJournal/Models/` — SwiftData models (versioned schema, CloudKit-compatible)
 - `GamingJournal/Services/` — plain Swift logic (formatting, stats, export…); keep UI-free so it's unit-testable
-- `GamingJournal/Views/<Feature>/` — SwiftUI views: `Shelf/` (home), `Journal/` (reader, writer, dictation), `Settings/`, `Theme/`
+- `GamingJournal/Views/<Feature>/` — SwiftUI views: `Shelf/` (home), `Journal/` (reader, writer), `Settings/`, `Theme/`
 - `GamingJournalTests/` — XCTest unit tests
 - The Xcode project uses synchronized folders: new files in these folders are picked up without editing `project.pbxproj`. Only new targets, entitlements or build settings need pbxproj edits.
 

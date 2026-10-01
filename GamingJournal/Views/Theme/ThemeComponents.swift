@@ -254,3 +254,21 @@ struct RibbonShape: Shape {
         return path
     }
 }
+
+// MARK: - Page controls
+
+/// Rubric-ink controls in a page's margins (Prev, Next, Done…). A disabled one fades, so it
+/// doesn't look like it can still be turned to.
+struct PageControlButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(isEnabled ? Theme.rubric : Theme.fadedInk.opacity(0.45))
+            .opacity(configuration.isPressed ? 0.6 : 1)
+    }
+}
+
+extension ButtonStyle where Self == PageControlButtonStyle {
+    static var pageControl: PageControlButtonStyle { PageControlButtonStyle() }
+}

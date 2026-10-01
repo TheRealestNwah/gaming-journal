@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import PhotosUI
 
-/// A blank page to write on: the in-game date, the words, and optionally a picture or two.
+/// A blank page to write on: the in-game date, the place, the words, and optionally a picture or two.
 struct WriterView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
@@ -14,7 +14,6 @@ struct WriterView: View {
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var isLoadingPhotos = false
     @State private var isShowingCamera = false
-    @State private var dictation = Dictation()
     @FocusState private var bodyFocused: Bool
     @FocusState private var placeFocused: Bool
     @ScaledMetric(relativeTo: .body) private var fontSize: CGFloat = 19
@@ -55,8 +54,10 @@ struct WriterView: View {
                     .submitLabel(.next)
                     .onSubmit { bodyFocused = true }
                     .padding(.top, 2)
-                dateHints
-                    .padding(.top, 4)
+                if let next = InGameDate.nextDay(after: draft.inGameDate) {
+                    nextDayButton(next)
+                        .padding(.top, 4)
+                }
 
                 ZStack(alignment: .topLeading) {
                     if draft.body.isEmpty {
@@ -114,9 +115,6 @@ struct WriterView: View {
     private var topBar: some View {
         HStack {
             Button("Cancel") {
-                // End a take first, so its words don't land after the page is discarded.
-                dictation.stop()
-                _ = dictation.takeTranscript()
                 if entry == nil && unfinished == nil { drafts.discard(for: journal.id) }
                 dismiss()
             }
@@ -131,32 +129,20 @@ struct WriterView: View {
         }
         .font(Theme.pageControl)
         .foregroundStyle(Theme.rubric)
+        .buttonStyle(.pageControl)
         .padding(.top, 10)
         .padding(.bottom, 10)
     }
 
-    /// "Next day" for dates it can read, and when the entry is filed in the real world.
-    private var dateHints: some View {
-        HStack(spacing: 14) {
-            if let next = InGameDate.nextDay(after: draft.inGameDate) {
-                Button {
-                    draft.inGameDate = next
-                } label: {
-                    Label("Next day", systemImage: "arrow.forward")
-                }
-                .accessibilityHint("Sets the date to \(next)")
-            }
-            // The book is ordered by this date, so an entry typed in late can be filed back.
-            HStack(spacing: 6) {
-                Text("written")
-                    .foregroundStyle(Theme.fadedInk)
-                DatePicker("Written", selection: $draft.writtenAt, in: ...Date.now, displayedComponents: .date)
-                    .labelsHidden()
-                    .accessibilityLabel("Written on")
-                    .accessibilityIdentifier("writtenAt")
-            }
+    /// Steps the in-game date on by a day, for calendars it can read.
+    private func nextDayButton(_ next: String) -> some View {
+        Button {
+            draft.inGameDate = next
+        } label: {
+            Label("Next day", systemImage: "arrow.forward")
         }
         .font(Theme.bookItalic(15, relativeTo: .footnote))
+        .accessibilityHint("Sets the date to \(next)")
     }
 
     private var photoStrip: some View {
@@ -184,7 +170,6 @@ struct WriterView: View {
 
     private var tools: some View {
         HStack(alignment: .top, spacing: 22) {
-            DictationRow(text: $draft.body, dictation: dictation)
             PhotosPicker(selection: $pickerItems, maxSelectionCount: 6, matching: .images) {
                 Label(isLoadingPhotos ? "Adding…" : "Picture", systemImage: "photo")
                     .font(Theme.pageControl)
@@ -239,14 +224,13 @@ struct WriterView: View {
     // MARK: Actions
 
     private func save() {
-        // Words from a take still running go in too. A copy, so the change doesn't put the saved
-        // page back on the draft shelf.
-        var page = draft
-        dictation.stop()
-        page.body = DictationText.append(dictation.takeTranscript(), to: page.body)
         if let entry {
-            page.apply(to: entry, in: journal)
+            draft.apply(to: entry, in: journal)
         } else {
+            // A new entry is filed under today, even if it was started on an earlier day. A copy,
+            // so the change doesn't put the saved page back on the draft shelf.
+            var page = draft
+            page.writtenAt = .now
             let entry = Entry()
             context.insert(entry)
             page.apply(to: entry, in: journal)
