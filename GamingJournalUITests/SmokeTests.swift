@@ -133,9 +133,10 @@ final class SmokeTests: XCTestCase {
 
     func testSettingsOpenFromTheShelf() {
         let app = launch()
-        // The shelf's own heading is the only title; the bar shows none (#167).
+        // The shelf's own heading is the only title: the bar stays inline-height rather than
+        // growing a large title above it (#167). The hidden title is still read by VoiceOver.
         XCTAssertTrue(app.buttons["Begin a new journal"].waitForExistence(timeout: Self.step))
-        XCTAssertFalse(app.navigationBars.staticTexts["Journals"].exists)
+        XCTAssertLessThan(app.navigationBars.firstMatch.frame.height, 70)
         app.buttons["Settings"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: Self.step))
         app.navigationBars["Settings"].buttons["Done"].tap()
