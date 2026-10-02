@@ -44,7 +44,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
 
@@ -96,14 +96,51 @@ jobs:
             | tee test.log | grep -E "Test Case|error:|failed|passed|\*\*" || true
           grep -qE "TEST (EXECUTE )?SUCCEEDED" test.log
 
+      # Reuse the simulator build. Boot and run iPad after iPhone, without clones.
+      - name: Pick and boot an iPad simulator
+        id: ipad
+        run: |
+          xcrun simctl shutdown "${{ steps.sim.outputs.udid }}"
+          UDID=$(xcrun simctl list devices available -j \
+            | jq -r '[.devices[] | .[] | select(.name | startswith("iPad"))][0].udid')
+          test "$UDID" != null
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: Test iPad
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project GamingJournal.xcodeproj -scheme GamingJournal \
+            -destination "platform=iOS Simulator,id=${{ steps.ipad.outputs.udid }}" \
+            -derivedDataPath build -parallel-testing-enabled NO \
+            -only-testing:GamingJournalUITests \
+            -resultBundlePath IPadResults.xcresult CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee ipad-test.log | grep -E "Test Case|error:|failed|passed|\*\*" || true
+          grep -qE "TEST (EXECUTE )?SUCCEEDED" ipad-test.log
+
+      - name: Build and test native Mac
+        if: ${{ !cancelled() }}
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project GamingJournal.xcodeproj -scheme "Hearthbound (Mac)" \
+            -destination 'platform=macOS' -derivedDataPath build-mac \
+            -parallel-testing-enabled NO -resultBundlePath MacResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" \
+            2>&1 | tee mac-test.log | grep -E "Test Case|error:|failed|passed|\*\*" || true
+          grep -qE "TEST (EXECUTE )?SUCCEEDED" mac-test.log
+
       - name: Export app screenshots
         if: always()
         run: |
-          if [ -d TestResults.xcresult ]; then
-            xcrun xcresulttool export attachments \
-              --path TestResults.xcresult \
-              --output-path screenshots
-          fi
+          for PLATFORM in Test IPad Mac; do
+            if [ -d "${PLATFORM}Results.xcresult" ]; then
+              xcrun xcresulttool export attachments \
+                --path "${PLATFORM}Results.xcresult" \
+                --output-path "screenshots/${PLATFORM}"
+            fi
+          done
 
       - name: Upload app screenshots
         if: always()
@@ -123,3 +160,5 @@ jobs:
             boot.log
             build.log
             test.log
+            ipad-test.log
+            mac-test.log

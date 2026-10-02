@@ -1,17 +1,30 @@
 import XCTest
 import SwiftUI
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
 @testable import GamingJournal
 
 /// Keeps the pages and the shelf readable: text colours must meet WCAG AA (4.5:1) on the surfaces
 /// they sit on, in both light and dark mode.
 final class ThemeContrastTests: XCTestCase {
     private func components(_ color: Color, dark: Bool) -> (Double, Double, Double) {
+        #if os(macOS)
+        var rgb = (0.0, 0.0, 0.0)
+        NSAppearance(named: dark ? .darkAqua : .aqua)!.performAsCurrentDrawingAppearance {
+            let resolved = NSColor(color).usingColorSpace(.deviceRGB)!
+            rgb = (Double(resolved.redComponent), Double(resolved.greenComponent), Double(resolved.blueComponent))
+        }
+        return rgb
+        #else
         let traits = UITraitCollection(userInterfaceStyle: dark ? .dark : .light)
         let resolved = UIColor(color).resolvedColor(with: traits)
         var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
         resolved.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
         return (Double(red), Double(green), Double(blue))
+        #endif
     }
 
     private func luminance(_ color: Color, dark: Bool) -> Double {
@@ -63,7 +76,7 @@ final class BookFontTests: XCTestCase {
     func testBundledFontsAreRegistered() {
         BookFont.register()
         for name in [BookFont.roman, BookFont.italic, BookFont.smallCaps] {
-            XCTAssertNotNil(UIFont(name: name, size: 17), "\(name) isn't available")
+            XCTAssertNotNil(PlatformFont(name: name, size: 17), "\(name) isn't available")
         }
     }
 }

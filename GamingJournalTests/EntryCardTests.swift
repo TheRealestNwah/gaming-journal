@@ -13,7 +13,13 @@ final class EntryCardTests: XCTestCase {
         XCTAssertEqual(card.text, "The dragon came.")
         XCTAssertEqual(card.journalTitle, "The Journal of Eira")
         let image = try XCTUnwrap(card.render())
+        #if os(macOS)
+        let bitmap = image.cgImage(forProposedRect: nil, context: nil, hints: nil)
+        XCTAssertEqual(bitmap?.width, 1080)
+        XCTAssertGreaterThan(try XCTUnwrap(bitmap?.height), 0)
+        #else
         XCTAssertEqual(image.cgImage?.width, 1080)
         XCTAssertGreaterThan(try XCTUnwrap(image.cgImage?.height), 0)
+        #endif
     }
 }

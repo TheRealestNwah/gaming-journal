@@ -25,12 +25,12 @@ struct RootView: View {
                 guard let journal = journals.first(where: { ($0.entries ?? []).contains { $0.id == entryID } }) else { return }
                 path = [JournalRoute(journal: journal, entryID: entryID)]
             }
-            .fullScreenCover(item: $writingIn) { journal in
+            .journalCover(item: $writingIn) { journal in
                 WriterView(journal: journal)
             }
             .background {
                 Color.clear
-                    .fullScreenCover(isPresented: Binding(
+                    .journalCover(isPresented: Binding(
                         get: { !onboardingCompleted },
                         set: { if !$0 { onboardingCompleted = true } }
                     )) {

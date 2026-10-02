@@ -49,7 +49,7 @@ struct JournalView: View {
 
     private struct SharedPicture: Identifiable {
         let id = UUID()
-        let image: UIImage
+        let image: PlatformImage
     }
 
     private struct TornOut: Equatable {
@@ -202,7 +202,7 @@ struct JournalView: View {
         .onChange(of: perSpread) {
             if hasOpened { settle() }
         }
-        .toolbar(.hidden, for: .navigationBar)
+        .journalNavigationHidden()
         .onChange(of: laidOut.count) {
             if hasOpened { settle() }
         }
@@ -213,9 +213,11 @@ struct JournalView: View {
                 anchor = index / perSpread == spreadCount(laidOut.count) - 1 ? .latest : .free
                 highlightTerms = []
             }
+            #if os(iOS)
             if UIAccessibility.isVoiceOverRunning {
                 AccessibilityNotification.PageScrolled(pageLabel(pageCount: laidOut.count)).post()
             }
+            #endif
         }
         .onChange(of: journal.entries?.count) { oldCount, newCount in
             // Written a new entry: show where it landed. That's usually the last page, but an entry
@@ -231,7 +233,7 @@ struct JournalView: View {
             ShareSheet(items: [shared.image])
                 .presentationDetents([.medium, .large])
         }
-        .fullScreenCover(item: $writing) { request in
+        .journalCover(item: $writing) { request in
             WriterView(journal: journal, entry: request.entry)
         }
         .sheet(isPresented: $isEditingJournal) {
@@ -497,6 +499,7 @@ struct JournalView: View {
                 .font(Theme.bookItalic(15, relativeTo: .footnote))
                 .foregroundStyle(Theme.fadedInk)
                 .accessibilityLabel(pageLabel(pageCount: pageCount))
+                .accessibilityIdentifier("pagePosition")
             Spacer()
             Button { turn(to: pageIndex + perSpread) } label: { Image(systemName: "arrow.right") }
                 .keyboardShortcut(.rightArrow, modifiers: [])

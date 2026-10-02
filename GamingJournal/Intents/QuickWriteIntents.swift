@@ -1,5 +1,9 @@
 import AppIntents
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
 
 /// A character's journal Siri and Shortcuts can write in.
 struct JournalEntity: AppEntity {
@@ -53,7 +57,11 @@ struct WriteAsCharacterIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        #if os(macOS)
+        NSWorkspace.shared.open(WidgetSnapshot.writeURL(for: journal.id))
+        #else
         _ = await UIApplication.shared.open(WidgetSnapshot.writeURL(for: journal.id))
+        #endif
         return .result()
     }
 }
@@ -66,7 +74,11 @@ struct WriteInJournalIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        #if os(macOS)
+        NSWorkspace.shared.open(WidgetSnapshot.writeURL)
+        #else
         _ = await UIApplication.shared.open(WidgetSnapshot.writeURL)
+        #endif
         return .result()
     }
 }

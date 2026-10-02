@@ -1,6 +1,10 @@
 import CoreText
 import SwiftUI
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
 
 /// Colour and type tokens for the in-game journal look: aged paper and ink for the pages, dark
 /// wood for the shelf. Pages stay paper in dark mode, just dimmer, like a book read by candlelight.
@@ -59,13 +63,20 @@ enum Theme {
     // MARK: Helpers
 
     static func dynamic(light: UInt32, dark: UInt32) -> Color {
+        #if os(macOS)
+        Color(nsColor: NSColor(name: nil) { appearance in
+            NSColor(hex: appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light)
+        })
+        #else
         Color(UIColor { traits in
             UIColor(hex: traits.userInterfaceStyle == .dark ? dark : light)
         })
+        #endif
     }
 
     /// Book-face navigation titles and a quiet navigation bar. Call once at launch.
     static func applyAppearance() {
+        #if os(iOS)
         let titles: [NSAttributedString.Key: Any] = [
             .font: UIFont(name: BookFont.smallCaps, size: 19) ?? .preferredFont(forTextStyle: .headline),
         ]
@@ -83,6 +94,7 @@ enum Theme {
         UINavigationBar.appearance().scrollEdgeAppearance = atRest
         UINavigationBar.appearance().standardAppearance = scrolled
         UINavigationBar.appearance().compactAppearance = scrolled
+        #endif
     }
 }
 
@@ -104,7 +116,7 @@ enum BookFont {
     }
 }
 
-extension UIColor {
+extension PlatformColor {
     convenience init(hex: UInt32) {
         self.init(
             red: CGFloat((hex >> 16) & 0xFF) / 255,
@@ -117,6 +129,10 @@ extension UIColor {
 
 extension Color {
     init(hex: UInt32) {
+        #if os(macOS)
+        self.init(nsColor: NSColor(hex: hex))
+        #else
         self.init(uiColor: UIColor(hex: hex))
+        #endif
     }
 }

@@ -1,3 +1,4 @@
+#if os(iOS)
 import XCTest
 
 /// Quick checks of the core flows, run on every pull request.
@@ -167,3 +168,5 @@ final class SmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["Begin a new journal"].waitForExistence(timeout: Self.step))
     }
 }
+
+#endif

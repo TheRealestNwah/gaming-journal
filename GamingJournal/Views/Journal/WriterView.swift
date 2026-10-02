@@ -17,6 +17,7 @@ struct WriterView: View {
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var isLoadingPhotos = false
     @State private var isShowingCamera = false
+    @State private var isImportingPhotos = false
     @FocusState private var bodyFocused: Bool
     @FocusState private var placeFocused: Bool
     @ScaledMetric(relativeTo: .body) private var fontSize: CGFloat = 19
@@ -46,14 +47,14 @@ struct WriterView: View {
                 TextField("In-game date", text: $draft.inGameDate, prompt: Text("In-game date, e.g. 17th of Last Seed").foregroundStyle(Theme.fadedInk.opacity(0.7)))
                     .font(Theme.dateLine)
                     .foregroundStyle(Theme.rubric)
-                    .textInputAutocapitalization(.words)
+                    .capitalizedWords()
                     .accessibilityIdentifier("inGameDate")
                     .submitLabel(.next)
                     .onSubmit { placeFocused = true }
                 TextField("Place", text: $draft.place, prompt: Text("Where, e.g. Whiterun").foregroundStyle(Theme.fadedInk.opacity(0.7)))
                     .font(Theme.bookItalic(17, relativeTo: .subheadline))
                     .foregroundStyle(Theme.fadedInk)
-                    .textInputAutocapitalization(.words)
+                    .capitalizedWords()
                     .accessibilityIdentifier("place")
                     .focused($placeFocused)
                     .submitLabel(.next)
@@ -102,13 +103,22 @@ struct WriterView: View {
         .onChange(of: draft) { _, draft in
             if entry == nil && unfinished == nil { drafts.keep(draft, for: journal.id) }
         }
-        .fullScreenCover(isPresented: $isShowingCamera) {
+        #if os(iOS)
+        .journalCover(isPresented: $isShowingCamera) {
             CameraPicker { image in
                 isShowingCamera = false
                 if let image { Task { await add(image) } }
             }
             .ignoresSafeArea()
         }
+        #endif
+        .interactiveDismissDisabled()
+        #if os(macOS)
+        .fileImporter(isPresented: $isImportingPhotos, allowedContentTypes: [.image], allowsMultipleSelection: true) { result in
+            guard case .success(let urls) = result else { return }
+            Task { await loadFiles(urls) }
+        }
+        #endif
         .onChange(of: pickerItems) { _, items in
             guard !items.isEmpty else { return }
             Task { await load(items) }
@@ -182,6 +192,7 @@ struct WriterView: View {
                 Label("Add a picture", systemImage: "photo")
             }
             .disabled(isLoadingPhotos)
+            #if os(iOS)
             if CameraPicker.isAvailable {
                 Button {
                     isShowingCamera = true
@@ -190,6 +201,11 @@ struct WriterView: View {
                 }
                 .disabled(isLoadingPhotos)
             }
+            #endif
+            #if os(macOS)
+            Button("Add picture from file", systemImage: "folder") { isImportingPhotos = true }
+                .disabled(isLoadingPhotos)
+            #endif
             if isLoadingPhotos {
                 ProgressView()
                     .accessibilityLabel("Adding pictures")
@@ -234,6 +250,24 @@ struct WriterView: View {
         .padding(.bottom, 14)
     }
 
+    #if os(macOS)
+    private func loadFiles(_ urls: [URL]) async {
+        isLoadingPhotos = true
+        defer { isLoadingPhotos = false }
+        for url in urls {
+            let processed = await Task.detached {
+                let scoped = url.startAccessingSecurityScopedResource()
+                defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+                guard let data = try? Data(contentsOf: url) else { return nil as PhotoProcessor.Processed? }
+                return PhotoProcessor.process(data)
+            }.value
+            if let processed {
+                draft.photos.append(DraftPhoto(imageData: processed.imageData, thumbnailData: processed.thumbnailData))
+            }
+        }
+    }
+    #endif
+
     // MARK: Actions
 
     private func discard() {
@@ -258,12 +292,15 @@ struct WriterView: View {
         dismiss()
     }
 
-    private func add(_ image: UIImage) async {
+    #if os(iOS)
+    private func add(_ image: PlatformImage) async {
         isLoadingPhotos = true
         defer { isLoadingPhotos = false }
         guard let processed = await Task.detached(operation: { PhotoProcessor.process(image) }).value else { return }
         draft.photos.append(DraftPhoto(imageData: processed.imageData, thumbnailData: processed.thumbnailData))
     }
+
+    #endif
 
     private func load(_ items: [PhotosPickerItem]) async {
         isLoadingPhotos = true

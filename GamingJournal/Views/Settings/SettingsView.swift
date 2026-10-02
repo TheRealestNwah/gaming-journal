@@ -35,7 +35,9 @@ struct SettingsView: View {
                 }
                 .listRowBackground(Theme.paper.opacity(0.6))
 
+                #if os(iOS)
                 LockSection()
+                #endif
 
                 // Free-team builds can't sign the iCloud entitlement, so there is nothing to sync with.
                 #if !FREE_TEAM
@@ -61,7 +63,7 @@ struct SettingsView: View {
             .scrollContentBackground(.hidden)
             .background(PaperBackground())
             .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineJournalTitle()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Close", systemImage: "xmark") { dismiss() }
@@ -88,6 +90,7 @@ struct SettingsView: View {
             }
         }
         .tint(Theme.rubric)
+        .journalSheetSize()
     }
 
     private var syncFooter: String {

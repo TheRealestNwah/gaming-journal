@@ -1,3 +1,4 @@
+#if os(iOS)
 import SwiftUI
 import UIKit
 
@@ -118,3 +119,5 @@ private struct SealedCover: View {
             .accessibilityHidden(true)
     }
 }
+
+#endif

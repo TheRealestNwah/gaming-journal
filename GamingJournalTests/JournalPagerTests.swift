@@ -120,6 +120,15 @@ final class JournalPagerTests: XCTestCase {
         XCTAssertEqual(JournalPager.spreadStart(of: 5, pagesPerSpread: 1), 5)
     }
 
+    func testResizedWindowsSwitchSpreadsAtTheBoundary() {
+        for width in [320.0, 504, 639, 820, 959] {
+            XCTAssertEqual(JournalPager.pagesPerSpread(width: width, height: 700), 1)
+        }
+        XCTAssertEqual(JournalPager.pagesPerSpread(width: 960, height: 700), 2)
+        XCTAssertEqual(JournalPager.pagesPerSpread(width: 1024, height: 1024), 1)
+        XCTAssertEqual(JournalPager.pagesPerSpread(width: 1366, height: 900), 2)
+    }
+
     func testSizeEstimateGivesSensibleCapacity() {
         let pager = JournalPager(width: 342, height: 657, fontSize: 19)
         XCTAssertEqual(pager.charactersPerLine, 37)

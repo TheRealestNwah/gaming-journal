@@ -1,4 +1,8 @@
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
 import UserNotifications
 
 /// Shows reminders even while the app is open, and opens a tapped reminder's link, which the
@@ -20,7 +24,11 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         guard let url = CampfireReminders.url(from: response.notification.request.content.userInfo) else { return }
         await MainActor.run {
+            #if os(macOS)
+            NSWorkspace.shared.open(url)
+            #else
             UIApplication.shared.open(url)
+            #endif
         }
     }
 }

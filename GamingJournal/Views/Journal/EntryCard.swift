@@ -1,5 +1,5 @@
 import SwiftUI
-import UIKit
+
 
 /// One entry as a picture of its page, for sharing: the date, the place, the words and the first
 /// picture on aged paper, signed with whose journal it's from.
@@ -7,7 +7,7 @@ struct EntryCard: View {
     let heading: String
     let place: String
     let text: String
-    let picture: UIImage?
+    let picture: PlatformImage?
     let journalTitle: String
 
     /// The card's width in points; rendered at 3× for a sharp 1080-pixel image.
@@ -17,7 +17,7 @@ struct EntryCard: View {
         heading = entry.heading()
         place = entry.place
         text = entry.body
-        picture = entry.sortedPhotos.first.flatMap { $0.imageData ?? $0.thumbnailData }.flatMap(UIImage.init(data:))
+        picture = entry.sortedPhotos.first.flatMap { $0.imageData ?? $0.thumbnailData }.flatMap(PlatformImage.init(data:))
         journalTitle = journal.title
     }
 
@@ -41,7 +41,7 @@ struct EntryCard: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             if let picture {
-                Image(uiImage: picture)
+                Image(platformImage: picture)
                     .resizable()
                     .scaledToFit()
                     .frame(maxHeight: 220)
@@ -64,14 +64,19 @@ struct EntryCard: View {
 
     /// The card as an image, or nil if it couldn't be drawn.
     @MainActor
-    func render() -> UIImage? {
+    func render() -> PlatformImage? {
         let renderer = ImageRenderer(content: self)
         renderer.scale = 3
+        #if os(macOS)
+        return renderer.nsImage
+        #else
         return renderer.uiImage
+        #endif
     }
 }
 
 /// The system share sheet for an image.
+#if os(iOS)
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
 
@@ -81,3 +86,5 @@ struct ShareSheet: UIViewControllerRepresentable {
 
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }
+
+#endif

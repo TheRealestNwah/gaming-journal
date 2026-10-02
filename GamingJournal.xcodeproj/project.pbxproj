@@ -32,6 +32,20 @@
 			remoteGlobalIDString = 6A0000000000000000000001;
 			remoteInfo = GamingJournal;
 		};
+		6B00000000000000000000A1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6A000000000000000000000A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6B0000000000000000000001;
+			remoteInfo = GamingJournal;
+		};
+		6B00000000000000000000A3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6A000000000000000000000A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6B0000000000000000000001;
+			remoteInfo = GamingJournal;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -53,6 +67,9 @@
 		6A0000000000000000000012 /* GamingJournalTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GamingJournalTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6A0000000000000000000032 /* GamingJournalWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GamingJournalWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		6A0000000000000000000022 /* GamingJournalUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GamingJournalUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		6B0000000000000000000002 /* GamingJournalMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GamingJournalMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6B0000000000000000000012 /* GamingJournalMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GamingJournalMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		6B0000000000000000000022 /* GamingJournalMacUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GamingJournalMacUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -70,8 +87,22 @@
 			membershipExceptions = (
 				GamingJournal-FreeTeam.entitlements,
 				GamingJournal.entitlements,
+				GamingJournal-Mac.entitlements,
+				GamingJournal-Mac-FreeTeam.entitlements,
+				MacInfo.plist,
 			);
 			target = 6A0000000000000000000001 /* GamingJournal */;
+		};
+		6B00000000000000000000B4 /* Exceptions for "GamingJournal" folder in "GamingJournal" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				GamingJournal-FreeTeam.entitlements,
+				GamingJournal.entitlements,
+				GamingJournal-Mac.entitlements,
+				GamingJournal-Mac-FreeTeam.entitlements,
+				MacInfo.plist,
+			);
+			target = 6B0000000000000000000001 /* GamingJournal */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -80,6 +111,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				6A00000000000000000000B4 /* Exceptions for "GamingJournal" folder in "GamingJournal" target */,
+				6B00000000000000000000B4,
 			);
 			path = GamingJournal;
 			sourceTree = "<group>";
@@ -133,6 +165,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6B0000000000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6B0000000000000000000014 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6B0000000000000000000024 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -150,6 +203,9 @@
 		6A0000000000000000000006 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				6B0000000000000000000022,
+				6B0000000000000000000012,
+				6B0000000000000000000002,
 				6A0000000000000000000002 /* GamingJournal.app */,
 				6A0000000000000000000012 /* GamingJournalTests.xctest */,
 				6A0000000000000000000022 /* GamingJournalUITests.xctest */,
@@ -253,6 +309,74 @@
 			productReference = 6A0000000000000000000022 /* GamingJournalUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		6B0000000000000000000001 /* GamingJournal */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6B0000000000000000000007 /* Build configuration list for PBXNativeTarget "GamingJournalMac" */;
+			buildPhases = (
+				6B0000000000000000000008 /* Sources */,
+				6B0000000000000000000004 /* Frameworks */,
+				6B0000000000000000000009 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				6A0000000000000000000003 /* GamingJournal */,
+			);
+			name = GamingJournalMac;
+			packageProductDependencies = (
+			);
+			productName = GamingJournalMac;
+			productReference = 6B0000000000000000000002 /* GamingJournalMac.app */;
+			productType = "com.apple.product-type.application";
+		};
+		6B0000000000000000000011 /* GamingJournalMacTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6B0000000000000000000017 /* Build configuration list for PBXNativeTarget "GamingJournalMacTests" */;
+			buildPhases = (
+				6B0000000000000000000018 /* Sources */,
+				6B0000000000000000000014 /* Frameworks */,
+				6B0000000000000000000019 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6B00000000000000000000A2 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				6A0000000000000000000013 /* GamingJournalTests */,
+			);
+			name = GamingJournalMacTests;
+			packageProductDependencies = (
+			);
+			productName = GamingJournalMacTests;
+			productReference = 6B0000000000000000000012 /* GamingJournalMacTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		6B0000000000000000000021 /* GamingJournalMacUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6B0000000000000000000027 /* Build configuration list for PBXNativeTarget "GamingJournalMacUITests" */;
+			buildPhases = (
+				6B0000000000000000000028 /* Sources */,
+				6B0000000000000000000024 /* Frameworks */,
+				6B0000000000000000000029 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6B00000000000000000000A4 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				6A0000000000000000000023 /* GamingJournalUITests */,
+			);
+			name = GamingJournalMacUITests;
+			packageProductDependencies = (
+			);
+			productName = GamingJournalMacUITests;
+			productReference = 6B0000000000000000000022 /* GamingJournalMacUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -293,6 +417,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				6B0000000000000000000021,
+				6B0000000000000000000011,
+				6B0000000000000000000001,
 				6A0000000000000000000001 /* GamingJournal */,
 				6A0000000000000000000011 /* GamingJournalTests */,
 				6A0000000000000000000031 /* GamingJournalWidgets */,
@@ -330,6 +457,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6B0000000000000000000009 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6B0000000000000000000019 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6B0000000000000000000029 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -361,6 +509,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6B0000000000000000000008 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6B0000000000000000000018 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6B0000000000000000000028 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -378,6 +547,16 @@
 			isa = PBXTargetDependency;
 			target = 6A0000000000000000000001 /* GamingJournal */;
 			targetProxy = 6A00000000000000000000A3 /* PBXContainerItemProxy */;
+		};
+		6B00000000000000000000A2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6B0000000000000000000001 /* GamingJournal */;
+			targetProxy = 6B00000000000000000000A1 /* PBXContainerItemProxy */;
+		};
+		6B00000000000000000000A4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6B0000000000000000000001 /* GamingJournal */;
+			targetProxy = 6B00000000000000000000A3 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -844,6 +1023,266 @@
 			};
 			name = FreeTeam;
 		};
+		6B000000000000000000000E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+                PRODUCT_MODULE_NAME = GamingJournal;
+                ENABLE_APP_SANDBOX = YES;
+                ENABLE_HARDENED_RUNTIME = YES;
+                INFOPLIST_FILE = GamingJournal/MacInfo.plist;
+                INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+                INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+                SDKROOT = macosx;
+                SUPPORTED_PLATFORMS = macosx;
+                MACOSX_DEPLOYMENT_TARGET = 14.0;
+                SUPPORTS_MACCATALYST = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = GamingJournal/GamingJournal-Mac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Hearthbound;
+
+
+
+
+
+
+
+
+
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gamingjournal.GamingJournal;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+
+			};
+			name = Debug;
+		};
+		6B000000000000000000000F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+                PRODUCT_MODULE_NAME = GamingJournal;
+                ENABLE_APP_SANDBOX = YES;
+                ENABLE_HARDENED_RUNTIME = YES;
+                INFOPLIST_FILE = GamingJournal/MacInfo.plist;
+                INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+                INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+                SDKROOT = macosx;
+                SUPPORTED_PLATFORMS = macosx;
+                MACOSX_DEPLOYMENT_TARGET = 14.0;
+                SUPPORTS_MACCATALYST = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = GamingJournal/GamingJournal-Mac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Hearthbound;
+
+
+
+
+
+
+
+
+
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gamingjournal.GamingJournal;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+
+			};
+			name = Release;
+		};
+		6B000000000000000000001E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+                SDKROOT = macosx;
+                SUPPORTED_PLATFORMS = macosx;
+                MACOSX_DEPLOYMENT_TARGET = 14.0;
+                SUPPORTS_MACCATALYST = NO;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gamingjournal.GamingJournalMacTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GamingJournalMac.app/Contents/MacOS/GamingJournalMac";
+			};
+			name = Debug;
+		};
+		6B000000000000000000001F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+                SDKROOT = macosx;
+                SUPPORTED_PLATFORMS = macosx;
+                MACOSX_DEPLOYMENT_TARGET = 14.0;
+                SUPPORTS_MACCATALYST = NO;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gamingjournal.GamingJournalMacTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GamingJournalMac.app/Contents/MacOS/GamingJournalMac";
+			};
+			name = Release;
+		};
+		6B000000000000000000002E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+                SDKROOT = macosx;
+                SUPPORTED_PLATFORMS = macosx;
+                MACOSX_DEPLOYMENT_TARGET = 14.0;
+                SUPPORTS_MACCATALYST = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gamingjournal.GamingJournalMacUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+
+				TEST_TARGET_NAME = GamingJournalMac;
+			};
+			name = Debug;
+		};
+		6B000000000000000000002F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+                SDKROOT = macosx;
+                SUPPORTED_PLATFORMS = macosx;
+                MACOSX_DEPLOYMENT_TARGET = 14.0;
+                SUPPORTS_MACCATALYST = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gamingjournal.GamingJournalMacUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+
+				TEST_TARGET_NAME = GamingJournalMac;
+			};
+			name = Release;
+		};
+		6B00000000000000000000C1 /* FreeTeam */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+                PRODUCT_MODULE_NAME = GamingJournal;
+                ENABLE_APP_SANDBOX = YES;
+                ENABLE_HARDENED_RUNTIME = YES;
+                INFOPLIST_FILE = GamingJournal/MacInfo.plist;
+                INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+                INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+                SDKROOT = macosx;
+                SUPPORTED_PLATFORMS = macosx;
+                MACOSX_DEPLOYMENT_TARGET = 14.0;
+                SUPPORTS_MACCATALYST = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = GamingJournal/GamingJournal-Mac-FreeTeam.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Hearthbound;
+
+
+
+
+
+
+
+
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gamingjournal.GamingJournal.free;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+
+			};
+			name = FreeTeam;
+		};
+		6B00000000000000000000C2 /* FreeTeam */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+                SDKROOT = macosx;
+                SUPPORTED_PLATFORMS = macosx;
+                MACOSX_DEPLOYMENT_TARGET = 14.0;
+                SUPPORTS_MACCATALYST = NO;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gamingjournal.GamingJournalMacTests.free;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GamingJournalMac.app/Contents/MacOS/GamingJournalMac";
+			};
+			name = FreeTeam;
+		};
+		6B00000000000000000000C4 /* FreeTeam */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+                SDKROOT = macosx;
+                SUPPORTED_PLATFORMS = macosx;
+                MACOSX_DEPLOYMENT_TARGET = 14.0;
+                SUPPORTS_MACCATALYST = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gamingjournal.GamingJournalMacUITests.free;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+
+				TEST_TARGET_NAME = GamingJournalMac;
+			};
+			name = FreeTeam;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -893,6 +1332,36 @@
 				6A000000000000000000002E /* Debug */,
 				6A000000000000000000002F /* Release */,
 				6A00000000000000000000C4 /* FreeTeam */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6B0000000000000000000007 /* Build configuration list for PBXNativeTarget "GamingJournal" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6B000000000000000000000E /* Debug */,
+				6B000000000000000000000F /* Release */,
+				6B00000000000000000000C1 /* FreeTeam */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6B0000000000000000000017 /* Build configuration list for PBXNativeTarget "GamingJournalTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6B000000000000000000001E /* Debug */,
+				6B000000000000000000001F /* Release */,
+				6B00000000000000000000C2 /* FreeTeam */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6B0000000000000000000027 /* Build configuration list for PBXNativeTarget "GamingJournalUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6B000000000000000000002E /* Debug */,
+				6B000000000000000000002F /* Release */,
+				6B00000000000000000000C4 /* FreeTeam */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

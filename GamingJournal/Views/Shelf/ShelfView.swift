@@ -44,7 +44,7 @@ struct ShelfView: View {
             .background(WoodBackground())
             .navigationTitle("Journals")
             // Inline, so the hidden principal item replaces the title instead of a large one showing.
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineJournalTitle()
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     // The shelf's own heading does the job; keep the bar clear.
@@ -63,7 +63,7 @@ struct ShelfView: View {
                 }
             }
             .tint(Theme.gold)
-            .toolbarBackground(.hidden, for: .navigationBar)
+            .journalNavigationBackground()
             .navigationDestination(for: JournalRoute.self) { route in
                 JournalView(journal: route.journal, focusEntryID: route.entryID, highlight: route.highlight)
             }
@@ -94,7 +94,9 @@ struct ShelfView: View {
         } message: { _ in
             Text("Every page in it is lost. This can't be undone.")
         }
+        #if os(iOS)
         .sensoryFeedback(.success, trigger: journals.count) { old, new in new > old }
+        #endif
     }
 
     /// The journals on the shelf, or a pointer to + when there are none.
@@ -170,13 +172,13 @@ struct JournalEditorView: View {
                 Section {
                     TextField("Character's name", text: $characterName)
                         .font(Theme.book(20, relativeTo: .title3))
-                        .textInputAutocapitalization(.words)
+                        .capitalizedWords()
                         .focused($nameFocused)
                         .accessibilityIdentifier("characterName")
                     TextField("Race, class or title", text: $epithet)
-                        .textInputAutocapitalization(.words)
+                        .capitalizedWords()
                     TextField("Game", text: $gameTitle)
-                        .textInputAutocapitalization(.words)
+                        .capitalizedWords()
                 } footer: {
                     Text("The journal is written by this character, in their own words.")
                 }
@@ -203,7 +205,7 @@ struct JournalEditorView: View {
             .scrollContentBackground(.hidden)
             .background(PaperBackground())
             .navigationTitle(journal == nil ? "New Journal" : "Edit Journal")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineJournalTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", systemImage: "xmark") { dismiss() }
@@ -216,6 +218,7 @@ struct JournalEditorView: View {
             .onAppear { if journal == nil { nameFocused = true } }
         }
         .tint(Theme.rubric)
+        .journalSheetSize()
     }
 
     private func save() {

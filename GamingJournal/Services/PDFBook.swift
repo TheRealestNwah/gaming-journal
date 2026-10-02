@@ -1,5 +1,9 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
 
 /// A journal typeset as a small printed book: a leather cover page, then every entry on aged
 /// pages under its date, set in the same book face as the app.
@@ -8,12 +12,12 @@ enum PDFBook {
     static let pageSize = CGSize(width: 432, height: 648)
     static let margin: CGFloat = 50
 
-    private static let paper = UIColor(red: 0.94, green: 0.89, blue: 0.78, alpha: 1)
-    private static let ink = UIColor(red: 0.18, green: 0.13, blue: 0.09, alpha: 1)
-    private static let fadedInk = UIColor(red: 0.37, green: 0.27, blue: 0.19, alpha: 1)
-    private static let rubric = UIColor(red: 0.48, green: 0.18, blue: 0.11, alpha: 1)
-    private static let gold = UIColor(red: 0.84, green: 0.71, blue: 0.42, alpha: 1)
-    private static let cream = UIColor(red: 0.95, green: 0.90, blue: 0.80, alpha: 1)
+    private static let paper = PlatformColor(red: 0.94, green: 0.89, blue: 0.78, alpha: 1)
+    private static let ink = PlatformColor(red: 0.18, green: 0.13, blue: 0.09, alpha: 1)
+    private static let fadedInk = PlatformColor(red: 0.37, green: 0.27, blue: 0.19, alpha: 1)
+    private static let rubric = PlatformColor(red: 0.48, green: 0.18, blue: 0.11, alpha: 1)
+    private static let gold = PlatformColor(red: 0.84, green: 0.71, blue: 0.42, alpha: 1)
+    private static let cream = PlatformColor(red: 0.95, green: 0.90, blue: 0.80, alpha: 1)
 
     /// Everything the book prints, copied out of the store so it can be typeset off the main
     /// thread (a journal full of pictures takes a while).
@@ -54,6 +58,42 @@ enum PDFBook {
     /// Typesets a copied-out book. Safe to call off the main thread.
     static func render(_ journal: Book) -> Data {
         let bounds = CGRect(origin: .zero, size: pageSize)
+        #if os(macOS)
+        let data = NSMutableData()
+        var mediaBox = bounds
+        guard let consumer = CGDataConsumer(data: data as CFMutableData),
+              let context = CGContext(consumer: consumer, mediaBox: &mediaBox, [
+                kCGPDFContextTitle: journal.title,
+                kCGPDFContextCreator: "Hearthbound",
+              ] as CFDictionary) else { return Data() }
+        NSGraphicsContext.saveGraphicsState()
+        defer { NSGraphicsContext.restoreGraphicsState() }
+        var pageNumber = 0
+        func newPage(numbered: Bool = true) {
+            if pageNumber > 0 { context.restoreGState(); context.endPDFPage() }
+            context.beginPDFPage(nil)
+            context.saveGState()
+            context.translateBy(x: 0, y: bounds.height)
+            context.scaleBy(x: 1, y: -1)
+            NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
+            pageNumber += 1
+            context.setFillColor(paper.cgColor)
+            context.fill(bounds)
+            if numbered {
+                draw("\(pageNumber - 1)", font: book(10), color: fadedInk, centeredAt: CGPoint(x: bounds.midX, y: bounds.maxY - 30))
+            }
+        }
+        newPage(numbered: false)
+        drawCover(journal, in: bounds)
+        if !journal.entries.isEmpty {
+            newPage()
+            flow(pages(journal.entries), newPage: { newPage() })
+        }
+        context.restoreGState()
+        context.endPDFPage()
+        context.closePDF()
+        return data as Data
+        #else
         let format = UIGraphicsPDFRendererFormat()
         format.documentInfo = [
             kCGPDFContextTitle as String: journal.title,
@@ -77,9 +117,10 @@ enum PDFBook {
 
             if !journal.entries.isEmpty {
                 newPage()
-                flow(pages(journal.entries), in: context, newPage: { newPage() })
+                flow(pages(journal.entries), newPage: { newPage() })
             }
         }
+        #endif
     }
 
     static func filename(for journal: Journal) -> String {
@@ -89,12 +130,20 @@ enum PDFBook {
     // MARK: Pages
 
     private static func drawCover(_ journal: Book, in bounds: CGRect) {
-        let leather = UIColor(journal.coverStyle.colors.last ?? .brown)
+        let leather = PlatformColor(journal.coverStyle.colors.last ?? .brown)
         let band = bounds.insetBy(dx: 36, dy: 60)
         leather.setFill()
+        #if os(macOS)
+        NSBezierPath(roundedRect: band, xRadius: 12, yRadius: 12).fill()
+        #else
         UIBezierPath(roundedRect: band, cornerRadius: 12).fill()
+        #endif
         gold.setStroke()
+        #if os(macOS)
+        let tooled = NSBezierPath(roundedRect: band.insetBy(dx: 12, dy: 12), xRadius: 8, yRadius: 8)
+        #else
         let tooled = UIBezierPath(roundedRect: band.insetBy(dx: 12, dy: 12), cornerRadius: 8)
+        #endif
         tooled.lineWidth = 1.5
         tooled.stroke()
 
@@ -118,7 +167,7 @@ enum PDFBook {
 
     /// Every entry as one flowing run of text: a date heading, the words, then its pictures.
     static func pages(_ entries: [Book.Page]) -> NSAttributedString {
-        let text = NSMutableAttributedString()
+        let text = NSMutableAttributedString(string: "")
         let heading = NSMutableParagraphStyle()
         heading.paragraphSpacingBefore = 16
         heading.paragraphSpacing = 4
@@ -170,19 +219,26 @@ enum PDFBook {
     /// A picture sized for the page and downsampled to twice that size, which is sharp in print
     /// without carrying full-size photos into the file.
     private static func pictureAttachment(_ data: Data?) -> NSTextAttachment? {
-        guard let data, let image = UIImage(data: data) else { return nil }
+        guard let data, let image = PlatformImage(data: data) else { return nil }
         let size = pictureSize(for: image.size)
         guard size != .zero else { return nil }
         let printed = PhotoProcessor.jpeg(image, maxDimension: max(size.width, size.height) * 2, quality: 0.8)
-            .flatMap(UIImage.init(data:)) ?? image
+            .flatMap(PlatformImage.init(data:)) ?? image
+        #if os(macOS)
+        let attachment = NSTextAttachment()
+        guard let sized = printed.copy() as? NSImage else { return nil }
+        sized.size = size
+        attachment.attachmentCell = NSTextAttachmentCell(imageCell: sized)
+        #else
         let attachment = NSTextAttachment(image: printed)
         attachment.bounds = CGRect(origin: .zero, size: size)
+        #endif
         return attachment
     }
 
     /// Lays text into the page's text box with TextKit, one text container per page, starting new
     /// pages until it's all set. A picture that doesn't fit at the foot of a page moves to the next.
-    private static func flow(_ text: NSAttributedString, in context: UIGraphicsPDFRendererContext, newPage: () -> Void) {
+    private static func flow(_ text: NSAttributedString, newPage: () -> Void) {
         let storage = NSTextStorage(attributedString: text)
         let layout = NSLayoutManager()
         storage.addLayoutManager(layout)
@@ -206,21 +262,26 @@ enum PDFBook {
 
     /// IM Fell English, the app's book face (small capitals stand in for bold), falling back to
     /// the system serif.
-    static func book(_ size: CGFloat, weight: UIFont.Weight = .regular, italic: Bool = false) -> UIFont {
+    static func book(_ size: CGFloat, weight: PlatformFont.Weight = .regular, italic: Bool = false) -> PlatformFont {
         let name = italic ? BookFont.italic : (weight == .regular ? BookFont.roman : BookFont.smallCaps)
-        if let font = UIFont(name: name, size: size) {
+        if let font = PlatformFont(name: name, size: size) {
             return font
         }
-        var descriptor = UIFont.systemFont(ofSize: size, weight: weight).fontDescriptor
+        #if os(macOS)
+        let fallback = NSFont.systemFont(ofSize: size, weight: weight)
+        return italic ? NSFontManager.shared.convert(fallback, toHaveTrait: .italicFontMask) : fallback
+        #else
+        var descriptor = PlatformFont.systemFont(ofSize: size, weight: weight).fontDescriptor
         descriptor = descriptor.withDesign(.serif) ?? descriptor
         if italic, let slanted = descriptor.withSymbolicTraits(descriptor.symbolicTraits.union(.traitItalic)) {
             descriptor = slanted
         }
-        return UIFont(descriptor: descriptor, size: size)
+        return PlatformFont(descriptor: descriptor, size: size)
+        #endif
     }
 
     @discardableResult
-    private static func drawCentered(_ string: String, font: UIFont, color: UIColor, top: CGFloat, in rect: CGRect) -> CGFloat {
+    private static func drawCentered(_ string: String, font: PlatformFont, color: PlatformColor, top: CGFloat, in rect: CGRect) -> CGFloat {
         let style = NSMutableParagraphStyle()
         style.alignment = .center
         let text = NSAttributedString(string: string, attributes: [.font: font, .foregroundColor: color, .paragraphStyle: style])
@@ -229,7 +290,7 @@ enum PDFBook {
         return top + ceil(height)
     }
 
-    private static func draw(_ string: String, font: UIFont, color: UIColor, centeredAt point: CGPoint) {
+    private static func draw(_ string: String, font: PlatformFont, color: PlatformColor, centeredAt point: CGPoint) {
         let text = NSAttributedString(string: string, attributes: [.font: font, .foregroundColor: color])
         let size = text.size()
         text.draw(at: CGPoint(x: point.x - size.width / 2, y: point.y))

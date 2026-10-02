@@ -1,4 +1,8 @@
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
 
 /// Shrinks picked images before they're stored: a full-size JPEG capped at `maxDimension` and a
 /// small thumbnail for strips.
@@ -23,20 +27,32 @@ enum PhotoProcessor {
     }
 
     static func process(_ data: Data) -> Processed? {
-        UIImage(data: data).flatMap { process($0) }
+        PlatformImage(data: data).flatMap { process($0) }
     }
 
     /// A photo straight from the camera.
-    static func process(_ image: UIImage) -> Processed? {
+    static func process(_ image: PlatformImage) -> Processed? {
         guard let full = jpeg(image, maxDimension: maxDimension, quality: 0.85),
               let thumbnail = jpeg(image, maxDimension: thumbnailDimension, quality: 0.7)
         else { return nil }
         return Processed(imageData: full, thumbnailData: thumbnail)
     }
 
-    static func jpeg(_ image: UIImage, maxDimension: CGFloat, quality: CGFloat) -> Data? {
+    static func jpeg(_ image: PlatformImage, maxDimension: CGFloat, quality: CGFloat) -> Data? {
         let target = fittedSize(for: image.size, maxDimension: maxDimension)
         guard target != .zero else { return nil }
+        #if os(macOS)
+        guard let source = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
+              let context = CGContext(data: nil, width: Int(target.width), height: Int(target.height),
+                  bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+                  bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return nil }
+        context.setFillColor(CGColor(gray: 1, alpha: 1))
+        context.fill(CGRect(origin: .zero, size: target))
+        context.interpolationQuality = .high
+        context.draw(source, in: CGRect(origin: .zero, size: target))
+        guard let resized = context.makeImage() else { return nil }
+        return NSBitmapImageRep(cgImage: resized).representation(using: .jpeg, properties: [.compressionFactor: quality])
+        #else
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
         format.opaque = true
@@ -44,5 +60,6 @@ enum PhotoProcessor {
             image.draw(in: CGRect(origin: .zero, size: target))
         }
         return rendered.jpegData(compressionQuality: quality)
+        #endif
     }
 }

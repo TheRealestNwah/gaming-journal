@@ -1,4 +1,7 @@
 import PDFKit
+#if os(macOS)
+import AppKit
+#endif
 import XCTest
 @testable import GamingJournal
 
@@ -51,6 +54,16 @@ final class PDFBookTests: XCTestCase {
     }
 
     private func jpeg(width: CGFloat, height: CGFloat) -> Data {
+        #if os(macOS)
+        let image = NSImage(size: CGSize(width: width, height: height), flipped: false) { _ in
+            for x in stride(from: 0, to: width, by: 8) {
+                NSColor(calibratedHue: x / width, saturation: 0.6, brightness: 0.7, alpha: 1).setFill()
+                NSRect(x: x, y: 0, width: 8, height: height).fill()
+            }
+            return true
+        }
+        return PhotoProcessor.jpeg(image, maxDimension: max(width, height), quality: 0.8)!
+        #else
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
         return UIGraphicsImageRenderer(size: CGSize(width: width, height: height), format: format).image { context in
@@ -60,6 +73,7 @@ final class PDFBookTests: XCTestCase {
                 context.fill(CGRect(x: x, y: 0, width: 8, height: height))
             }
         }.jpegData(compressionQuality: 0.8)!
+        #endif
     }
 
     func testPicturesArePrintedAfterTheWords() throws {
