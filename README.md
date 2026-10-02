@@ -8,6 +8,13 @@ Everything lives on-device (SwiftData), with optional iCloud sync. No account an
 > Claude and OpenAI Codex, directed by the maintainer.
 > See [AI disclosure](#ai-disclosure).
 
+<p align="center">
+  <img src="docs/screenshots/shelf.png" width="23%" alt="The shelf of journals">
+  <img src="docs/screenshots/journal.png" width="23%" alt="A journal page with dated entries">
+  <img src="docs/screenshots/contents.png" width="23%" alt="The contents page">
+  <img src="docs/screenshots/writer.png" width="23%" alt="Writing a new entry">
+</p>
+
 ## Features
 
 - **A shelf of journals**, one per character, each a leather-bound book with the character's name, race or class, and game. Search (magnifying glass), a new journal (+) and Settings sit in the top bar.
