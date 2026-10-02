@@ -8,10 +8,15 @@ import UniformTypeIdentifiers
 /// latest page, where the next entry will go.
 struct JournalView: View {
     let journal: Journal
+    private let onSettings: () -> Void
+    private let onNewJournal: () -> Void
 
     /// `highlight` is a search query whose words are marked on the page it opens at.
-    init(journal: Journal, focusEntryID: UUID? = nil, highlight: String = "") {
+    init(journal: Journal, focusEntryID: UUID? = nil, highlight: String = "",
+         onSettings: @escaping () -> Void = {}, onNewJournal: @escaping () -> Void = {}) {
         self.journal = journal
+        self.onSettings = onSettings
+        self.onNewJournal = onNewJournal
         let ribbon = RibbonShelf().mark(for: journal.id)
         _ribbon = State(initialValue: ribbon)
         _anchor = State(initialValue: focusEntryID.map(Anchor.entry) ?? ribbon.map(Anchor.mark) ?? .latest)
@@ -46,6 +51,7 @@ struct JournalView: View {
     @State private var sharing: SharedPicture?
     /// The PDF book is being typeset in the background.
     @State private var isBindingBook = false
+    @State private var errorMessage: String?
 
     private struct SharedPicture: Identifiable {
         let id = UUID()
@@ -147,16 +153,20 @@ struct JournalView: View {
                     }
                 }
 
+                HStack {
+                    Spacer()
+                    writeButton
+                        .accessibilityLabel("Write a new entry")
+                        .keyboardShortcut("n", modifiers: .command)
+                        .help("Write a new entry (Command-N)")
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
                 bottomBar(pageCount: laidOut.count)
             }
             .frame(maxWidth: perSpread == 2 ? 1280 : 640)
             .frame(maxWidth: .infinity)
 
-            writeButton
-            .accessibilityLabel("Write a new entry")
-            .keyboardShortcut("n", modifiers: .command)
-            .padding(.trailing, 24)
-            .padding(.bottom, 70)
         }
         .overlay(alignment: .bottomLeading) {
             if isBindingBook {
@@ -198,6 +208,9 @@ struct JournalView: View {
             if hasOpened { settle() }
         }
         .journalNavigationHidden()
+        .journalCommandActions(writing != nil || isEditingJournal || isShowingContents || sharing != nil ? JournalCommandActions() :
+            JournalCommandActions(settings: onSettings, newJournal: onNewJournal,
+                                  write: { writing = WriterRequest(entry: nil) }, find: { isShowingContents = true }))
         .onChange(of: laidOut.count) {
             if hasOpened { settle() }
         }
@@ -205,7 +218,7 @@ struct JournalView: View {
             // A swipe: follow the reader from here on.
             if index != settledIndex {
                 settledIndex = index
-                anchor = index / perSpread == spreadCount(laidOut.count) - 1 ? .latest : .free
+                anchor = laidOut.indices.contains(index) ? RibbonMark(page: laidOut[index]).map(Anchor.mark) ?? .free : .free
                 highlightTerms = []
             }
             #if os(iOS)
@@ -269,7 +282,14 @@ struct JournalView: View {
             // One exporter for both books: SwiftUI honours only one per view.
             contentType: bookExport?.contentType ?? .pdf,
             defaultFilename: bookExport?.filename
-        ) { _ in }
+        ) { result in
+            if case .failure(let error) = result, !FileOperation.isCancellation(error) {
+                errorMessage = "The book could not be exported. Try exporting again or choose another location. " + error.localizedDescription
+            }
+        }
+        .alert("Could not complete the action", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
+            Button("OK", role: .cancel) { errorMessage = nil }
+        } message: { Text(errorMessage ?? "") }
     }
 
     /// The page area was measured: lay out the pages again and keep the book open where it was.
@@ -289,7 +309,7 @@ struct JournalView: View {
         switch anchor {
         case .latest: target = last
         case .entry(let id): target = JournalPager.pageIndex(of: id, in: pages) ?? last
-        case .mark(let mark): target = JournalPager.pageIndex(of: mark.entryID, part: mark.part, in: pages) ?? last
+        case .mark(let mark): target = pageIndex(for: mark, in: pages) ?? last
         case .free: target = min(pageIndex, last)
         }
         show(JournalPager.spreadStart(of: target, pagesPerSpread: perSpread), animated: animated)
@@ -299,7 +319,8 @@ struct JournalView: View {
     private func turn(to index: Int) {
         let last = JournalPager.spreadStart(of: max(0, laidOutCount - 1), pagesPerSpread: perSpread)
         let target = JournalPager.spreadStart(of: min(max(0, index), last), pagesPerSpread: perSpread)
-        anchor = target == last ? .latest : .free
+        let laidOut = pages
+        anchor = laidOut.indices.contains(target) ? RibbonMark(page: laidOut[target]).map(Anchor.mark) ?? .free : .free
         highlightTerms = []
         show(target, animated: true)
     }
@@ -401,22 +422,34 @@ struct JournalView: View {
     /// Deletes an entry, keeping a copy (pictures included) for a few seconds so Undo can put it back.
     private func tearOut(_ entry: Entry) {
         let copy = TornOut(record: JournalBackup.EntryRecord(entry: entry), heading: entry.heading())
-        journal.touch()
-        context.delete(entry)
-        try? context.save()
+        do {
+            try JournalStore.commit(in: context) {
+                journal.touch()
+                context.delete(entry)
+            }
+        } catch {
+            errorMessage = "The entry could not be deleted. " + error.localizedDescription
+            return
+        }
         tornOut = copy
         AccessibilityNotification.Announcement("Entry torn out. Undo is available.").post()
     }
 
     private func undoTearOut() {
         guard let tornOut else { return }
-        self.tornOut = nil
-        let entry = tornOut.record.makeEntry()
-        context.insert(entry)
-        entry.journal = journal
-        journal.touch()
-        restoredEntryID = entry.id
-        try? context.save()
+        do {
+            let entryID = try JournalStore.commit(in: context) {
+                let entry = tornOut.record.makeEntry()
+                context.insert(entry)
+                entry.journal = journal
+                journal.touch()
+                return entry.id
+            }
+            restoredEntryID = entryID
+            self.tornOut = nil
+        } catch {
+            errorMessage = "The entry could not be restored. Try Undo again. " + error.localizedDescription
+        }
     }
 
     private var laidOutCount: Int { pages.count }
@@ -424,7 +457,14 @@ struct JournalView: View {
     // MARK: Ribbon
 
     private func ribbonPage(in pages: [JournalPager.Page]) -> Int? {
-        ribbon.flatMap { JournalPager.pageIndex(of: $0.entryID, part: $0.part, in: pages) }
+        ribbon.flatMap { pageIndex(for: $0, in: pages) }
+    }
+
+    private func pageIndex(for mark: RibbonMark, in pages: [JournalPager.Page]) -> Int? {
+        if let offset = mark.textOffset {
+            return JournalPager.pageIndex(of: mark.entryID, textOffset: offset, in: pages)
+        }
+        return JournalPager.pageIndex(of: mark.entryID, part: mark.part, in: pages)
     }
 
     /// Lays the ribbon in the open page, or takes it out with nil.
@@ -460,6 +500,7 @@ struct JournalView: View {
                 Image(systemName: "books.vertical")
             }
             .accessibilityLabel("Back to journals")
+            .help("Back to journals")
             Spacer()
             Button {
                 isShowingContents = true
@@ -468,6 +509,7 @@ struct JournalView: View {
                     .accessibilityLabel("Contents")
             }
             .accessibilityIdentifier("contents")
+            .help("Contents and search (Command-F)")
             .padding(.trailing, 14)
             Menu {
                 if ribbonIndex.map({ $0 / perSpread }) == pageIndex / perSpread {
@@ -492,6 +534,7 @@ struct JournalView: View {
                 Image(systemName: "ellipsis.circle")
                     .accessibilityLabel("Journal options")
             }
+            .help("Journal options, ribbon and exports")
         }
         .font(Theme.pageControl)
         .foregroundStyle(Theme.rubric)
@@ -537,45 +580,63 @@ private struct PageView: View {
     let onEdit: (Entry) -> Void
     let onDelete: (Entry) -> Void
     let onShare: (Entry) -> Void
+    @State private var contentHeight: CGFloat = 0
+    @State private var viewportHeight: CGFloat = 0
 
     var body: some View {
-        // Scrolls only if the layout estimate ever overfills a page.
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                if page.blocks.isEmpty {
-                    Text("The pages are blank. Take up the quill and write the first entry.")
-                        .font(Theme.bookItalicFixed(fontSize))
-                        .foregroundStyle(Theme.fadedInk)
-                        .padding(.top, 18)
-                }
-                ForEach(page.blocks) { block in
-                    BlockView(block: block, entry: entries[block.entryID], fontSize: fontSize, highlight: highlight)
-                        // A tap opens the entry to amend; the long-press menu has the rest.
-                        .onTapGesture {
-                            if let entry = entries[block.entryID] { onEdit(entry) }
-                        }
-                        .accessibilityAction {
-                            if let entry = entries[block.entryID] { onEdit(entry) }
-                        }
-                        .accessibilityHint("Opens the entry to amend")
-                        .contextMenu {
-                            if let entry = entries[block.entryID] {
-                                Button("Edit Entry", systemImage: "pencil") { onEdit(entry) }
-                                Button("Share as Picture", systemImage: "square.and.arrow.up") { onShare(entry) }
-                                Button("Delete Entry", systemImage: "trash", role: .destructive) { onDelete(entry) }
+        // Unusual headings/photos can still exceed the estimate. Make that fallback explicit.
+        VStack(spacing: 2) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    if page.blocks.isEmpty {
+                        Text("The pages are blank. Take up the quill and write the first entry.")
+                            .font(Theme.bookItalicFixed(fontSize))
+                            .foregroundStyle(Theme.fadedInk)
+                            .padding(.top, 18)
+                    }
+                    ForEach(page.blocks) { block in
+                        BlockView(block: block, entry: entries[block.entryID], fontSize: fontSize, highlight: highlight)
+                            // A tap opens the entry to amend; the long-press menu has the rest.
+                            .onTapGesture {
+                                if let entry = entries[block.entryID] { onEdit(entry) }
                             }
-                        }
+                            .accessibilityAction {
+                                if let entry = entries[block.entryID] { onEdit(entry) }
+                            }
+                            .accessibilityHint("Opens the entry to amend")
+                            .contextMenu {
+                                if let entry = entries[block.entryID] {
+                                    Button("Edit Entry", systemImage: "pencil") { onEdit(entry) }
+                                    Button("Share as Picture", systemImage: "square.and.arrow.up") { onShare(entry) }
+                                    Button("Delete Entry", systemImage: "trash", role: .destructive) { onDelete(entry) }
+                                }
+                            }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.bottom, 8)
+                .background(GeometryReader { geometry in
+                    Color.clear.onAppear { contentHeight = geometry.size.height }
+                        .onChange(of: geometry.size.height) { _, height in contentHeight = height }
+                })
+            }
+            .background(GeometryReader { geometry in
+                Color.clear.onAppear { viewportHeight = geometry.size.height }
+                    .onChange(of: geometry.size.height) { _, height in viewportHeight = height }
+            })
+            .scrollBounceBehavior(.basedOnSize)
+            .overlay(alignment: .topTrailing) {
+                if showsRibbon {
+                    RibbonMarker()
+                        .padding(.trailing, 8)
+                        .accessibilityLabel("The ribbon marks this page")
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.bottom, 8)
-        }
-        .scrollBounceBehavior(.basedOnSize)
-        .overlay(alignment: .topTrailing) {
-            if showsRibbon {
-                RibbonMarker()
-                    .padding(.trailing, 8)
-                    .accessibilityLabel("The ribbon marks this page")
+            if contentHeight > viewportHeight + 2 && viewportHeight > 0 {
+                Label("Scroll to read the rest of this page", systemImage: "arrow.down")
+                    .font(Theme.bookItalic(12, relativeTo: .caption))
+                    .foregroundStyle(Theme.fadedInk)
+                    .accessibilityIdentifier("pageOverflowHint")
             }
         }
     }

@@ -39,7 +39,15 @@ final class IPadTests: XCTestCase {
         capture("ipad-large-text-dark-reader", app)
         quill.tap()
         XCTAssertTrue(app.textViews["entryBody"].waitForExistence(timeout: 15))
-        app.buttons["Cancel"].tap()
+        let body = app.textViews["entryBody"]
+        body.tap()
+        body.typeText("A readable page.")
+        XCTAssertTrue(app.buttons["Done"].isHittable)
+        XCTAssertTrue(app.buttons["Cancel"].isHittable)
+        XCTAssertTrue(app.textFields["inGameDate"].isHittable)
+        XCTAssertGreaterThan(body.frame.height, 80)
+        capture("ipad-large-text-writer", app)
+        app.buttons["Done"].tap()
         XCTAssertTrue(quill.waitForExistence(timeout: 15))
     }
 
