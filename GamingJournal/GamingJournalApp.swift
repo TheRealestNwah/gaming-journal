@@ -34,13 +34,14 @@ struct GamingJournalApp: App {
 
     var body: some Scene {
         #if os(macOS)
-        WindowGroup("Hearthbound") {
+        Window("Hearthbound", id: "journals") {
             RootView()
                 .environment(appLock)
                 .frame(minWidth: 640, minHeight: 540)
         }
         .modelContainer(container)
         .defaultSize(width: 1100, height: 800)
+        .journalLaunchBehavior()
         .commands {
             // Keep one journal workflow while using normal Mac launch/reopen behavior.
             CommandGroup(replacing: .newItem) { }
@@ -56,3 +57,16 @@ struct GamingJournalApp: App {
         #endif
     }
 }
+
+#if os(macOS)
+private extension Scene {
+    @SceneBuilder
+    func journalLaunchBehavior() -> some Scene {
+        if #available(macOS 15.0, *) {
+            self.defaultLaunchBehavior(.presented).restorationBehavior(.disabled)
+        } else {
+            self
+        }
+    }
+}
+#endif

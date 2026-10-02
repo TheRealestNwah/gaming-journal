@@ -64,6 +64,17 @@ jobs:
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
           nohup xcrun simctl bootstatus "$UDID" -b > boot.log 2>&1 &
 
+      - name: Build and test native Mac
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project GamingJournal.xcodeproj -scheme "Hearthbound (Mac)" \
+            -destination 'platform=macOS' -derivedDataPath build-mac \
+            -parallel-testing-enabled NO -resultBundlePath MacResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" \
+            2>&1 | tee mac-test.log | grep -E "Test Case|error:|failed|passed|\*\*" || true
+          grep -qE "TEST (EXECUTE )?SUCCEEDED" mac-test.log
+
       - name: Build
         run: |
           set -o pipefail
@@ -119,17 +130,11 @@ jobs:
             2>&1 | tee ipad-test.log | grep -E "Test Case|error:|failed|passed|\*\*" || true
           grep -qE "TEST (EXECUTE )?SUCCEEDED" ipad-test.log
 
-      - name: Build and test native Mac
-        if: ${{ !cancelled() }}
+      - name: Collect Mac launch diagnostics
+        if: failure()
         run: |
-          set -o pipefail
-          xcodebuild test \
-            -project GamingJournal.xcodeproj -scheme "Hearthbound (Mac)" \
-            -destination 'platform=macOS' -derivedDataPath build-mac \
-            -parallel-testing-enabled NO -resultBundlePath MacResults.xcresult \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" \
-            2>&1 | tee mac-test.log | grep -E "Test Case|error:|failed|passed|\*\*" || true
-          grep -qE "TEST (EXECUTE )?SUCCEEDED" mac-test.log
+          plutil -p build-mac/Build/Products/Debug/GamingJournalMac.app/Contents/Info.plist > mac-info.log || true
+          log show --last 15m --style compact --predicate 'process == "GamingJournalMac"' > mac-launch.log || true
 
       - name: Export app screenshots
         if: always()
@@ -162,3 +167,5 @@ jobs:
             test.log
             ipad-test.log
             mac-test.log
+            mac-info.log
+            mac-launch.log

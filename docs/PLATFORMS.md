@@ -1,6 +1,6 @@
 # iPad and native Mac
 
-The universal iOS app targets iPhone and iPad (iOS/iPadOS 17+). CI runs the normal smoke suite on both, then iPad rotation/spread acceptance, and exports screenshots. Portrait and narrow windows use one page; landscape windows at least 960 points wide use two. Simulator checks do not replace #30: real keyboard, VoiceOver, Stage Manager, camera, signing and two-device iCloud acceptance remain manual.
+The universal iOS app targets iPhone and iPad (iOS/iPadOS 17+). CI runs the normal smoke suite on both, plus iPad rotation/spread acceptance, and exports screenshots. Portrait and narrow windows use one page; landscape windows at least 960 points wide use two. Simulator checks do not replace #30: real keyboard, VoiceOver, Stage Manager, camera, signing and two-device iCloud acceptance remain manual.
 
 ## Native Mac
 
@@ -14,4 +14,4 @@ Initial Mac limits: no app-lock UI, camera capture or desktop widget extension. 
 
 ## Validation
 
-CI keeps simulator parallel testing disabled and runs iPhone then iPad on one runner, reusing the iOS build. It then builds/tests the native Mac scheme with shared unit tests and Mac-specific UI smoke tests. Artifacts separate screenshots by platform. No release or tag is authorized by these changes.
+CI keeps simulator parallel testing disabled and runs iPhone then iPad on one runner, reusing the iOS build. It first builds/tests the native Mac scheme with shared unit tests and Mac-specific UI smoke tests. Artifacts separate screenshots by platform. No release or tag is authorized by these changes.
