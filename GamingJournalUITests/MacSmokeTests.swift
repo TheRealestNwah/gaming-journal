@@ -10,7 +10,7 @@ final class MacSmokeTests: XCTestCase {
             + (demo ? ["-demoData", "YES"] : [])
         app.launch()
         app.activate()
-        let opened = app.windows.buttons["Begin a new journal"].waitForExistence(timeout: 20)
+        let opened = app.windows.buttons.matching(identifier: "Begin a new journal").firstMatch.waitForExistence(timeout: 20)
         capture("mac-launch", app)
         XCTAssertTrue(opened, app.debugDescription)
         return app
@@ -23,13 +23,13 @@ final class MacSmokeTests: XCTestCase {
     }
     func testCreateJournalWriteAndReadEntry() {
         let app = launch()
-        app.windows.buttons["Begin a new journal"].click()
+        app.windows.buttons.matching(identifier: "Begin a new journal").firstMatch.click()
         let name = app.windows.textFields["characterName"]
         XCTAssertTrue(name.waitForExistence(timeout: 15))
         name.click()
         name.typeText("Mac traveller")
-        app.windows.buttons["Begin"].click()
-        let quill = app.windows.buttons["Write a new entry"]
+        app.windows.buttons.matching(identifier: "Begin").firstMatch.click()
+        let quill = app.windows.buttons.matching(identifier: "Write a new entry").firstMatch
         XCTAssertTrue(quill.waitForExistence(timeout: 15))
         quill.click()
         let body = app.windows.textViews["entryBody"]
@@ -37,14 +37,14 @@ final class MacSmokeTests: XCTestCase {
         body.click()
         body.typeText("A page written beside the campfire.")
         capture("mac-writer", app)
-        app.windows.buttons["Done"].click()
+        app.windows.buttons.matching(identifier: "Done").firstMatch.click()
         XCTAssertTrue(app.windows.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "A page written beside")).firstMatch.waitForExistence(timeout: 15))
         capture("mac-reader", app)
     }
     func testShelfSearchContentsAndSettings() {
         let app = launch(demo: true)
         capture("mac-shelf", app)
-        app.windows.buttons["Search"].click()
+        app.windows.buttons.matching(identifier: "Search").firstMatch.click()
         let search = app.windows.textFields["Search the journals"]
         XCTAssertTrue(search.waitForExistence(timeout: 15))
         search.click()
@@ -52,19 +52,19 @@ final class MacSmokeTests: XCTestCase {
         let result = app.windows.buttons.matching(NSPredicate(format: "label CONTAINS %@", "wall that spoke")).firstMatch
         XCTAssertTrue(result.waitForExistence(timeout: 15))
         result.click()
-        XCTAssertTrue(app.windows.buttons["contents"].waitForExistence(timeout: 15))
-        app.windows.buttons["contents"].click()
+        XCTAssertTrue(app.windows.buttons.matching(identifier: "contents").firstMatch.waitForExistence(timeout: 15))
+        app.windows.buttons.matching(identifier: "contents").firstMatch.click()
         let first = app.windows.buttons.matching(identifier: "contentsEntry").firstMatch
         XCTAssertTrue(first.waitForExistence(timeout: 15))
         capture("mac-contents", app)
         first.click()
-        XCTAssertTrue(app.windows.buttons["Back to journals"].waitForExistence(timeout: 15))
-        app.windows.buttons["Back to journals"].click()
-        app.windows.buttons["Settings"].click()
-        XCTAssertTrue(app.windows.buttons["Export Backup"].waitForExistence(timeout: 15))
-        XCTAssertTrue(app.windows.buttons["Import Backup"].exists)
+        XCTAssertTrue(app.windows.buttons.matching(identifier: "Back to journals").firstMatch.waitForExistence(timeout: 15))
+        app.windows.buttons.matching(identifier: "Back to journals").firstMatch.click()
+        app.windows.buttons.matching(identifier: "Settings").firstMatch.click()
+        XCTAssertTrue(app.windows.buttons.matching(identifier: "Export Backup").firstMatch.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.windows.buttons.matching(identifier: "Import Backup").firstMatch.exists)
         capture("mac-settings", app)
-        app.windows.buttons["Close"].click()
+        app.windows.buttons.matching(identifier: "Close").firstMatch.click()
     }
 }
 #endif

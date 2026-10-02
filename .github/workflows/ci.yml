@@ -53,17 +53,6 @@ jobs:
           xcodebuild -version
           swift --version
 
-      # Boot the simulator in the background so it is ready by the time the
-      # build finishes, instead of xcodebuild booting it before the tests.
-      - name: Pick and boot an iPhone simulator
-        id: sim
-        run: |
-          UDID=$(xcrun simctl list devices available -j \
-            | jq -r '[.devices[] | .[] | select(.name | startswith("iPhone"))][0].udid')
-          echo "Using simulator: $UDID"
-          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
-          nohup xcrun simctl bootstatus "$UDID" -b > boot.log 2>&1 &
-
       - name: Build and test native Mac
         run: |
           set -o pipefail
@@ -74,6 +63,17 @@ jobs:
             CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" \
             2>&1 | tee mac-test.log | grep -E "Test Case|error:|failed|passed|\*\*" || true
           grep -qE "TEST (EXECUTE )?SUCCEEDED" mac-test.log
+
+      # Boot the simulator in the background so it is ready by the time the
+      # build finishes, instead of xcodebuild booting it before the tests.
+      - name: Pick and boot an iPhone simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j \
+            | jq -r '[.devices[] | .[] | select(.name | startswith("iPhone"))][0].udid')
+          echo "Using simulator: $UDID"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          nohup xcrun simctl bootstatus "$UDID" -b > boot.log 2>&1 &
 
       - name: Build
         run: |
