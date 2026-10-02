@@ -15,6 +15,11 @@ Everything lives on-device (SwiftData), with optional iCloud sync. No account an
   <img src="docs/screenshots/writer.png" width="23%" alt="Writing a new entry">
 </p>
 
+<p align="center">
+  <img src="docs/screenshots/ipad-journal.png" width="58%" alt="A journal on iPad">
+  <img src="docs/screenshots/mac-journal.png" width="38%" alt="A journal on the native Mac app">
+</p>
+
 ## Features
 
 - **A shelf of journals**, one per character, each a leather-bound book with the character's name, race or class, and game. Search (magnifying glass), a new journal (+) and Settings sit in the top bar.
