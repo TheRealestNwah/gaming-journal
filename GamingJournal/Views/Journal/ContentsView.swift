@@ -73,7 +73,7 @@ struct ContentsView: View {
             .scrollDismissesKeyboard(.immediately)
             .background(PaperBackground())
             .navigationTitle("Contents")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineJournalTitle()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Close", systemImage: "xmark") { dismiss() }
@@ -81,6 +81,7 @@ struct ContentsView: View {
             }
         }
         .tint(Theme.rubric)
+        .journalSheetSize()
     }
 
     private func line(for entry: Entry) -> some View {

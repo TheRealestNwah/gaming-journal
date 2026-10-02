@@ -7,8 +7,8 @@ struct ThumbnailImage: View {
 
     var body: some View {
         Group {
-            if let data, let image = UIImage(data: data) {
-                Image(uiImage: image)
+            if let data, let image = PlatformImage(data: data) {
+                Image(platformImage: image)
                     .resizable()
                     .scaledToFill()
             } else {
@@ -57,7 +57,7 @@ struct PhotoStrip: View {
             }
             .padding(.vertical, 4)
         }
-        .fullScreenCover(item: Binding(
+        .journalCover(item: Binding(
             get: { viewerStart.map(ViewerStart.init) },
             set: { viewerStart = $0?.id }
         )) { start in
@@ -88,13 +88,33 @@ struct PhotoViewer: View {
     @State var selection: UUID
     @Environment(\.dismiss) private var dismiss
 
+    private func move(_ offset: Int) {
+        guard let index = photos.firstIndex(where: { $0.id == selection }), photos.indices.contains(index + offset) else { return }
+        selection = photos[index + offset].id
+    }
+
     var body: some View {
         NavigationStack {
+            #if os(macOS)
+            VStack {
+                if let photo = photos.first(where: { $0.id == selection }),
+                   let data = photo.imageData, let image = PlatformImage(data: data) {
+                    Image(platformImage: image).resizable().scaledToFit()
+                }
+                HStack {
+                    Button("Previous picture") { move(-1) }
+                        .disabled(selection == photos.first?.id)
+                    Button("Next picture") { move(1) }
+                        .disabled(selection == photos.last?.id)
+                    Button("Close") { dismiss() }.keyboardShortcut(.cancelAction)
+                }.padding()
+            }.background(Color.black)
+            #else
             TabView(selection: $selection) {
                 ForEach(photos) { photo in
                     Group {
-                        if let data = photo.imageData, let image = UIImage(data: data) {
-                            Image(uiImage: image)
+                        if let data = photo.imageData, let image = PlatformImage(data: data) {
+                            Image(platformImage: image)
                                 .resizable()
                                 .scaledToFit()
                         } else {
@@ -106,12 +126,13 @@ struct PhotoViewer: View {
             }
             .tabViewStyle(.page(indexDisplayMode: photos.count > 1 ? .automatic : .never))
             .background(Color.black)
-            .toolbarBackground(.hidden, for: .navigationBar)
+            .journalNavigationBackground()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Close", systemImage: "xmark") { dismiss() }
                 }
             }
+            #endif
         }
         .preferredColorScheme(.dark)
     }

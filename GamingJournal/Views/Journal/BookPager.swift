@@ -1,3 +1,4 @@
+#if os(iOS)
 import SwiftUI
 import UIKit
 
@@ -92,3 +93,5 @@ struct BookPager: UIViewControllerRepresentable {
         }
     }
 }
+
+#endif

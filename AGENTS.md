@@ -19,10 +19,15 @@ The app is called **Hearthbound**. Its Xcode targets, schemes, bundle IDs, app g
 - The `FreeTeam` build configuration (scheme **Hearthbound (Free Team)**) is for testing on a device with a free Apple ID: `.free` bundle IDs and app group, no iCloud or push, and the `FREE_TEAM` Swift condition. CI never builds it, so keep `#if FREE_TEAM` branches tiny, and add any new build setting or entitlement to it too.
 - One issue per work item. When several items are green-lit together, build them on one branch and open one PR that closes all of them. A single item still gets its own PR. `main` is protected and requires the `Build & test (iOS Simulator)` check.
 
+## Native Mac
+- `Hearthbound (Mac)` is a native macOS 14+ SwiftUI/AppKit scheme sharing the app source folder. `Hearthbound (Mac Free Team)` mirrors free-team identities without cloud entitlements.
+- Guard UIKit/AppKit differences at the platform boundary. Keep models, migrations and journal logic shared. See `docs/PLATFORMS.md` for features and manual acceptance.
+- Mac currently has no app-lock UI, camera capture or widget extension. Do not imply those are supported.
+
 ## CI
 - macOS runners are the bottleneck: only a few run at once, and every run holds one for ~5 min. Avoid pushing several PR branches at the same time. Push or rebase them one after another so they don't queue behind each other.
 - CI runs on pull requests only (not on pushes to `main`). Docs-only PRs (`docs/`, `*.md`) skip the macOS job, and the skipped job still satisfies the required check. Use "Run workflow" (workflow_dispatch) to test `main` by hand.
-- Unit and UI smoke tests run in one `xcodebuild test-without-building` call on a simulator booted during the build. Parallel testing stays off, because cloning the simulator costs minutes while the suite takes seconds. Keep it that way when editing `.github/workflows/ci.yml`.
+- iPhone unit and UI smoke tests run in one `xcodebuild test-without-building` call on a simulator booted during the build. Parallel testing stays off, because cloning the simulator costs minutes while the suite takes seconds. Keep it that way when editing `.github/workflows/ci.yml`. The native Mac scheme runs its shared unit and Mac UI tests first on the same runner; iPhone follows, then iPad UI tests reuse the iOS build.
 
 ## Tone and theme
 - The in-game journal look: aged paper with scorched edges, dark ink, red "rubric" ink for dates and actions; the shelf is dark wood with gilt. Pages stay paper in dark mode, just dimmer.

@@ -43,6 +43,11 @@ A journal's ribbon is kept per device in UserDefaults, not in the model.
 | Export the PDF book without freezing the app | #155 |
 | Make the reader easier to use with VoiceOver | #156 |
 
+## Platform expansion
+
+- #185: iPad smoke tests, rotation/facing-page acceptance and screenshot artifacts in CI.
+- #186: native macOS 14+ SwiftUI/AppKit target sharing the journal implementation. See [platform details and limits](PLATFORMS.md).
+
 ## Validation still needed
 
 The approved September 2026 feature list is implemented. Simulator CI checks builds, service
@@ -62,7 +67,7 @@ No approved feature remains unimplemented on this roadmap. New features need a s
 
 Not planned yet; each needs the owner's go-ahead.
 
-- Run on a Mac next to the game (the iPad app on Apple silicon, or Mac Catalyst)
+- Extend the native Mac version with desktop widgets and an independently validated privacy lock.
 
 Removed on purpose, not coming back unless the owner asks: party, emotions, bonds, chapters, stats and play sessions.
 

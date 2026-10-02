@@ -49,7 +49,7 @@ struct JournalView: View {
 
     private struct SharedPicture: Identifiable {
         let id = UUID()
-        let image: UIImage
+        let image: PlatformImage
     }
 
     private struct TornOut: Equatable {
@@ -152,12 +152,7 @@ struct JournalView: View {
             .frame(maxWidth: perSpread == 2 ? 1280 : 640)
             .frame(maxWidth: .infinity)
 
-            Button {
-                writing = WriterRequest(entry: nil)
-            } label: {
-                WaxSeal()
-            }
-            .buttonStyle(.plain)
+            writeButton
             .accessibilityLabel("Write a new entry")
             .keyboardShortcut("n", modifiers: .command)
             .padding(.trailing, 24)
@@ -202,7 +197,7 @@ struct JournalView: View {
         .onChange(of: perSpread) {
             if hasOpened { settle() }
         }
-        .toolbar(.hidden, for: .navigationBar)
+        .journalNavigationHidden()
         .onChange(of: laidOut.count) {
             if hasOpened { settle() }
         }
@@ -213,9 +208,11 @@ struct JournalView: View {
                 anchor = index / perSpread == spreadCount(laidOut.count) - 1 ? .latest : .free
                 highlightTerms = []
             }
+            #if os(iOS)
             if UIAccessibility.isVoiceOverRunning {
                 AccessibilityNotification.PageScrolled(pageLabel(pageCount: laidOut.count)).post()
             }
+            #endif
         }
         .onChange(of: journal.entries?.count) { oldCount, newCount in
             // Written a new entry: show where it landed. That's usually the last page, but an entry
@@ -231,7 +228,7 @@ struct JournalView: View {
             ShareSheet(items: [shared.image])
                 .presentationDetents([.medium, .large])
         }
-        .fullScreenCover(item: $writing) { request in
+        .journalCover(item: $writing) { request in
             WriterView(journal: journal, entry: request.entry)
         }
         .sheet(isPresented: $isEditingJournal) {
@@ -325,6 +322,24 @@ struct JournalView: View {
         let first = min(pageIndex, max(0, pageCount - 1)) + 1
         let second = min(first + perSpread - 1, pageCount)
         return second > first ? "pages \(first)–\(second) of \(pageCount)" : "page \(first) of \(pageCount)"
+    }
+
+    @ViewBuilder
+    private var writeButton: some View {
+        #if os(macOS)
+        Button("Take up the quill", systemImage: "pencil.and.scribble") {
+            writing = WriterRequest(entry: nil)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(Theme.wax)
+        #else
+        Button {
+            writing = WriterRequest(entry: nil)
+        } label: {
+            WaxSeal().contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        #endif
     }
 
     /// One spread: a page, or two facing pages with the gutter between them.
@@ -497,6 +512,7 @@ struct JournalView: View {
                 .font(Theme.bookItalic(15, relativeTo: .footnote))
                 .foregroundStyle(Theme.fadedInk)
                 .accessibilityLabel(pageLabel(pageCount: pageCount))
+                .accessibilityIdentifier("pagePosition")
             Spacer()
             Button { turn(to: pageIndex + perSpread) } label: { Image(systemName: "arrow.right") }
                 .keyboardShortcut(.rightArrow, modifiers: [])
@@ -528,7 +544,7 @@ private struct PageView: View {
             VStack(alignment: .leading, spacing: 0) {
                 if page.blocks.isEmpty {
                     Text("The pages are blank. Take up the quill and write the first entry.")
-                        .font(Theme.bookItalic(fontSize))
+                        .font(Theme.bookItalicFixed(fontSize))
                         .foregroundStyle(Theme.fadedInk)
                         .padding(.top, 18)
                 }
@@ -582,14 +598,14 @@ private struct BlockView: View {
                     .accessibilityAddTraits(.isHeader)
                 if !block.place.isEmpty {
                     Text(marked(block.place))
-                        .font(Theme.bookItalic(fontSize * 0.85))
+                        .font(Theme.bookItalicFixed(fontSize * 0.85))
                         .foregroundStyle(Theme.fadedInk)
                         .accessibilityLabel("At \(block.place)")
                 }
             }
             if !block.text.isEmpty {
                 Text(marked(block.text))
-                    .font(Theme.book(fontSize))
+                    .font(Theme.bookFixed(fontSize))
                     .lineSpacing(fontSize * 0.22)
                     .foregroundStyle(Theme.ink)
                     .fixedSize(horizontal: false, vertical: true)
