@@ -32,8 +32,10 @@ final class MacSmokeTests: XCTestCase {
         let quill = app.windows.buttons.matching(identifier: "Write a new entry").firstMatch
         XCTAssertTrue(quill.waitForExistence(timeout: 15))
         capture("mac-empty-reader", app)
-        XCTAssertTrue(quill.isHittable)
-        quill.click()
+        // Exercise a real pointer click on the visible control. SwiftUI's overlay
+        // accessibility hit-test can disagree with the native view hit-test.
+        print("Reader controls hittable: back=\(app.windows.buttons.matching(identifier: "Back to journals").firstMatch.isHittable), quill=\(quill.isHittable)")
+        quill.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
         let body = app.windows.textViews["entryBody"]
         XCTAssertTrue(body.waitForExistence(timeout: 15))
         body.click()
