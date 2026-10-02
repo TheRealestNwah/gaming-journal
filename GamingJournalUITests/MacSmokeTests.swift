@@ -7,7 +7,10 @@ final class MacSmokeTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-uiTesting", "-onboarding.completed", "YES"] + (demo ? ["-demoData"] : [])
         app.launch()
-        XCTAssertTrue(app.buttons["Begin a new journal"].waitForExistence(timeout: 20))
+        app.activate()
+        let opened = app.buttons["Begin a new journal"].waitForExistence(timeout: 20)
+        capture("mac-launch", app)
+        XCTAssertTrue(opened, app.debugDescription)
         return app
     }
     private func capture(_ name: String, _ app: XCUIApplication) {
@@ -33,7 +36,7 @@ final class MacSmokeTests: XCTestCase {
         body.typeText("A page written beside the campfire.")
         capture("mac-writer", app)
         app.buttons["Done"].click()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "A page written beside")).firstMatch.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "A page written beside")).firstMatch.waitForExistence(timeout: 15))
         capture("mac-reader", app)
     }
     func testShelfSearchContentsAndSettings() {

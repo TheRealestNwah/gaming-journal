@@ -142,6 +142,9 @@ struct WriterView: View {
             Button("Done", systemImage: "checkmark", action: save)
                 .fontWeight(.semibold)
                 .disabled(!draft.isValid)
+                #if os(macOS)
+                .keyboardShortcut(.return, modifiers: .command)
+                #endif
         }
         .labelStyle(.iconOnly)
         .imageScale(.large)

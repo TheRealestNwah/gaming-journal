@@ -1032,6 +1032,7 @@
                 INFOPLIST_FILE = GamingJournal/MacInfo.plist;
                 INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
                 INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+                INFOPLIST_KEY_CFBundleName = Hearthbound;
                 SDKROOT = macosx;
                 SUPPORTED_PLATFORMS = macosx;
                 MACOSX_DEPLOYMENT_TARGET = 14.0;
@@ -1076,6 +1077,7 @@
                 INFOPLIST_FILE = GamingJournal/MacInfo.plist;
                 INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
                 INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+                INFOPLIST_KEY_CFBundleName = Hearthbound;
                 SDKROOT = macosx;
                 SUPPORTED_PLATFORMS = macosx;
                 MACOSX_DEPLOYMENT_TARGET = 14.0;
@@ -1206,6 +1208,7 @@
                 INFOPLIST_FILE = GamingJournal/MacInfo.plist;
                 INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
                 INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+                INFOPLIST_KEY_CFBundleName = Hearthbound;
                 SDKROOT = macosx;
                 SUPPORTED_PLATFORMS = macosx;
                 MACOSX_DEPLOYMENT_TARGET = 14.0;

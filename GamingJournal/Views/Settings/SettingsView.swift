@@ -37,6 +37,10 @@ struct SettingsView: View {
 
                 #if os(iOS)
                 LockSection()
+                #else
+                Section("Privacy") {
+                    MacSpotlightSetting()
+                }
                 #endif
 
                 // Free-team builds can't sign the iCloud entitlement, so there is nothing to sync with.
@@ -164,3 +168,12 @@ extension UTType {
     /// Markdown, for exported journal books.
     static let markdownText = UTType(filenameExtension: "md", conformingTo: .plainText) ?? .plainText
 }
+
+#if os(macOS)
+private struct MacSpotlightSetting: View {
+    @AppStorage(SpotlightIndex.enabledKey) private var enabled = true
+    var body: some View {
+        Toggle("Show in Spotlight", systemImage: "magnifyingglass", isOn: $enabled)
+    }
+}
+#endif

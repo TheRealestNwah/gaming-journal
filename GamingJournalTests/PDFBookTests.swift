@@ -33,7 +33,13 @@ final class PDFBookTests: XCTestCase {
     }
 
     func testBookHasCoverThenDatedEntries() throws {
-        let pdf = try document(makeJournal())
+        let journal = makeJournal()
+        let data = PDFBook.render(journal, locale: Locale(identifier: "en_US"))
+        let artifact = XCTAttachment(data: data, uniformTypeIdentifier: "com.adobe.pdf")
+        artifact.name = "journal-pdf-sample"
+        artifact.lifetime = .keepAlways
+        add(artifact)
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
         XCTAssertEqual(pdf.pageCount, 2)
         let cover = try XCTUnwrap(pdf.page(at: 0)?.string)
         XCTAssertTrue(cover.contains("Eira Stormborn"))

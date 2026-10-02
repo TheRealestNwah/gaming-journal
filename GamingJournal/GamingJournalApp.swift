@@ -34,14 +34,18 @@ struct GamingJournalApp: App {
 
     var body: some Scene {
         #if os(macOS)
-        Window("Hearthbound", id: "journals") {
+        WindowGroup("Hearthbound") {
             RootView()
                 .environment(appLock)
                 .frame(minWidth: 640, minHeight: 540)
         }
         .modelContainer(container)
         .defaultSize(width: 1100, height: 800)
-        .commands { TextEditingCommands() }
+        .commands {
+            // Keep one journal workflow while using normal Mac launch/reopen behavior.
+            CommandGroup(replacing: .newItem) { }
+            TextEditingCommands()
+        }
         #else
         WindowGroup {
             RootView()

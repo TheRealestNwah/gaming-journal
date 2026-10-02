@@ -1,4 +1,4 @@
-# Hearthbound — iOS
+# Hearthbound — iPhone, iPad and Mac
 
 The journal your character keeps, like the one in an Elder Scrolls game. Start a journal for each character you play, and write their days in their own words: dated in the game's own calendar, on aged pages you turn like a book.
 
@@ -28,7 +28,7 @@ Rebuilt around one journal per character (#116–#119), with the approved Septem
 ## Requirements
 
 - Xcode 16+
-- iOS 17+
+- iOS/iPadOS 17+, or macOS 14+ for the native Mac app
 
 ## Building
 
@@ -42,6 +42,17 @@ xcodebuild test -project GamingJournal.xcodeproj -scheme GamingJournal \
 ```
 
 The project uses Xcode's synchronized folders, so new files under `GamingJournal/` and `GamingJournalTests/` are picked up automatically.
+
+## Native Mac
+
+Select **Hearthbound (Mac)** and the **My Mac** destination in Xcode. The native SwiftUI/AppKit app shares the journal data model and core features with iOS. It uses a resizable window, desktop sheets, arrow-key page turns, picture import from files, and native sharing. Command-Return saves writing.
+
+```sh
+xcodebuild test -project GamingJournal.xcodeproj -scheme "Hearthbound (Mac)" \
+  -destination 'platform=macOS' -parallel-testing-enabled NO
+```
+
+The first Mac version does not offer app locking, camera capture or desktop widgets. Signing, Photos/Spotlight/Shortcuts, reminders and iCloud require hands-on acceptance before release. See [platform support and validation](docs/PLATFORMS.md). **Hearthbound (Mac Free Team)** provides the separate `.free` configuration without iCloud or push; its signing is not checked by CI.
 
 ## Running on your own device
 
@@ -69,7 +80,7 @@ CI builds without signing, so it only checks that sync compiles. Syncing between
 
 ## CI
 
-GitHub Actions builds the app and runs the unit and UI smoke tests on every pull request. PRs that only touch docs skip the build. To test `main` by hand, use "Run workflow".
+GitHub Actions builds and runs shared unit tests, iPhone and iPad UI smoke tests, iPad rotation checks, and native Mac UI checks on every code pull request. Platform screenshots are attached to the run. PRs that only touch docs skip the build. To test `main` by hand, use "Run workflow".
 
 ## AI disclosure
 

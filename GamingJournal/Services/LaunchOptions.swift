@@ -28,7 +28,13 @@ enum LaunchOptions {
 enum DemoData {
     @MainActor
     static func seed(into context: ModelContext, now: Date = .now, calendar: Calendar = .current) {
-        context.insert(journal(now: now, calendar: calendar))
+        let sample = journal(now: now, calendar: calendar)
+        // UI-only fixture: enough text to exercise many spreads at any iPad size.
+        if LaunchOptions.isUITesting && ProcessInfo.processInfo.arguments.contains("-longDemoData"),
+           let first = sample.story.first {
+            first.body += String(repeating: "\n\nThe mountain road wound through the snow. I stopped at the old watchtower and recorded the landmarks before continuing toward the river.", count: 35)
+        }
+        context.insert(sample)
         try? context.save()
     }
 
