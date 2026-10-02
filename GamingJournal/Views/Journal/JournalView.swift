@@ -158,7 +158,12 @@ struct JournalView: View {
                 WaxSeal()
                     .contentShape(Circle())
             }
+            #if os(macOS)
+            .buttonStyle(.borderless)
+            #else
             .buttonStyle(.plain)
+            #endif
+            .accessibilityElement(children: .ignore)
             .accessibilityLabel("Write a new entry")
             .keyboardShortcut("n", modifiers: .command)
             .padding(.trailing, 24)
