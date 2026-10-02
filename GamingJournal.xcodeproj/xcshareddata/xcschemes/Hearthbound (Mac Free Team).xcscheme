@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "6B0000000000000000000001"
-               BuildableName = "GamingJournalMac.app"
+               BuildableName = "Hearthbound.app"
                BlueprintName = "GamingJournalMac"
                ReferencedContainer = "container:GamingJournal.xcodeproj">
             </BuildableReference>
@@ -69,7 +69,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "6B0000000000000000000001"
-            BuildableName = "GamingJournalMac.app"
+            BuildableName = "Hearthbound.app"
             BlueprintName = "GamingJournalMac"
             ReferencedContainer = "container:GamingJournal.xcodeproj">
          </BuildableReference>
@@ -86,7 +86,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "6B0000000000000000000001"
-            BuildableName = "GamingJournalMac.app"
+            BuildableName = "Hearthbound.app"
             BlueprintName = "GamingJournalMac"
             ReferencedContainer = "container:GamingJournal.xcodeproj">
          </BuildableReference>

@@ -3,9 +3,6 @@ import SwiftData
 
 @main
 struct GamingJournalApp: App {
-    #if os(macOS)
-    @NSApplicationDelegateAdaptor(MacAppDelegate.self) private var macDelegate
-    #endif
     let container: ModelContainer
     @State private var appLock: AppLock
 

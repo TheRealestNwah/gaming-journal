@@ -14,4 +14,4 @@ Initial Mac limits: no app-lock UI, camera capture or desktop widget extension. 
 
 ## Validation
 
-CI keeps simulator parallel testing disabled and runs iPhone then iPad on one runner, reusing the iOS build. It first builds/tests the native Mac scheme with shared unit tests and Mac-specific UI smoke tests. Artifacts separate screenshots by platform. No release or tag is authorized by these changes.
+CI first builds/tests the native Mac scheme with shared unit tests and Mac-specific UI smoke tests. It then runs iPhone and iPad on the same runner, reusing the iOS build and keeping simulator parallel testing disabled. Artifacts separate screenshots by platform. No release or tag is authorized by these changes.

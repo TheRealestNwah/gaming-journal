@@ -27,7 +27,7 @@ The app is called **Hearthbound**. Its Xcode targets, schemes, bundle IDs, app g
 ## CI
 - macOS runners are the bottleneck: only a few run at once, and every run holds one for ~5 min. Avoid pushing several PR branches at the same time. Push or rebase them one after another so they don't queue behind each other.
 - CI runs on pull requests only (not on pushes to `main`). Docs-only PRs (`docs/`, `*.md`) skip the macOS job, and the skipped job still satisfies the required check. Use "Run workflow" (workflow_dispatch) to test `main` by hand.
-- iPhone unit and UI smoke tests run in one `xcodebuild test-without-building` call on a simulator booted during the build. Parallel testing stays off, because cloning the simulator costs minutes while the suite takes seconds. Keep it that way when editing `.github/workflows/ci.yml`. iPad UI tests run next using the same build, then the native Mac scheme runs its shared unit and Mac UI tests on the same runner.
+- iPhone unit and UI smoke tests run in one `xcodebuild test-without-building` call on a simulator booted during the build. Parallel testing stays off, because cloning the simulator costs minutes while the suite takes seconds. Keep it that way when editing `.github/workflows/ci.yml`. The native Mac scheme runs its shared unit and Mac UI tests first on the same runner; iPhone follows, then iPad UI tests reuse the iOS build.
 
 ## Tone and theme
 - The in-game journal look: aged paper with scorched edges, dark ink, red "rubric" ink for dates and actions; the shelf is dark wood with gilt. Pages stay paper in dark mode, just dimmer.

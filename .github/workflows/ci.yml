@@ -133,8 +133,8 @@ jobs:
       - name: Collect Mac launch diagnostics
         if: failure()
         run: |
-          plutil -p build-mac/Build/Products/Debug/GamingJournalMac.app/Contents/Info.plist > mac-info.log || true
-          log show --last 15m --style compact --predicate 'process == "GamingJournalMac"' > mac-launch.log || true
+          plutil -p build-mac/Build/Products/Debug/Hearthbound.app/Contents/Info.plist > mac-info.log || true
+          log show --last 15m --style compact --predicate 'process == "Hearthbound"' > mac-launch.log || true
 
       - name: Export app screenshots
         if: always()

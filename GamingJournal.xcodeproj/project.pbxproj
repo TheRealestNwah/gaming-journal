@@ -67,7 +67,7 @@
 		6A0000000000000000000012 /* GamingJournalTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GamingJournalTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6A0000000000000000000032 /* GamingJournalWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GamingJournalWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		6A0000000000000000000022 /* GamingJournalUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GamingJournalUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		6B0000000000000000000002 /* GamingJournalMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GamingJournalMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6B0000000000000000000002 /* Hearthbound.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Hearthbound.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6B0000000000000000000012 /* GamingJournalMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GamingJournalMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6B0000000000000000000022 /* GamingJournalMacUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GamingJournalMacUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -328,7 +328,7 @@
 			packageProductDependencies = (
 			);
 			productName = GamingJournalMac;
-			productReference = 6B0000000000000000000002 /* GamingJournalMac.app */;
+			productReference = 6B0000000000000000000002 /* Hearthbound.app */;
 			productType = "com.apple.product-type.application";
 		};
 		6B0000000000000000000011 /* GamingJournalMacTests */ = {
@@ -1061,7 +1061,7 @@
 				);
 				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gamingjournal.GamingJournal;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Hearthbound;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 
@@ -1106,7 +1106,7 @@
 				);
 				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gamingjournal.GamingJournal;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Hearthbound;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 
@@ -1131,7 +1131,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GamingJournalMac.app/Contents/MacOS/GamingJournalMac";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Hearthbound.app/Contents/MacOS/Hearthbound";
 			};
 			name = Debug;
 		};
@@ -1153,7 +1153,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GamingJournalMac.app/Contents/MacOS/GamingJournalMac";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Hearthbound.app/Contents/MacOS/Hearthbound";
 			};
 			name = Release;
 		};
@@ -1236,7 +1236,7 @@
 				);
 				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gamingjournal.GamingJournal.free;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Hearthbound;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 
@@ -1261,7 +1261,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GamingJournalMac.app/Contents/MacOS/GamingJournalMac";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Hearthbound.app/Contents/MacOS/Hearthbound";
 			};
 			name = FreeTeam;
 		};
