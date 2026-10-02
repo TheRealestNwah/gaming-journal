@@ -152,18 +152,7 @@ struct JournalView: View {
             .frame(maxWidth: perSpread == 2 ? 1280 : 640)
             .frame(maxWidth: .infinity)
 
-            Button {
-                writing = WriterRequest(entry: nil)
-            } label: {
-                WaxSeal()
-                    .contentShape(Circle())
-            }
-            #if os(macOS)
-            .buttonStyle(.borderless)
-            #else
-            .buttonStyle(.plain)
-            #endif
-            .accessibilityElement(children: .ignore)
+            writeButton
             .accessibilityLabel("Write a new entry")
             .keyboardShortcut("n", modifiers: .command)
             .padding(.trailing, 24)
@@ -333,6 +322,24 @@ struct JournalView: View {
         let first = min(pageIndex, max(0, pageCount - 1)) + 1
         let second = min(first + perSpread - 1, pageCount)
         return second > first ? "pages \(first)–\(second) of \(pageCount)" : "page \(first) of \(pageCount)"
+    }
+
+    @ViewBuilder
+    private var writeButton: some View {
+        #if os(macOS)
+        Button("Take up the quill", systemImage: "pencil.and.scribble") {
+            writing = WriterRequest(entry: nil)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(Theme.wax)
+        #else
+        Button {
+            writing = WriterRequest(entry: nil)
+        } label: {
+            WaxSeal().contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        #endif
     }
 
     /// One spread: a page, or two facing pages with the gutter between them.
