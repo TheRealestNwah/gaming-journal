@@ -5,7 +5,9 @@ final class MacSmokeTests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
     private func launch(demo: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTesting", "-onboarding.completed", "YES", "-ApplePersistenceIgnoreState", "YES"] + (demo ? ["-demoData"] : [])
+        app.launchArguments = ["-uiTesting", "YES", "-onboarding.completed", "YES",
+            "-ApplePersistenceIgnoreState", "YES", "-NSTreatUnknownArgumentsAsOpen", "NO"]
+            + (demo ? ["-demoData", "YES"] : [])
         app.launch()
         app.activate()
         let opened = app.buttons["Begin a new journal"].waitForExistence(timeout: 20)
