@@ -531,7 +531,7 @@ private struct PageView: View {
             VStack(alignment: .leading, spacing: 0) {
                 if page.blocks.isEmpty {
                     Text("The pages are blank. Take up the quill and write the first entry.")
-                        .font(Theme.bookItalic(fontSize))
+                        .font(Theme.bookItalicFixed(fontSize))
                         .foregroundStyle(Theme.fadedInk)
                         .padding(.top, 18)
                 }
@@ -585,14 +585,14 @@ private struct BlockView: View {
                     .accessibilityAddTraits(.isHeader)
                 if !block.place.isEmpty {
                     Text(marked(block.place))
-                        .font(Theme.bookItalic(fontSize * 0.85))
+                        .font(Theme.bookItalicFixed(fontSize * 0.85))
                         .foregroundStyle(Theme.fadedInk)
                         .accessibilityLabel("At \(block.place)")
                 }
             }
             if !block.text.isEmpty {
                 Text(marked(block.text))
-                    .font(Theme.book(fontSize))
+                    .font(Theme.bookFixed(fontSize))
                     .lineSpacing(fontSize * 0.22)
                     .foregroundStyle(Theme.ink)
                     .fixedSize(horizontal: false, vertical: true)

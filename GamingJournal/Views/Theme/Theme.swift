@@ -48,6 +48,15 @@ enum Theme {
         .custom(BookFont.italic, size: size, relativeTo: style)
     }
 
+    /// Values already resolved by @ScaledMetric must not scale a second time.
+    static func bookFixed(_ size: CGFloat) -> Font {
+        .custom(BookFont.roman, fixedSize: size)
+    }
+
+    static func bookItalicFixed(_ size: CGFloat) -> Font {
+        .custom(BookFont.italic, fixedSize: size)
+    }
+
     /// Small capitals, for dates and headings.
     static func bookCaps(_ size: CGFloat, relativeTo style: Font.TextStyle = .body) -> Font {
         .custom(BookFont.smallCaps, size: size, relativeTo: style)

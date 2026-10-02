@@ -11,7 +11,7 @@ final class IPadTests: XCTestCase {
     override func tearDownWithError() throws { XCUIDevice.shared.orientation = .portrait }
 
     private func capture(_ name: String, _ app: XCUIApplication) {
-        let attachment = XCTAttachment(screenshot: app.screenshot())
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
@@ -31,6 +31,11 @@ final class IPadTests: XCTestCase {
         XCTAssertTrue(quill.isHittable)
         XCTAssertTrue(app.buttons["Back to journals"].isHittable)
         XCTAssertTrue(app.buttons["contents"].isHittable)
+        let entry = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "never learned")).firstMatch
+        XCTAssertTrue(entry.waitForExistence(timeout: 15))
+        // This short entry should fit within a screen at the largest text size.
+        // Applying Dynamic Type twice makes it several screens tall.
+        XCTAssertLessThan(entry.frame.height, app.frame.height)
         capture("ipad-large-text-dark-reader", app)
         quill.tap()
         XCTAssertTrue(app.textViews["entryBody"].waitForExistence(timeout: 15))
