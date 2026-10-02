@@ -31,6 +31,8 @@ final class MacSmokeTests: XCTestCase {
         app.windows.buttons.matching(identifier: "Begin").firstMatch.click()
         let quill = app.windows.buttons.matching(identifier: "Write a new entry").firstMatch
         XCTAssertTrue(quill.waitForExistence(timeout: 15))
+        capture("mac-empty-reader", app)
+        XCTAssertTrue(quill.isHittable)
         quill.click()
         let body = app.windows.textViews["entryBody"]
         XCTAssertTrue(body.waitForExistence(timeout: 15))

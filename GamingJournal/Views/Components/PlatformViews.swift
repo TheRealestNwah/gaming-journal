@@ -50,6 +50,14 @@ extension View {
         self
         #endif
     }
+    /// The automatic Mac form uses a label grid that can overflow a compact sheet.
+    @ViewBuilder func journalFormStyle() -> some View {
+        #if os(macOS)
+        formStyle(.grouped)
+        #else
+        self
+        #endif
+    }
     /// Mac sheets need an explicit useful size; iPad keeps its system presentation.
     @ViewBuilder func journalSheetSize() -> some View {
         #if os(macOS)

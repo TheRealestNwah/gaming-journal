@@ -156,6 +156,7 @@ struct JournalView: View {
                 writing = WriterRequest(entry: nil)
             } label: {
                 WaxSeal()
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Write a new entry")

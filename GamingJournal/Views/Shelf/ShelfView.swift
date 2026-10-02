@@ -202,6 +202,7 @@ struct JournalEditorView: View {
                 }
                 .listRowBackground(Theme.paper.opacity(0.6))
             }
+            .journalFormStyle()
             .scrollContentBackground(.hidden)
             .background(PaperBackground())
             .navigationTitle(journal == nil ? "New Journal" : "Edit Journal")
