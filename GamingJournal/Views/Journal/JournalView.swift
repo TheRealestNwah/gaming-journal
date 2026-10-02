@@ -105,7 +105,7 @@ struct JournalView: View {
         }
     }
 
-    private var book: some View {
+    private var bookLayout: some View {
         let laidOut = pages
         let entries = Dictionary((journal.entries ?? []).map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let ribbonIndex = ribbonPage(in: laidOut)
@@ -168,6 +168,11 @@ struct JournalView: View {
             .frame(maxWidth: .infinity)
 
         }
+    }
+
+    private var bookNavigation: some View {
+        let laidOut = pages
+        return bookLayout
         .overlay(alignment: .bottomLeading) {
             if isBindingBook {
                 HStack(spacing: 10) {
@@ -237,6 +242,10 @@ struct JournalView: View {
                 settle(animated: true)
             }
         }
+    }
+
+    private var book: some View {
+        bookNavigation
         .sheet(item: $sharing) { shared in
             ShareSheet(items: [shared.image])
                 .presentationDetents([.medium, .large])
