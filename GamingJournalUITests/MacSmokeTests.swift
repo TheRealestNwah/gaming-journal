@@ -92,7 +92,7 @@ final class MacSmokeTests: XCTestCase {
         XCTAssertFalse(app.windows.buttons.matching(identifier: "Done").firstMatch.isEnabled)
         resume.click()
         app.typeKey(XCUIKeyboardKey.return.rawValue, modifierFlags: .command)
-        let ok = app.buttons.matching(identifier: "OK").firstMatch
+        let ok = app.windows.buttons.matching(identifier: "OK").firstMatch
         XCTAssertTrue(ok.waitForExistence(timeout: 15))
         ok.click()
         XCTAssertEqual(body.value as? String, "A Mac draft kept safe.")

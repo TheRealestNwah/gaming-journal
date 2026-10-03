@@ -14,10 +14,14 @@ enum JournalStore {
         defer { context.autosaveEnabled = autosave }
         do {
             let value = try changes()
+            // Register relationship and property changes before a save can fail synchronously.
+            context.processPendingChanges()
             try save(context)
             return value
         } catch {
+            context.processPendingChanges()
             context.rollback()
+            context.processPendingChanges()
             throw error
         }
     }

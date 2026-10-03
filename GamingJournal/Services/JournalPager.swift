@@ -224,6 +224,11 @@ struct JournalPager {
                !text[end].isWhitespace, let space = lastSpace {
                 end = space
             }
+            // Trailing spaces belong to this slice, but must not use the next line's capacity.
+            while end < text.endIndex, text[end].isWhitespace, !text[end].isNewline,
+                  !text[text.index(before: end)].isNewline {
+                end = text.index(after: end)
+            }
             result.append(start.utf16Offset(in: text)..<end.utf16Offset(in: text))
             start = end
         }
