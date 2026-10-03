@@ -28,8 +28,6 @@ struct JournalView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ScaledMetric(relativeTo: .body) private var fontSize: CGFloat = 19
     @State private var pageIndex = 0
-    /// The page last turned to by the app rather than by a swipe.
-    @State private var settledIndex = 0
     @State private var anchor: Anchor
     @State private var textArea = CGSize.zero
     /// The whole screen's size, which decides between one page and two facing pages.
@@ -137,7 +135,8 @@ struct JournalView: View {
                     if hasOpened {
                         BookPager(
                             spreadCount: spreadCount(laidOut.count),
-                            spread: Binding(get: { pageIndex / perSpread }, set: { pageIndex = $0 * perSpread }),
+                            spread: Binding(get: { pageIndex / perSpread },
+                                            set: { turn(to: $0 * perSpread, animated: false) }),
                             curls: !reduceMotion
                         ) { spread in
                             AnyView(spreadView(spread, pages: laidOut, entries: entries, ribbonIndex: ribbonIndex))
@@ -230,13 +229,7 @@ struct JournalView: View {
         .onChange(of: laidOut) {
             if hasOpened { settle() }
         }
-        .onChange(of: pageIndex) { _, index in
-            // A swipe: follow the reader from here on.
-            if index != settledIndex {
-                settledIndex = index
-                anchor = laidOut.indices.contains(index) ? RibbonMark(page: laidOut[index]).map(Anchor.mark) ?? .free : .free
-                highlightTerms = []
-            }
+        .onChange(of: pageIndex) {
             #if os(iOS)
             if UIAccessibility.isVoiceOverRunning {
                 AccessibilityNotification.PageScrolled(pageLabel(pageCount: laidOut.count)).post()
@@ -335,14 +328,15 @@ struct JournalView: View {
         show(JournalPager.spreadStart(of: target, pagesPerSpread: perSpread), animated: animated)
     }
 
-    /// Prev and Next.
-    private func turn(to index: Int) {
+    /// Explicit navigation (buttons, keys or a completed swipe) moves the reading anchor.
+    /// Layout-driven index changes never do: SwiftUI may coalesce them during rotation.
+    private func turn(to index: Int, animated: Bool = true) {
         let last = JournalPager.spreadStart(of: max(0, laidOutCount - 1), pagesPerSpread: perSpread)
         let target = JournalPager.spreadStart(of: min(max(0, index), last), pagesPerSpread: perSpread)
         let laidOut = pages
         anchor = laidOut.indices.contains(target) ? RibbonMark(page: laidOut[target]).map(Anchor.mark) ?? .free : .free
         highlightTerms = []
-        show(target, animated: true)
+        show(target, animated: animated)
     }
 
     // MARK: Spreads
@@ -500,7 +494,6 @@ struct JournalView: View {
     }
 
     private func show(_ index: Int, animated: Bool) {
-        settledIndex = index
         guard index != pageIndex else { return }
         if animated && !reduceMotion {
             withAnimation(.easeInOut(duration: 0.35)) { pageIndex = index }
