@@ -46,6 +46,7 @@ final class JournalStoreTests: XCTestCase {
         })
         XCTAssertEqual(entry.body, "Original")
         XCTAssertEqual(entry.sortedPhotos.count, 1)
+        XCTAssertEqual(entry.sortedPhotos.first?.imageData, Data([1]))
         XCTAssertEqual(draft.body, "Changed", "The editor copy remains available for retry")
         try JournalStore.save(draft, entry: entry, in: journal, context: context)
         XCTAssertEqual(entry.body, "Changed")
@@ -57,11 +58,13 @@ final class JournalStoreTests: XCTestCase {
         let journal = DemoData.journal()
         context.insert(journal)
         try context.save()
-        XCTAssertThrowsError(try JournalStore.commit(in: context, save: { _ in throw CocoaError(.fileWriteOutOfSpace) }) {
+        XCTAssertThrowsError(try JournalStore.commit(in: context, save: { _ in throw CocoaError(.fileWriteOutOfSpace) },
+                                                   restore: JournalStore.restoration(for: journal, includingEntries: true)) {
             context.delete(journal)
         })
         XCTAssertEqual(try context.fetch(FetchDescriptor<Journal>()).count, 1)
         XCTAssertEqual(try context.fetch(FetchDescriptor<Entry>()).count, 3)
+        XCTAssertEqual(journal.story.count, 3)
     }
 
     func testSavedEntrySurvivesReopeningDiskStore() throws {

@@ -36,6 +36,9 @@ enum DemoData {
                 "\n\nMilestone \($0). The mountain road wound through the snow. I stopped at the old watchtower and recorded the landmarks before continuing toward the river."
             }.joined()
         }
+        if LaunchOptions.isUITesting && ProcessInfo.processInfo.arguments.contains("-missingPhoto") {
+            sample.latestEntry?.photos = [EntryPhoto(imageData: nil, thumbnailData: nil)]
+        }
         context.insert(sample)
         try? context.save()
     }

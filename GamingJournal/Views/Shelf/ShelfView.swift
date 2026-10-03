@@ -101,7 +101,7 @@ struct ShelfView: View {
             Button("Delete \(journal.characterName)'s journal", role: .destructive) {
                 let id = journal.id
                 do {
-                    try JournalStore.commit(in: context) { context.delete(journal) }
+                    try JournalStore.commit(in: context, restore: JournalStore.restoration(for: journal, includingEntries: true)) { context.delete(journal) }
                     path.removeAll { $0.journal.id == id }
                     DraftShelf().discard(for: id)
                     RibbonShelf().setMark(nil, for: id)
@@ -256,7 +256,8 @@ struct JournalEditorView: View {
 
     private func save() {
         do {
-            let saved = try JournalStore.commit(in: context) {
+            let restore = journal.map { JournalStore.restoration(for: $0) } ?? {}
+            let saved = try JournalStore.commit(in: context, restore: restore) {
                 if let journal {
                     journal.characterName = trimmedName
                     journal.epithet = epithet.trimmingCharacters(in: .whitespacesAndNewlines)

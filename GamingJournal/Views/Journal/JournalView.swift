@@ -432,7 +432,7 @@ struct JournalView: View {
     private func tearOut(_ entry: Entry) {
         let copy = TornOut(record: JournalBackup.EntryRecord(entry: entry), heading: entry.heading())
         do {
-            try JournalStore.commit(in: context) {
+            try JournalStore.commit(in: context, restore: JournalStore.restoration(for: journal, includingEntries: true)) {
                 journal.touch()
                 context.delete(entry)
             }
@@ -447,7 +447,7 @@ struct JournalView: View {
     private func undoTearOut() {
         guard let tornOut else { return }
         do {
-            let entryID = try JournalStore.commit(in: context) {
+            let entryID = try JournalStore.commit(in: context, restore: JournalStore.restoration(for: journal)) {
                 let entry = tornOut.record.makeEntry()
                 context.insert(entry)
                 entry.journal = journal

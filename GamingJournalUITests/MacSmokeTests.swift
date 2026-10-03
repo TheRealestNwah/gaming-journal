@@ -101,5 +101,17 @@ final class MacSmokeTests: XCTestCase {
         capture("qa-mac-saved-recovery", app)
     }
 
+    func testUnavailablePictureExplainsItsState() {
+        let app = launch(demo: true, arguments: ["-missingPhoto", "YES"])
+        app.windows.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Eira Stormborn")).firstMatch.click()
+        let picture = app.windows.buttons.matching(identifier: "Photo 1 of 1").firstMatch
+        XCTAssertTrue(picture.waitForExistence(timeout: 15))
+        picture.click()
+        XCTAssertTrue(app.windows.staticTexts["Photo unavailable"].waitForExistence(timeout: 15))
+        capture("qa-mac-unavailable-picture", app)
+        app.windows.buttons.matching(identifier: "Close").firstMatch.click()
+        XCTAssertTrue(app.windows.buttons.matching(identifier: "Write a new entry").firstMatch.waitForExistence(timeout: 15))
+    }
+
 }
 #endif
