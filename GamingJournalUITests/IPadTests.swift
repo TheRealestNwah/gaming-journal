@@ -111,12 +111,25 @@ final class IPadTests: XCTestCase {
         let retained = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", marker)).firstMatch
         XCTAssertTrue(retained.waitForExistence(timeout: 15))
         XCTAssertTrue(retained.isHittable)
+        // This passage moves into the first landscape spread. Cached UIKit hosts must
+        // show that spread's opening too, rather than stale text with a new page number.
+        let spread = expectation(for: NSPredicate(format: "label BEGINSWITH %@", "pages 1–2"), evaluatedWith: app.staticTexts["pagePosition"])
+        wait(for: [spread], timeout: 15)
+        let opening = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "The cart ride ended")).firstMatch
+        XCTAssertTrue(opening.waitForExistence(timeout: 15))
+        XCTAssertTrue(opening.isHittable)
         let quill = app.buttons["Write a new entry"]
         // The dedicated writing area must sit below the page viewport, not over its text.
         let viewport = app.scrollViews.matching(identifier: "pageViewport").firstMatch
         XCTAssertTrue(viewport.exists)
         XCTAssertGreaterThanOrEqual(quill.frame.minY, viewport.frame.maxY)
         capture("ipad-reflow-middle-passage", app)
+        XCUIDevice.shared.orientation = .portrait
+        let restoredPage = expectation(for: NSPredicate(format: "label BEGINSWITH %@", "page 2 of"), evaluatedWith: app.staticTexts["pagePosition"])
+        wait(for: [restoredPage], timeout: 15)
+        XCTAssertTrue(retained.waitForExistence(timeout: 15))
+        XCTAssertTrue(retained.isHittable)
+        capture("ipad-reflow-return-to-portrait", app)
     }
 
 }

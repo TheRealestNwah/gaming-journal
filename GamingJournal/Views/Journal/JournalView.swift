@@ -80,6 +80,15 @@ struct JournalView: View {
         case free
     }
 
+    /// UIKit caches hosted spreads; a new layout must start with fresh page/scroll state.
+    private struct PagerLayout: Hashable {
+        let curls: Bool
+        let width: CGFloat
+        let height: CGFloat
+        let fontSize: CGFloat
+        let pagesPerSpread: Int
+    }
+
     private static let pagePadding: CGFloat = 30
 
     /// 2 when facing pages are open, otherwise 1. `pageIndex` is always the first page of a spread.
@@ -133,8 +142,10 @@ struct JournalView: View {
                         ) { spread in
                             AnyView(spreadView(spread, pages: laidOut, entries: entries, ribbonIndex: ribbonIndex))
                         }
-                        // The curl is fixed when the pager is made.
-                        .id(reduceMotion)
+                        // Recreate cached UIKit spreads when their pagination geometry changes.
+                        .id(PagerLayout(curls: !reduceMotion, width: textArea.width,
+                                        height: textArea.height, fontSize: fontSize,
+                                        pagesPerSpread: perSpread))
                         .accessibilityScrollAction { edge in
                             switch edge {
                             case .trailing: turn(to: pageIndex + perSpread)
