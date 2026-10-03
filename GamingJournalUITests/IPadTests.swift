@@ -99,7 +99,7 @@ final class IPadTests: XCTestCase {
         next.tap()
         let turned = expectation(for: NSPredicate(format: "label BEGINSWITH %@", "page 2 of"), evaluatedWith: app.staticTexts["pagePosition"])
         wait(for: [turned], timeout: 15)
-        let passage = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Milestone")).firstMatch
+        let passage = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Milestone")).firstMatch
         XCTAssertTrue(passage.waitForExistence(timeout: 15))
         let text = passage.label
         let expression = try NSRegularExpression(pattern: "Milestone [0-9]+\\.")
@@ -108,7 +108,7 @@ final class IPadTests: XCTestCase {
         XCUIDevice.shared.orientation = .landscapeLeft
         let landscape = expectation(for: NSPredicate { _, _ in app.frame.width > app.frame.height }, evaluatedWith: app)
         wait(for: [landscape], timeout: 15)
-        let retained = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", marker)).firstMatch
+        let retained = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", marker)).firstMatch
         XCTAssertTrue(retained.waitForExistence(timeout: 15))
         XCTAssertTrue(retained.isHittable)
         let quill = app.buttons["Write a new entry"]
