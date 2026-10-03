@@ -28,7 +28,6 @@ A journal's ribbon is kept per device in UserDefaults, not in the model.
 | Contents page to jump to an entry | #124 |
 | Ribbon bookmark so a journal reopens where you left off | #125 |
 | Pictures in the PDF book export | #126 |
-
 | More in-game calendars for Next day (Harptos, real-world dates) | #144 |
 | Share an entry as a picture of its page | #145 |
 | Two facing pages on iPad | #146 |
