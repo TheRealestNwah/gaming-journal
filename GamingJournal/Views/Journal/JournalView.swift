@@ -216,7 +216,7 @@ struct JournalView: View {
         .journalCommandActions(writing != nil || isEditingJournal || isShowingContents || sharing != nil ? JournalCommandActions() :
             JournalCommandActions(settings: onSettings, newJournal: onNewJournal,
                                   write: { writing = WriterRequest(entry: nil) }, find: { isShowingContents = true }))
-        .onChange(of: laidOut.count) {
+        .onChange(of: laidOut) {
             if hasOpened { settle() }
         }
         .onChange(of: pageIndex) { _, index in
@@ -634,6 +634,7 @@ private struct PageView: View {
                     .onChange(of: geometry.size.height) { _, height in viewportHeight = height }
             })
             .scrollBounceBehavior(.basedOnSize)
+            .accessibilityIdentifier("pageViewport")
             .overlay(alignment: .topTrailing) {
                 if showsRibbon {
                     RibbonMarker()

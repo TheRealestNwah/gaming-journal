@@ -10,15 +10,29 @@ enum JournalStore {
                           changes: () throws -> T) throws -> T {
         if context.hasChanges { try context.save() }
         let autosave = context.autosaveEnabled
+        let previousUndo = context.undoManager
+        // A local group restores the observable model graph as well as the store's pending work.
+        // ModelContext.rollback alone can leave registered SwiftData relationship caches stale.
+        let undo = UndoManager()
+        undo.groupsByEvent = false
+        context.undoManager = undo
         context.autosaveEnabled = false
-        defer { context.autosaveEnabled = autosave }
+        defer {
+            context.undoManager = previousUndo
+            context.autosaveEnabled = autosave
+        }
+        undo.beginUndoGrouping()
         do {
             let value = try changes()
             // Register relationship and property changes before a save can fail synchronously.
             context.processPendingChanges()
+            undo.endUndoGrouping()
             try save(context)
             return value
         } catch {
+            context.processPendingChanges()
+            if undo.groupingLevel > 0 { undo.endUndoGrouping() }
+            if undo.canUndo { undo.undo() }
             context.processPendingChanges()
             context.rollback()
             context.processPendingChanges()
